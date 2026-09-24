@@ -1,0 +1,12 @@
+{
+  "name": "lecture-interpreter",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=web\" \"npm run dev --workspace=api\"",
+    "build": "npm run build --workspace=web && npm run build --workspace=api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
