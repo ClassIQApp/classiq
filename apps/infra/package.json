@@ -22,7 +22,7 @@
         "@classiq/eslint": "workspace:*",
         "@classiq/prettier": "workspace:*",
         "@classiq/typescript": "workspace:*",
-        "@classiq/service": "workspace:*",
+        "@classiq/api": "workspace:*",
         "@classiq/website": "workspace:*",
         "@types/node": "catalog:",
         "aws-cdk": "catalog:",

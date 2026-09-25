@@ -1,9 +1,11 @@
 {
-    "name": "@classiq/service",
+    "name": "@classiq/api",
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "esbuild src/index.ts --bundle --platform=node --target=node24 --format=esm --sourcemap --outfile=dist/index.mjs",
+        "build": "vite build && pnpm run zip:lambda",
+        "zip:lambda": "cd dist && zip -q -X -FS lambda.zip index.mjs index.mjs.map",
+        "dev": "vite --host 127.0.0.1",
         "test": "vitest run",
         "lint": "pnpm exec eslint --cache --cache-location .cache/eslint . --fix",
         "lint:check": "pnpm exec eslint --cache --cache-location .cache/eslint-check . --max-warnings=0",
@@ -13,16 +15,19 @@
         "fullclean": "pnpm run clean && rm -rf node_modules"
     },
     "prettier": "@classiq/prettier",
+    "dependencies": {
+        "hono": "catalog:"
+    },
     "devDependencies": {
         "@classiq/eslint": "workspace:*",
         "@classiq/prettier": "workspace:*",
         "@classiq/typescript": "workspace:*",
-        "@types/aws-lambda": "catalog:",
         "@types/node": "catalog:",
-        "esbuild": "catalog:",
+        "@hono/vite-dev-server": "catalog:",
         "eslint": "catalog:",
         "prettier": "catalog:",
         "typescript": "catalog:",
+        "vite": "catalog:",
         "vitest": "catalog:"
     }
 }

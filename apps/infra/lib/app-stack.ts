@@ -10,18 +10,18 @@ import type { Construct } from "constructs";
 import { fileURLToPath } from "node:url";
 
 // Build artifacts produced by sibling workspaces (turbo builds them first via ^build)
-const serviceDist = fileURLToPath(new URL("../../service/dist", import.meta.url));
+const apiZip = fileURLToPath(new URL("../../api/dist/lambda.zip", import.meta.url));
 const websiteDist = fileURLToPath(new URL("../../website/dist", import.meta.url));
 
 export class AppStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
         super(scope, id, props);
 
-        const handler = new Function(this, "ServiceFn", {
+        const handler = new Function(this, "ApiFn", {
             runtime: Runtime.NODEJS_24_X,
             architecture: Architecture.ARM_64,
             handler: "index.handler",
-            code: Code.fromAsset(serviceDist),
+            code: Code.fromAsset(apiZip),
             memorySize: 512,
             timeout: Duration.seconds(10),
             environment: {
@@ -30,7 +30,7 @@ export class AppStack extends Stack {
         });
 
         const api = new HttpApi(this, "Api", {
-            defaultIntegration: new HttpLambdaIntegration("ServiceIntegration", handler),
+            defaultIntegration: new HttpLambdaIntegration("ApiIntegration", handler),
         });
 
         const siteBucket = new Bucket(this, "SiteBucket", {
