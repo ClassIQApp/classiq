@@ -1,0 +1,25 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "compilerOptions": {
+        "target": "es2023",
+        "lib": ["es2023"],
+        "skipLibCheck": true,
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "moduleDetection": "force",
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+
+        // tsc only type-checks here; esbuild, vite and tsx do the emitting
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+
+        "strict": true,
+        "verbatimModuleSyntax": true,
+        "noUncheckedIndexedAccess": true,
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
+    }
+}

@@ -1,0 +1,5 @@
+{
+    "*.{mjs,cjs,js,jsx,ts,tsx,md,json,yml,yaml,css}": [
+        "pnpm exec prettier --cache --cache-location .cache/prettier --ignore-path .prettierignore --write"
+    ]
+}

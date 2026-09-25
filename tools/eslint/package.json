@@ -1,0 +1,24 @@
+{
+    "name": "@classiq/eslint",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "prettier": "pnpm exec prettier --cache --cache-location .cache/prettier --ignore-path ../../.prettierignore . --write"
+    },
+    "prettier": "@classiq/prettier",
+    "devDependencies": {
+        "@classiq/prettier": "workspace:*",
+        "@eslint/js": "catalog:",
+        "eslint": "catalog:",
+        "eslint-config-prettier": "catalog:",
+        "eslint-plugin-react": "catalog:",
+        "eslint-plugin-react-hooks": "catalog:",
+        "eslint-plugin-turbo": "catalog:",
+        "eslint-plugin-unicorn": "catalog:",
+        "globals": "catalog:",
+        "typescript-eslint": "catalog:"
+    },
+    "exports": {
+        "./base": "./base.mjs"
+    }
+}

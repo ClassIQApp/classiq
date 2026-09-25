@@ -1,0 +1,16 @@
+{
+    "name": "@classiq/prettier",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "prettier": "pnpm exec prettier --cache --cache-location .cache/prettier --ignore-path ../../.prettierignore . --write"
+    },
+    "prettier": "@classiq/prettier",
+    "devDependencies": {
+        "@trivago/prettier-plugin-sort-imports": "catalog:",
+        "prettier": "catalog:"
+    },
+    "exports": {
+        ".": "./prettier.config.mjs"
+    }
+}

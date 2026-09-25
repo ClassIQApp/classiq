@@ -1,0 +1,34 @@
+{
+    "name": "classiq",
+    "private": true,
+    "scripts": {
+        "build": "turbo run build",
+        "dev": "turbo run dev",
+        "test": "turbo run test",
+        "lint": "turbo run lint",
+        "lint:check": "turbo run lint:check",
+        "prettier": "turbo run prettier",
+        "check-types": "turbo run check-types",
+        "clean": "rm -rf .turbo .cache && turbo run clean",
+        "fullclean": "rm -rf .turbo .cache node_modules && turbo run fullclean",
+        "prepare": "husky",
+        "website:dev": "pnpm --filter @classiq/website run dev",
+        "cdk:synth": "turbo run synth --filter=@classiq/infra",
+        "cdk:diff": "turbo run diff --filter=@classiq/infra",
+        "cdk:deploy": "turbo run deploy --filter=@classiq/infra"
+    },
+    "prettier": "@classiq/prettier",
+    "devDependencies": {
+        "@classiq/prettier": "workspace:*",
+        "eslint": "catalog:",
+        "husky": "catalog:",
+        "lint-staged": "catalog:",
+        "prettier": "catalog:",
+        "turbo": "catalog:",
+        "typescript": "catalog:"
+    },
+    "packageManager": "pnpm@12.6.0",
+    "engines": {
+        "node": ">=24"
+    }
+}

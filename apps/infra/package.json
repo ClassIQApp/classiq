@@ -1,0 +1,34 @@
+{
+    "name": "@classiq/infra",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "synth": "pnpm exec cdk synth -q",
+        "diff": "pnpm exec cdk diff",
+        "deploy": "pnpm exec cdk deploy --all",
+        "lint": "pnpm exec eslint --cache --cache-location .cache/eslint . --fix",
+        "lint:check": "pnpm exec eslint --cache --cache-location .cache/eslint-check . --max-warnings=0",
+        "prettier": "pnpm exec prettier --cache --cache-location .cache/prettier --ignore-path ../../.prettierignore . --write",
+        "check-types": "pnpm exec tsc --noEmit",
+        "clean": "rm -rf .turbo .cache cdk.out",
+        "fullclean": "pnpm run clean && rm -rf node_modules"
+    },
+    "prettier": "@classiq/prettier",
+    "dependencies": {
+        "aws-cdk-lib": "catalog:",
+        "constructs": "catalog:"
+    },
+    "devDependencies": {
+        "@classiq/eslint": "workspace:*",
+        "@classiq/prettier": "workspace:*",
+        "@classiq/typescript": "workspace:*",
+        "@classiq/service": "workspace:*",
+        "@classiq/website": "workspace:*",
+        "@types/node": "catalog:",
+        "aws-cdk": "catalog:",
+        "eslint": "catalog:",
+        "prettier": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:"
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "name": "@classiq/service",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "esbuild src/index.ts --bundle --platform=node --target=node24 --format=esm --sourcemap --outfile=dist/index.mjs",
+        "test": "vitest run",
+        "lint": "pnpm exec eslint --cache --cache-location .cache/eslint . --fix",
+        "lint:check": "pnpm exec eslint --cache --cache-location .cache/eslint-check . --max-warnings=0",
+        "prettier": "pnpm exec prettier --cache --cache-location .cache/prettier --ignore-path ../../.prettierignore . --write",
+        "check-types": "pnpm exec tsc --noEmit",
+        "clean": "rm -rf dist .turbo .cache",
+        "fullclean": "pnpm run clean && rm -rf node_modules"
+    },
+    "prettier": "@classiq/prettier",
+    "devDependencies": {
+        "@classiq/eslint": "workspace:*",
+        "@classiq/prettier": "workspace:*",
+        "@classiq/typescript": "workspace:*",
+        "@types/aws-lambda": "catalog:",
+        "@types/node": "catalog:",
+        "esbuild": "catalog:",
+        "eslint": "catalog:",
+        "prettier": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:"
+    }
+}

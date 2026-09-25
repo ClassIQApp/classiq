@@ -1,0 +1,53 @@
+{
+    "$schema": "https://turborepo.dev/schema.json",
+    "ui": "tui",
+    "tasks": {
+        "build": {
+            "dependsOn": ["^build"],
+            "inputs": ["$TURBO_DEFAULT$", ".env*"],
+            "outputs": ["dist/**"]
+        },
+        "test": {
+            "dependsOn": ["^build"]
+        },
+        "lint": {
+            "dependsOn": ["^lint"]
+        },
+        "lint:check": {
+            "dependsOn": ["^lint:check"]
+        },
+        "prettier": {
+            "dependsOn": ["^prettier"]
+        },
+        "check-types": {
+            "dependsOn": ["^build", "^check-types"]
+        },
+        "clean": {
+            "dependsOn": ["^clean"],
+            "cache": false
+        },
+        "fullclean": {
+            "dependsOn": ["^fullclean"],
+            "cache": false
+        },
+        "dev": {
+            "cache": false,
+            "persistent": true
+        },
+        "synth": {
+            "dependsOn": ["^build"],
+            "cache": false,
+            "passThroughEnv": ["AWS_*", "CDK_*"]
+        },
+        "diff": {
+            "dependsOn": ["^build"],
+            "cache": false,
+            "passThroughEnv": ["AWS_*", "CDK_*"]
+        },
+        "deploy": {
+            "dependsOn": ["^build"],
+            "cache": false,
+            "passThroughEnv": ["AWS_*", "CDK_*"]
+        }
+    }
+}

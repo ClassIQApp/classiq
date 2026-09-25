@@ -1,0 +1,11 @@
+node_modules
+.pnpm-store
+dist
+.turbo
+.cache
+cdk.out
+*.tsbuildinfo
+pnpm-lock.yaml
+*.log
+.env*
+.DS_Store

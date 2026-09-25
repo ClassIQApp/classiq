@@ -1,0 +1,4 @@
+{
+    "extends": "@classiq/typescript/server.tsconfig.json",
+    "include": ["src"]
+}
