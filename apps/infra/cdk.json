@@ -1,6 +1,6 @@
 {
-    "app": "tsx lib/app.ts",
+    "app": "tsx src/app.ts",
     "watch": {
-        "include": ["lib/**"]
+        "include": ["src/**"]
     }
 }
