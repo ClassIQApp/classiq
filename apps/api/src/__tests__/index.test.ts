@@ -1,5 +1,5 @@
-import app from "./index.ts";
-import { handler } from "./lambda.ts";
+import app from "../index.ts";
+import { handler } from "../lambda.ts";
 import type { LambdaEvent } from "hono/aws-lambda";
 import { describe, expect, it } from "vitest";
 
