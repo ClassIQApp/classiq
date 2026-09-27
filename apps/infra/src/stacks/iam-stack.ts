@@ -1,9 +1,12 @@
 import type { AppStack } from "./app-stack.ts";
 import type { CloudFrontCertificateStack } from "./cloudfront-certificate-stack.ts";
 import { CfnOutput, Stack, type StackProps } from "aws-cdk-lib";
-import { ArnPrincipal, ManagedPolicy, PolicyStatement, Role, User } from "aws-cdk-lib/aws-iam";
+import { ArnPrincipal, ManagedPolicy, OidcProviderNative, PolicyStatement, Role, User, WebIdentityPrincipal } from "aws-cdk-lib/aws-iam";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import type { Construct } from "constructs";
+
+const GITHUB_REPOSITORY = "ClassIQApp/classiq";
+const GITHUB_DEPLOY_BRANCH = "main";
 
 export interface IamStackProps extends StackProps {
     readonly appStack: AppStack;
@@ -139,8 +142,33 @@ export class IamStack extends Stack {
             }),
         );
 
+        const githubOidcProvider = new OidcProviderNative(this, "GitHubOidcProvider", {
+            url: "https://token.actions.githubusercontent.com",
+            clientIds: ["sts.amazonaws.com"],
+        });
+
+        const githubDeployRole = new Role(this, "GitHubDeployRole", {
+            roleName: "classiq-github-deploy",
+            description: `Assumed by GitHub Actions on ${GITHUB_REPOSITORY}@${GITHUB_DEPLOY_BRANCH} to run cdk deploy.`,
+            assumedBy: new WebIdentityPrincipal(githubOidcProvider.oidcProviderArn, {
+                StringEquals: {
+                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+                    "token.actions.githubusercontent.com:sub": `repo:${GITHUB_REPOSITORY}:ref:refs/heads/${GITHUB_DEPLOY_BRANCH}`,
+                },
+            }),
+        });
+
+        githubDeployRole.addToPolicy(
+            new PolicyStatement({
+                sid: "AssumeCdkBootstrapRoles",
+                actions: ["sts:AssumeRole"],
+                resources: [`arn:${this.partition}:iam::${this.account}:role/cdk-hnb659fds-*-${this.account}-*`],
+            }),
+        );
+
         new CfnOutput(this, "DevTeamUserName", { value: devTeamUser.userName });
         new CfnOutput(this, "DevTeamPasswordSecretArn", { value: passwordSecret.secretArn });
         new CfnOutput(this, "ReadOnlyRoleArn", { value: readOnlyRole.roleArn });
+        new CfnOutput(this, "GitHubDeployRoleArn", { value: githubDeployRole.roleArn });
     }
 }
