@@ -1,45 +1,43 @@
 # classiq
 
-Turborepo monorepo on pnpm workspaces. All dependency versions live in the `catalog:` in `pnpm-workspace.yaml` (`catalogMode: strict`).
+Codebase for the ClassIQ project: https://classiq.live
 
-| Path               | Package               | What                                         | Build output      |
-| ------------------ | --------------------- | -------------------------------------------- | ----------------- |
-| `apps/website`     | `@classiq/website`    | React + Vite frontend (`/mock` = UI mock)    | `dist/`           |
-| `apps/api`         | `@classiq/api`        | Hono API (Vite dev server + Node 24 Lambda)  | `dist/lambda.zip` |
-| `apps/infra`       | `@classiq/infra`      | AWS CDK (Lambda + HTTP API, S3 + CloudFront) | `cdk.out/`        |
-| `tools/eslint`     | `@classiq/eslint`     | Shared ESLint config                         |                   |
-| `tools/prettier`   | `@classiq/prettier`   | Shared Prettier config                       |                   |
-| `tools/typescript` | `@classiq/typescript` | Shared tsconfigs (`server`, `react`)         |                   |
+## Tooling
 
-`@classiq/infra` depends on `@classiq/api` and `@classiq/website`, so turbo always builds them before synth/deploy.
+- **Node.js >= 24**: [nodejs.org](https://nodejs.org/en/download), or a version manager like [mise](https://mise.jdx.dev/).
+- **pnpm 12+**: [install guide](https://pnpm.io/installation).
+- **AWS CLI v2**: [install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+- **Docker**: [install guide](https://docs.docker.com/get-docker/)
 
-## Prereqs
+## `apps/website`
 
-- Node >= 24, pnpm 12 (`corepack enable`)
-- AWS credentials for synth/diff/deploy (`AWS_*` env vars are passed through)
+React + Vite single-page app (SPA) static site. Local dev server runs on `http://localhost:5173`.
 
-## Commands
+## `apps/api`
+
+A Hono REST API app (`src/index.ts`) defines the whole API.
+Vite's dev server runs it locally, and `src/lambda.ts` wraps it with `hono/aws-lambda` for production.
+`vite build` bundles and zips it into `dist/lambda.zip`, which infra deploys as a single Lambda behind one API Gateway route.
+
+This setup allows us to run a real server for local development, but easily deploy it to an HTTP REST API Lambda for production deployment.
+
+## `apps/infra`
+
+AWS CDK (IaC) tooling to manage infra resources through code.
+
+One major stack:
+
+- **`Classiq`**: S3 + CloudFront for the site, Lambda + HTTP API Gateway for the backend at `api.classiq.live`
+
+(more resources will be needed later)
+
+## Useful Commands
 
 ```sh
-pnpm install
-pnpm build          # build everything (cached)
-pnpm test
-pnpm check-types
-pnpm lint           # eslint --fix
-pnpm prettier       # format
-pnpm website:dev    # vite dev server
-pnpm --filter @classiq/api dev    # Hono API at http://127.0.0.1:3000
-pnpm --filter @classiq/api build  # Vite bundle + deployable Lambda ZIP
-pnpm cdk:synth      # build deps, then cdk synth
-pnpm cdk:diff
-pnpm cdk:deploy     # never cached
+pnpm install       # installs all dependencies
+pnpm build         # build everything
+pnpm test          # run all tests
+pnpm dev           # API server on `http://localhost:3000`, website server on `http://localhost:5173`
+pnpm cdk:synth     # build deps, then synthesize cdk
+pnpm cdk:deploy    # deploy resources to AWS
 ```
-
-A husky pre-commit hook runs Prettier on staged files.
-
-The API exports one Hono app from `apps/api/src/index.ts`. Vite serves it
-locally with `@hono/vite-dev-server`; the production build bundles
-`src/lambda.ts` (the `hono/aws-lambda` adapter) as a minified, tree-shaken
-`dist/index.mjs`. The build then packages the bundle and source map at the root
-of `dist/lambda.zip`. CDK deploys that ZIP to Lambda. The API Gateway HTTP API
-uses the same routes as local development.
