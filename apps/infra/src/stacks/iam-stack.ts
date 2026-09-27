@@ -1,7 +1,7 @@
 import type { AppStack } from "./app-stack.ts";
 import type { CloudFrontCertificateStack } from "./cloudfront-certificate-stack.ts";
 import { CfnOutput, Stack, type StackProps } from "aws-cdk-lib";
-import { ArnPrincipal, PolicyStatement, Role, User } from "aws-cdk-lib/aws-iam";
+import { ArnPrincipal, ManagedPolicy, PolicyStatement, Role, User } from "aws-cdk-lib/aws-iam";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import type { Construct } from "constructs";
 
@@ -17,7 +17,6 @@ export class IamStack extends Stack {
         const passwordSecret = new Secret(this, "DevTeamUserPasswordSecret", {
             description: "Initial console password for the shared devteam IAM user. Reset on first login.",
             generateSecretString: {
-                excludePunctuation: true,
                 passwordLength: 24,
             },
         });
@@ -26,6 +25,7 @@ export class IamStack extends Stack {
             userName: "classiq-devteam",
             password: passwordSecret.secretValue,
             passwordResetRequired: true,
+            managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName("IAMUserChangePassword")],
         });
 
         const readOnlyRole = new Role(this, "ReadOnlyRole", {
@@ -93,6 +93,7 @@ export class IamStack extends Stack {
                 sid: "HttpApi",
                 actions: ["apigateway:GET"],
                 resources: [
+                    `arn:${this.partition}:apigateway:${this.region}::/apis`,
                     `arn:${this.partition}:apigateway:${this.region}::/apis/${apiLambda.api.apiId}`,
                     `arn:${this.partition}:apigateway:${this.region}::/apis/${apiLambda.api.apiId}/*`,
                 ],
@@ -112,6 +113,22 @@ export class IamStack extends Stack {
                 sid: "HostedZone",
                 actions: ["route53:GetHostedZone", "route53:ListResourceRecordSets", "route53:ListTagsForResource"],
                 resources: [`arn:${this.partition}:route53:::hostedzone/${hostedZone.hostedZoneId}`],
+            }),
+        );
+
+        readOnlyRole.addToPolicy(
+            new PolicyStatement({
+                sid: "ConsoleListPages",
+                actions: [
+                    "cloudformation:ListStacks",
+                    "s3:ListAllMyBuckets",
+                    "lambda:ListFunctions",
+                    "cloudfront:ListDistributions",
+                    "route53:ListHostedZones",
+                    "acm:ListCertificates",
+                    "logs:DescribeLogGroups",
+                ],
+                resources: ["*"],
             }),
         );
 
