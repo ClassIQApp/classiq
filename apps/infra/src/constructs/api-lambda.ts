@@ -17,28 +17,30 @@ export interface ApiLambdaProps {
 }
 
 export class ApiLambda extends Construct {
+    public readonly handler: NodeLambda;
+    public readonly certificate: Certificate;
     public readonly api: HttpApi;
 
     constructor(scope: Construct, id: string, { domainName, hostedZone, allowedOrigin }: ApiLambdaProps) {
         super(scope, id);
 
-        const handler = new NodeLambda(this, "Fn", {
+        this.handler = new NodeLambda(this, "Fn", {
             functionName: `${id}-fn`,
             codePath: apiZip,
         });
 
-        const certificate = new Certificate(this, "Certificate", {
+        this.certificate = new Certificate(this, "Certificate", {
             domainName,
             validation: CertificateValidation.fromDns(hostedZone),
         });
 
         const apiDomainName = new DomainName(this, "DomainName", {
             domainName,
-            certificate,
+            certificate: this.certificate,
         });
 
         this.api = new HttpApi(this, "Api", {
-            defaultIntegration: new HttpLambdaIntegration("ApiIntegration", handler),
+            defaultIntegration: new HttpLambdaIntegration("ApiIntegration", this.handler),
             defaultDomainMapping: {
                 domainName: apiDomainName,
             },

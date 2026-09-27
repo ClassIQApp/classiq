@@ -19,12 +19,13 @@ export interface StaticSiteProps {
 }
 
 export class StaticSite extends Construct {
+    public readonly bucket: Bucket;
     public readonly distribution: Distribution;
 
     constructor(scope: Construct, id: string, { domainName, hostedZone, certificate }: StaticSiteProps) {
         super(scope, id);
 
-        const siteBucket = new Bucket(this, "SiteBucket", {
+        this.bucket = new Bucket(this, "SiteBucket", {
             blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
             enforceSSL: true,
             removalPolicy: RemovalPolicy.DESTROY,
@@ -35,7 +36,7 @@ export class StaticSite extends Construct {
             domainNames: [domainName],
             certificate,
             defaultBehavior: {
-                origin: S3BucketOrigin.withOriginAccessControl(siteBucket),
+                origin: S3BucketOrigin.withOriginAccessControl(this.bucket),
                 viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
             },
             defaultRootObject: "index.html",
@@ -47,7 +48,7 @@ export class StaticSite extends Construct {
 
         new BucketDeployment(this, "SiteDeployment", {
             sources: [Source.asset(websiteDist)],
-            destinationBucket: siteBucket,
+            destinationBucket: this.bucket,
             distribution: this.distribution,
         });
 

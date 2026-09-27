@@ -3,7 +3,7 @@ import { ApiLambda } from "../constructs/api-lambda.ts";
 import { StaticSite } from "../constructs/static-site.ts";
 import type { CloudFrontCertificateStack } from "./cloudfront-certificate-stack.ts";
 import { CfnOutput, Stack, type StackProps } from "aws-cdk-lib";
-import { HostedZone } from "aws-cdk-lib/aws-route53";
+import { HostedZone, type IHostedZone } from "aws-cdk-lib/aws-route53";
 import type { Construct } from "constructs";
 
 export interface AppStackProps extends StackProps {
@@ -12,22 +12,26 @@ export interface AppStackProps extends StackProps {
 }
 
 export class AppStack extends Stack {
+    public readonly hostedZone: IHostedZone;
+    public readonly staticSite: StaticSite;
+    public readonly apiLambda: ApiLambda;
+
     constructor(scope: Construct, id: string, { deploymentConfig, cloudFrontCertificateStack, ...props }: AppStackProps) {
         super(scope, id, { ...props, crossRegionReferences: true });
 
-        const hostedZone = HostedZone.fromLookup(this, "HostedZone", {
+        this.hostedZone = HostedZone.fromLookup(this, "HostedZone", {
             domainName: deploymentConfig.domainName,
         });
 
-        new StaticSite(this, "StaticSite", {
+        this.staticSite = new StaticSite(this, "StaticSite", {
             domainName: deploymentConfig.domainName,
-            hostedZone,
+            hostedZone: this.hostedZone,
             certificate: cloudFrontCertificateStack.certificate,
         });
 
-        new ApiLambda(this, "ApiLambda", {
+        this.apiLambda = new ApiLambda(this, "ApiLambda", {
             domainName: deploymentConfig.apiDomainName,
-            hostedZone,
+            hostedZone: this.hostedZone,
             allowedOrigin: `https://${deploymentConfig.domainName}`,
         });
 
