@@ -6,6 +6,7 @@ import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import type { Construct } from "constructs";
 
 const GITHUB_REPOSITORY = "ClassIQApp/classiq";
+const GITHUB_OIDC_SUB_PREFIX = "repo:ClassIQApp@330227951/classiq@1373835451";
 const GITHUB_DEPLOY_BRANCH = "main";
 
 export interface IamStackProps extends StackProps {
@@ -153,7 +154,7 @@ export class IamStack extends Stack {
             assumedBy: new WebIdentityPrincipal(githubOidcProvider.oidcProviderArn, {
                 StringEquals: {
                     "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-                    "token.actions.githubusercontent.com:sub": `repo:${GITHUB_REPOSITORY}:ref:refs/heads/${GITHUB_DEPLOY_BRANCH}`,
+                    "token.actions.githubusercontent.com:sub": `${GITHUB_OIDC_SUB_PREFIX}:ref:refs/heads/${GITHUB_DEPLOY_BRANCH}`,
                 },
             }),
         });
