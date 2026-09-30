@@ -1,7 +1,4 @@
-import { Hono } from "hono";
+import { createApp } from "./app.ts";
+import { getDatabase } from "./db/client.ts";
 
-const app = new Hono();
-
-app.get("/", (c) => c.json({ message: "hello from node" }));
-
-export default app;
+export default createApp(getDatabase);

@@ -1,0 +1,15 @@
+services:
+    postgres:
+        image: postgres:latest
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: classiq
+            POSTGRES_PASSWORD: classiq
+            POSTGRES_DB: classiq
+        ports:
+            - "5432:5432"
+        volumes:
+            - classiq-postgres-data:/var/lib/postgresql
+
+volumes:
+    classiq-postgres-data:

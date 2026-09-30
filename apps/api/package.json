@@ -10,22 +10,30 @@
         "lint": "pnpm exec eslint --cache --cache-location .cache/eslint . --fix",
         "lint:check": "pnpm exec eslint --cache --cache-location .cache/eslint-check . --max-warnings=0",
         "prettier": "pnpm exec prettier --cache --cache-location .cache/prettier --ignore-path ../../.prettierignore . --write",
+        "db:start": "docker compose up -d",
+        "db:stop": "docker compose down",
+        "db:clean": "docker compose down --volumes",
+        "db:migrate": "tsx --env-file=.env.development scripts/migrate.ts",
+        "db:new": "tsx scripts/new-migration.ts",
         "check-types": "pnpm exec tsc --noEmit",
         "clean": "rm -rf dist .turbo .cache",
         "fullclean": "pnpm run clean && rm -rf node_modules"
     },
     "prettier": "@classiq/prettier",
     "dependencies": {
-        "hono": "catalog:"
+        "hono": "catalog:",
+        "pg": "catalog:"
     },
     "devDependencies": {
         "@classiq/eslint": "workspace:*",
         "@classiq/prettier": "workspace:*",
         "@classiq/typescript": "workspace:*",
         "@types/node": "catalog:",
+        "@types/pg": "catalog:",
         "@hono/vite-dev-server": "catalog:",
         "eslint": "catalog:",
         "prettier": "catalog:",
+        "tsx": "catalog:",
         "typescript": "catalog:",
         "vite": "catalog:",
         "vitest": "catalog:"

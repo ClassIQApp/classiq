@@ -1,3 +1,5 @@
+import { createApp } from "../app.ts";
+import { createDatabase } from "../db/client.ts";
 import app from "../index.ts";
 import { handler } from "../lambda.ts";
 import type { LambdaEvent } from "hono/aws-lambda";
@@ -46,5 +48,17 @@ describe("api", () => {
 
         expect(response.statusCode).toBe(200);
         expect(JSON.parse(response.body)).toEqual({ message: "hello from node" });
+    });
+
+    it("injects the database into routes", async () => {
+        const db = createDatabase("postgres://user:pass@localhost:5432/test");
+        const injected = createApp(() => db);
+
+        injected.get("/db", (c) => c.json({ same: c.var.getDb() === db }));
+
+        const response = await injected.request("/db");
+
+        expect(await response.json()).toEqual({ same: true });
+        await db.end();
     });
 });

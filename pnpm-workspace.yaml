@@ -10,6 +10,7 @@ catalog:
     "@hono/vite-dev-server": ^0.26.1
     "@trivago/prettier-plugin-sort-imports": ^6.0.2
     "@types/node": ^24.13.3
+    "@types/pg": ^8.23.1
     "@types/react": ^19.2.18
     "@types/react-dom": ^19.2.7
     "@vitejs/plugin-react": ^6.1.1
@@ -26,6 +27,7 @@ catalog:
     husky: ^9.1.7
     hono: ^4.13.8
     lint-staged: ^17.5.1
+    pg: ^8.23.1
     prettier: ^3.9.9
     react: ^19.2.8
     react-dom: ^19.2.8
@@ -50,3 +52,7 @@ minimumReleaseAgeExclude:
     - "@turbo/windows-arm64@2.11.4"
     - eslint-plugin-turbo@2.11.4
     - turbo@2.11.4
+    - pg-cloudflare@1.4.1
+    - pg-connection-string@2.14.1
+    - pg-protocol@1.16.1
+    - pg@8.23.1
