@@ -1,0 +1,125 @@
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    background: linear-gradient(135deg, #062d27 0%, #0b443a 45%, #f4f6f4 45%, #f4f6f4 100%);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 470px;
+    padding: 42px;
+    border: 1px solid #dce5e1;
+    border-radius: 14px;
+    background: white;
+    box-shadow: 0 18px 50px rgba(11, 48, 41, 0.18);
+}
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.login-logo {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: #062d27;
+    color: white;
+    font-size: 21px;
+}
+
+.login-brand h1 {
+    margin: 0;
+    color: #173f39;
+    font-family: Georgia, serif;
+    font-size: 30px;
+}
+
+.login-subtitle {
+    margin: 20px 0 28px;
+    color: #6a7c76;
+    font-size: 14px;
+}
+
+.login-options {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.login-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid #dce6e1;
+    border-radius: 9px;
+    background: #f8faf9;
+    color: #244d45;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.login-button:hover {
+    border-color: #286057;
+    background: #edf5f2;
+    transform: translateY(-2px);
+}
+
+.login-icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: #14584e;
+    color: white;
+    font-size: 18px;
+}
+
+.login-button div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.login-button strong {
+    color: #173f39;
+    font-size: 15px;
+}
+
+.login-button small {
+    color: #74857f;
+    font-size: 12px;
+}
+
+.login-footer {
+    margin: 30px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid #e3e9e6;
+    color: #82918c;
+    font-size: 11px;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .login-page {
+        padding: 18px;
+        background: #f4f6f4;
+    }
+
+    .login-card {
+        padding: 28px 22px;
+    }
+}

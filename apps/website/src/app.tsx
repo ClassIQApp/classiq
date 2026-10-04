@@ -1,11 +1,84 @@
+import AppShell from "./components/layout/AppShell";
+import type { NavItem } from "./components/layout/Sidebar";
 import "./index.css";
+import Login from "./pages/login";
+import StudentCourses from "./pages/student/Courses";
+// Student pages
+import StudentDashboard from "./pages/student/Dashboard";
+import StudentMaterials from "./pages/student/Materials";
+import StudentSettings from "./pages/student/Settings";
+import TeacherCourses from "./pages/teacher/Courses";
+// Teacher pages
+import TeacherLiveLecture from "./pages/teacher/LiveLecture";
+import TeacherMaterials from "./pages/teacher/Materials";
+import TeacherSettings from "./pages/teacher/Settings";
+import { useState } from "react";
+
+type Role = "teacher" | "student";
 
 function App() {
+    const [role, setRole] = useState<Role | null>(null);
+
+    const [activeNav, setActiveNav] = useState<NavItem>("Live Lecture");
+
+    function handleLogin(selectedRole: Role) {
+        setRole(selectedRole);
+
+        if (selectedRole === "teacher") {
+            setActiveNav("Live Lecture");
+        } else {
+            setActiveNav("Dashboard");
+        }
+    }
+
+    function handleLogout() {
+        setRole(null);
+        setActiveNav("Live Lecture");
+    }
+
+    // Show login page if nobody is logged in
+    if (!role) {
+        return <Login onLogin={handleLogin} />;
+    }
+
+    function showPage() {
+        // Teacher pages
+        if (role === "teacher") {
+            if (activeNav === "Courses") {
+                return <TeacherCourses />;
+            }
+
+            if (activeNav === "Materials") {
+                return <TeacherMaterials />;
+            }
+
+            if (activeNav === "Settings") {
+                return <TeacherSettings />;
+            }
+
+            return <TeacherLiveLecture />;
+        }
+
+        // Student pages
+        if (activeNav === "Courses") {
+            return <StudentCourses />;
+        }
+
+        if (activeNav === "Materials") {
+            return <StudentMaterials />;
+        }
+
+        if (activeNav === "Settings") {
+            return <StudentSettings />;
+        }
+
+        return <StudentDashboard />;
+    }
+
     return (
-        <main>
-            <h1>ClassIQ</h1>
-            <a href="/mock">View UI mock</a>
-        </main>
+        <AppShell activeNav={activeNav} onNavigate={setActiveNav} role={role} onLogout={handleLogout}>
+            {showPage()}
+        </AppShell>
     );
 }
 
