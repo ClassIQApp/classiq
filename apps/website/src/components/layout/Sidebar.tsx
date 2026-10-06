@@ -10,9 +10,7 @@ export default function Sidebar({ activeNav, onNavigate, role }: SidebarProps) {
     return (
         <aside className="sidebar">
             <div className="brand">
-                <div className="brand-mark">
-                    <span>▣</span>
-                </div>
+                <img src="/classiq-logo.png" alt="ClassIQ" className="sidebar-logo" />
 
                 <div className="brand-title">ClassIQ</div>
             </div>

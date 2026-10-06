@@ -21,12 +21,16 @@ function App() {
 
     const [activeNav, setActiveNav] = useState<NavItem>("Live Lecture");
 
-    function handleLogin(selectedRole: Role) {
-        setRole(selectedRole);
+    function handleLogin(email: string, password: string) {
+        console.log("Temporary login:", email, password);
 
-        if (selectedRole === "teacher") {
+        // TEMPORARY until the real backend authentication is ready.
+        // This lets us test both interfaces using one shared sign-in page.
+        if (email.toLowerCase().includes("teacher")) {
+            setRole("teacher");
             setActiveNav("Live Lecture");
         } else {
+            setRole("student");
             setActiveNav("Dashboard");
         }
     }
@@ -36,13 +40,11 @@ function App() {
         setActiveNav("Live Lecture");
     }
 
-    // Show login page if nobody is logged in
     if (!role) {
         return <Login onLogin={handleLogin} />;
     }
 
     function showPage() {
-        // Teacher pages
         if (role === "teacher") {
             if (activeNav === "Courses") {
                 return <TeacherCourses />;
@@ -59,7 +61,6 @@ function App() {
             return <TeacherLiveLecture />;
         }
 
-        // Student pages
         if (activeNav === "Courses") {
             return <StudentCourses />;
         }
