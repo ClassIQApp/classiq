@@ -211,7 +211,7 @@ function App() {
                                         <span
                                             key={index}
                                             style={{
-                                                height: `${8 + ((index * 17) % 29)}px`,
+                                                height: `${25 + ((index * 17) % 29) * 2.5}%`,
                                             }}
                                         />
                                     ))}

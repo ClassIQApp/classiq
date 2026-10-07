@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ClassIQ palette</title>
+        <link rel="stylesheet" href="../../apps/website/src/styles/tokens.css" />
+        <style>
+            body {
+                margin: 0;
+                padding: var(--space-10) var(--space-6);
+                background: var(--color-bg);
+                color: var(--color-text);
+                font-family: var(--font-sans);
+                line-height: var(--leading-normal);
+            }
+
+            main {
+                max-width: var(--layout-content);
+                margin: 0 auto;
+                display: grid;
+                gap: var(--space-10);
+            }
+
+            header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: var(--space-4);
+            }
+
+            h1 {
+                margin: 0;
+                font-family: var(--font-serif);
+                font-size: var(--text-2xl);
+            }
+
+            h2 {
+                margin: 0 0 var(--space-1);
+                font-size: var(--text-lg);
+            }
+
+            p {
+                margin: 0 0 var(--space-4);
+                color: var(--color-text-secondary);
+            }
+
+            .theme-toggle {
+                display: flex;
+                gap: var(--space-1);
+                padding: var(--space-1);
+                border: var(--border-width) solid var(--color-border);
+                border-radius: var(--radius-md);
+                background: var(--color-surface);
+            }
+
+            .theme-toggle button {
+                padding: var(--space-1) var(--space-3);
+                border: 0;
+                border-radius: var(--radius-sm);
+                background: transparent;
+                color: var(--color-text-secondary);
+                font: inherit;
+                font-size: var(--text-sm);
+                cursor: pointer;
+            }
+
+            .theme-toggle button[aria-pressed="true"] {
+                background: var(--color-primary-subtle);
+                color: var(--color-primary);
+                font-weight: var(--weight-semibold);
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+                gap: var(--space-2);
+            }
+
+            .swatch {
+                overflow: hidden;
+                border: var(--border-width) solid var(--color-border);
+                border-radius: var(--radius-lg);
+                background: var(--color-surface);
+                font-size: var(--text-xs);
+            }
+
+            .swatch-color {
+                height: var(--space-12);
+            }
+
+            .swatch-label {
+                padding: var(--space-2);
+                line-height: var(--leading-normal);
+            }
+
+            .swatch-label b {
+                display: block;
+                font-size: var(--text-xs);
+                word-break: break-all;
+            }
+
+            .swatch-label code {
+                color: var(--color-text-muted);
+                font-family: var(--font-mono);
+            }
+
+            .swatch-label span {
+                display: block;
+                margin-top: var(--space-1);
+                color: var(--color-text-secondary);
+            }
+
+            .themes {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: var(--space-4);
+            }
+
+            .theme {
+                padding: var(--space-4);
+                border: var(--border-width) solid var(--color-border);
+                border-radius: var(--radius-xl);
+                background: var(--color-bg);
+                color: var(--color-text);
+            }
+
+            .theme-light {
+                color-scheme: light;
+            }
+
+            .theme-dark {
+                color-scheme: dark;
+            }
+
+            .theme-title {
+                margin-bottom: var(--space-3);
+                color: var(--color-text-muted);
+                font-size: var(--text-xs);
+                font-weight: var(--weight-bold);
+                letter-spacing: var(--tracking-caps);
+                text-transform: uppercase;
+            }
+
+            .scale {
+                display: grid;
+                gap: var(--space-2);
+                font-size: var(--text-sm);
+            }
+
+            .scale-row {
+                display: grid;
+                grid-template-columns: 13rem 1fr;
+                align-items: center;
+                gap: var(--space-4);
+            }
+
+            .scale-row code {
+                color: var(--color-text-muted);
+                font-family: var(--font-mono);
+                font-size: var(--text-xs);
+            }
+
+            .bar {
+                height: var(--space-3);
+                border-radius: var(--radius-sm);
+                background: var(--color-primary);
+            }
+
+            .radius-box,
+            .shadow-box {
+                width: var(--space-16);
+                height: var(--space-10);
+                border: var(--border-width) solid var(--color-border-strong);
+                background: var(--color-surface);
+            }
+
+            /* Mini app preview, built only from semantic tokens */
+            .app {
+                display: flex;
+                overflow: hidden;
+                min-height: 20rem;
+                border: var(--border-width) solid var(--color-border);
+                border-radius: var(--radius-lg);
+                font-size: var(--text-xs);
+            }
+
+            .app-side {
+                width: 7rem;
+                padding: var(--space-3) var(--space-2);
+                display: flex;
+                flex-direction: column;
+                gap: var(--space-1);
+                background: var(--color-chrome);
+                color: var(--color-chrome-text);
+            }
+
+            .app-brand {
+                padding: 0 var(--space-2) var(--space-3);
+                color: var(--color-chrome-text-strong);
+                font-family: var(--font-serif);
+                font-size: var(--text-sm);
+                font-weight: var(--weight-semibold);
+            }
+
+            .app-nav {
+                padding: var(--space-2);
+                border-radius: var(--radius-md);
+            }
+
+            .app-nav.active {
+                background: var(--color-chrome-active);
+                color: var(--color-chrome-active-text);
+                box-shadow: inset var(--border-width-thick) 0 0 var(--color-chrome-active-text);
+            }
+
+            .app-main {
+                flex: 1;
+                min-width: 0;
+                padding: var(--space-3);
+                display: flex;
+                flex-direction: column;
+                gap: var(--space-2);
+                background: var(--color-bg);
+            }
+
+            .app-card {
+                padding: var(--space-3);
+                border: var(--border-width) solid var(--color-border);
+                border-radius: var(--radius-md);
+                background: var(--color-surface);
+                box-shadow: var(--shadow-sm);
+            }
+
+            .app-card strong {
+                display: block;
+                font-size: var(--text-sm);
+            }
+
+            .app-muted {
+                color: var(--color-text-secondary);
+            }
+
+            .pills {
+                display: flex;
+                flex-wrap: wrap;
+                gap: var(--space-1);
+                margin-top: var(--space-2);
+            }
+
+            .pill {
+                padding: var(--space-0-5) var(--space-2);
+                border-radius: var(--radius-full);
+                font-weight: var(--weight-semibold);
+            }
+
+            .pill-ready {
+                background: var(--color-success-subtle);
+                color: var(--color-success);
+            }
+
+            .pill-info {
+                background: var(--color-info-subtle);
+                color: var(--color-info);
+            }
+
+            .pill-danger {
+                background: var(--color-danger-subtle);
+                color: var(--color-danger);
+            }
+
+            .pill-neutral {
+                background: var(--color-neutral-subtle);
+                color: var(--color-neutral);
+            }
+
+            .pill-live {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--space-1);
+                color: var(--color-stage-text);
+            }
+
+            .pill-live::before {
+                content: "";
+                width: var(--size-dot);
+                height: var(--size-dot);
+                border-radius: var(--radius-full);
+                background: var(--color-live);
+            }
+
+            .timestamp {
+                margin-right: var(--space-2);
+                color: var(--color-primary);
+                font-weight: var(--weight-semibold);
+                font-variant-numeric: tabular-nums;
+            }
+
+            .term {
+                padding: 0 var(--space-1);
+                border-radius: var(--radius-sm);
+                background: var(--color-accent-subtle);
+                color: var(--color-accent);
+            }
+
+            .app-button {
+                align-self: flex-start;
+                padding: var(--space-2) var(--space-3);
+                border-radius: var(--radius-md);
+                background: var(--color-primary);
+                color: var(--color-on-primary);
+                font-weight: var(--weight-semibold);
+            }
+
+            .stage {
+                position: relative;
+                min-height: 6rem;
+                margin-top: auto;
+                padding: var(--space-2);
+                border-radius: var(--radius-md);
+                background: var(--color-stage);
+            }
+
+            .caption {
+                position: absolute;
+                left: 50%;
+                bottom: var(--space-2);
+                transform: translateX(-50%);
+                padding: var(--space-0-5) var(--space-2);
+                border-radius: var(--radius-sm);
+                background: var(--color-caption);
+                color: var(--color-caption-text);
+                white-space: nowrap;
+            }
+
+            @media (max-width: 48rem) {
+                .themes {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <header>
+                <div>
+                    <h1>ClassIQ palette</h1>
+                    <p>Pine from the logo on warm paper, with one amber accent. Live from <code>tokens.css</code>.</p>
+                </div>
+
+                <div class="theme-toggle" role="group" aria-label="Page theme">
+                    <button type="button" data-scheme="light dark" aria-pressed="true">System</button>
+                    <button type="button" data-scheme="light" aria-pressed="false">Light</button>
+                    <button type="button" data-scheme="dark" aria-pressed="false">Dark</button>
+                </div>
+            </header>
+
+            <section>
+                <h2>Preview</h2>
+                <p>The same markup in both themes.</p>
+                <div class="themes" id="previews"></div>
+            </section>
+
+            <section>
+                <h2>Semantic colors</h2>
+                <p>What components use. Each resolves differently per theme.</p>
+                <div class="themes" id="semantic"></div>
+            </section>
+
+            <section>
+                <h2>Palette</h2>
+                <p>Raw colors. Only <code>tokens.css</code> references these.</p>
+                <div class="grid" id="palette"></div>
+            </section>
+
+            <section>
+                <h2>Spacing</h2>
+                <div class="scale" id="spacing"></div>
+            </section>
+
+            <section>
+                <h2>Type</h2>
+                <div class="scale" id="type"></div>
+            </section>
+
+            <section>
+                <h2>Radii and elevation</h2>
+                <div class="scale" id="shape"></div>
+            </section>
+        </main>
+
+        <template id="preview-template">
+            <div class="app">
+                <div class="app-side">
+                    <div class="app-brand">ClassIQ</div>
+                    <div class="app-nav active">Dashboard</div>
+                    <div class="app-nav">Courses</div>
+                    <div class="app-nav">Materials</div>
+                    <div class="app-nav">Settings</div>
+                </div>
+                <div class="app-main">
+                    <div class="app-card">
+                        <strong>Lecture 7 · Thermodynamics</strong>
+                        <span class="app-muted">CHEM 2410 · 52 min</span>
+                        <div class="pills">
+                            <span class="pill pill-ready">Ready</span>
+                            <span class="pill pill-info">Translating</span>
+                            <span class="pill pill-danger">Failed</span>
+                            <span class="pill pill-neutral">Queued</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="timestamp">12:04</span>The <span class="term">enthalpy</span> change tells us how much heat is
+                        absorbed…
+                    </div>
+                    <div class="app-button">Open transcript</div>
+                    <div class="stage">
+                        <span class="pill-live">LIVE</span>
+                        <div class="caption">La entalpía nos dice cuánto calor…</div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <script>
+            const DESCRIPTIONS = {
+                "--color-bg": "Page background",
+                "--color-surface": "Cards, header, inputs",
+                "--color-surface-sunken": "Wells and recessed areas",
+                "--color-surface-hover": "Hover overlay on surfaces",
+                "--color-border": "Dividers and card edges",
+                "--color-border-strong": "Control borders, 3:1 minimum",
+                "--color-text": "Body text",
+                "--color-text-secondary": "Labels, supporting text",
+                "--color-text-muted": "Meta, hints, placeholders",
+                "--color-primary": "Buttons, links, active state",
+                "--color-primary-hover": "Primary hover",
+                "--color-on-primary": "Text on primary",
+                "--color-primary-subtle": "Selected rows, tinted pills",
+                "--color-focus-ring": "Keyboard focus ring",
+                "--color-accent": "Key terms, bookmarks, sources",
+                "--color-accent-subtle": "Accent highlight background",
+                "--color-success": "Ready (reuses the brand green)",
+                "--color-success-subtle": "Ready background",
+                "--color-info": "Processing",
+                "--color-info-subtle": "Processing background",
+                "--color-danger": "Failed, destructive",
+                "--color-danger-subtle": "Failed background",
+                "--color-on-danger": "Text on danger",
+                "--color-neutral": "Queued, inactive",
+                "--color-neutral-subtle": "Queued background",
+                "--color-live": "Live and recording indicator",
+                "--color-chrome": "Sidebar, dark in both themes",
+                "--color-chrome-text": "Sidebar items",
+                "--color-chrome-text-strong": "Sidebar brand, hover",
+                "--color-chrome-text-muted": "Sidebar footer",
+                "--color-chrome-hover": "Sidebar item hover",
+                "--color-chrome-active": "Active sidebar item",
+                "--color-chrome-active-text": "Active sidebar item text",
+                "--color-chrome-border": "Sidebar dividers",
+                "--color-stage": "Video and live lecture wells",
+                "--color-stage-text": "Text on the stage",
+                "--color-stage-text-muted": "Secondary text on the stage",
+                "--color-caption": "Caption background",
+                "--color-caption-text": "Caption text",
+            };
+
+            const PALETTE_ORDER = ["pine", "mint", "paper", "white", "stone", "ink", "night", "mist", "amber", "blue", "red", "black"];
+            const SHADOW_ORDER = ["sm", "md", "lg"];
+
+            const root = getComputedStyle(document.documentElement);
+            const tokens = [...root].filter((name) => name.startsWith("--"));
+            const byPrefix = (prefix) => tokens.filter((name) => name.startsWith(prefix));
+            const value = (token) => root.getPropertyValue(token).trim();
+            const bySize = (a, b) => (parseFloat(value(a)) || Infinity) - (parseFloat(value(b)) || Infinity);
+            const byListedOrder = (list, key) => (a, b) => {
+                const rank = (token) => list.indexOf(key(token)) + 1 || list.length + 1;
+
+                return rank(a) - rank(b);
+            };
+
+            function resolveColor(token, scope) {
+                const probe = document.createElement("div");
+                probe.style.background = `var(${token})`;
+                scope.append(probe);
+                const color = getComputedStyle(probe).backgroundColor;
+                probe.remove();
+                const scale = color.startsWith("color(") ? 255 : 1;
+                const [r, g, b, a = 1] = color
+                    .replace(/^color\(srgb/, "")
+                    .match(/[\d.]+/g)
+                    .map(Number)
+                    .map((channel, index) => (index < 3 ? channel * scale : channel));
+                const hex = "#" + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+
+                return a < 1 ? `${hex} · ${Math.round(a * 100)}%` : hex;
+            }
+
+            function swatch(token, scope) {
+                const element = document.createElement("div");
+                element.className = "swatch";
+                element.innerHTML = `
+                    <div class="swatch-color" style="background: var(${token})"></div>
+                    <div class="swatch-label"><b>${token}</b><code></code>${DESCRIPTIONS[token] ? `<span>${DESCRIPTIONS[token]}</span>` : ""}</div>`;
+                scope.append(element);
+                element.querySelector("code").textContent = resolveColor(token, scope);
+            }
+
+            function themed(target, render) {
+                for (const scheme of ["light", "dark"]) {
+                    const theme = document.createElement("div");
+                    theme.className = `theme theme-${scheme}`;
+                    theme.innerHTML = `<div class="theme-title">${scheme}</div>`;
+                    target.append(theme);
+                    render(theme);
+                }
+            }
+
+            function scaleRow(target, token, visual) {
+                const row = document.createElement("div");
+                row.className = "scale-row";
+                row.innerHTML = `<code>${token.startsWith("--shadow-") ? token : `${token} · ${value(token)}`}</code>`;
+                row.append(visual);
+                target.append(row);
+            }
+
+            function render() {
+                for (const id of ["previews", "semantic", "palette", "spacing", "type", "shape"]) {
+                    document.getElementById(id).replaceChildren();
+                }
+
+                themed(document.getElementById("previews"), (theme) =>
+                    theme.append(document.getElementById("preview-template").content.cloneNode(true)),
+                );
+
+                themed(document.getElementById("semantic"), (theme) => {
+                    const grid = document.createElement("div");
+                    grid.className = "grid";
+                    theme.append(grid);
+                    const order = Object.keys(DESCRIPTIONS);
+                    byPrefix("--color-")
+                        .sort(byListedOrder(order, (token) => token))
+                        .forEach((token) => swatch(token, grid));
+                });
+
+                const palette = document.getElementById("palette");
+                tokens
+                    .filter((name) => !name.startsWith("--color-") && /^#[\da-f]{3,8}$/i.test(value(name)))
+                    .sort(
+                        (a, b) =>
+                            byListedOrder(PALETTE_ORDER, (token) => token.slice(2).split("-")[0])(a, b) ||
+                            b.localeCompare(a, undefined, { numeric: true }),
+                    )
+                    .forEach((token) => swatch(token, palette));
+
+                byPrefix("--space-")
+                    .sort(bySize)
+                    .forEach((token) => {
+                        const bar = document.createElement("div");
+                        bar.className = "bar";
+                        bar.style.width = `var(${token})`;
+                        scaleRow(document.getElementById("spacing"), token, bar);
+                    });
+
+                byPrefix("--text-")
+                    .sort(bySize)
+                    .forEach((token) => {
+                        const sample = document.createElement("div");
+                        sample.textContent = "The enthalpy change tells us how much heat is absorbed";
+                        sample.style.fontSize = `var(${token})`;
+                        scaleRow(document.getElementById("type"), token, sample);
+                    });
+
+                const radii = byPrefix("--radius-").sort(bySize);
+                const shadows = byPrefix("--shadow-")
+                    .filter((name) => name !== "--shadow-color")
+                    .sort(byListedOrder(SHADOW_ORDER, (token) => token.replace("--shadow-", "")));
+
+                [...radii, ...shadows].forEach((token) => {
+                    const box = document.createElement("div");
+                    box.className = token.startsWith("--radius-") ? "radius-box" : "shadow-box";
+                    box.style[token.startsWith("--radius-") ? "borderRadius" : "boxShadow"] = `var(${token})`;
+                    scaleRow(document.getElementById("shape"), token, box);
+                });
+            }
+
+            for (const button of document.querySelectorAll(".theme-toggle button")) {
+                button.addEventListener("click", () => {
+                    document.documentElement.style.colorScheme = button.dataset.scheme;
+                    for (const other of document.querySelectorAll(".theme-toggle button")) {
+                        other.setAttribute("aria-pressed", String(other === button));
+                    }
+                    render();
+                });
+            }
+
+            render();
+        </script>
+    </body>
+</html>

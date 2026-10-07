@@ -18,7 +18,7 @@ html {
 
 body {
     min-height: 100svh;
-    line-height: 1.5;
+    line-height: var(--leading-normal);
     -webkit-font-smoothing: antialiased;
 }
 
@@ -52,7 +52,7 @@ h1,
 h2,
 h3,
 h4 {
-    line-height: 1.1;
+    line-height: var(--leading-tight);
     text-wrap: balance;
 }
 
@@ -82,15 +82,19 @@ ol[role="list"] {
 }
 
 :root {
-    color-scheme: light dark;
-    font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--font-sans);
+}
+
+body {
+    background: var(--color-bg);
+    color: var(--color-text);
 }
 
 main {
     display: grid;
     place-content: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     min-height: 100svh;
-    padding: 1rem;
+    padding: var(--space-4);
     text-align: center;
 }
