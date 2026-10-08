@@ -1,4 +1,6 @@
-﻿export type NavItem = "Live Lecture" | "Dashboard" | "Courses" | "Materials" | "Settings";
+import { BookOpenIcon, BroadcastIcon, FileTextIcon, GearIcon, SquaresFourIcon } from "@phosphor-icons/react";
+
+export type NavItem = "Live Lecture" | "Dashboard" | "Courses" | "Materials" | "Settings";
 
 type SidebarProps = {
     activeNav: NavItem;
@@ -21,28 +23,28 @@ export default function Sidebar({ activeNav, onNavigate, role }: SidebarProps) {
                         className={`nav-item ${activeNav === "Live Lecture" ? "active" : ""}`}
                         onClick={() => onNavigate("Live Lecture")}
                     >
-                        <span className="nav-icon">▷</span>
+                        <BroadcastIcon className="nav-icon" aria-hidden />
                         <span>Live Lecture</span>
                     </button>
                 ) : (
                     <button className={`nav-item ${activeNav === "Dashboard" ? "active" : ""}`} onClick={() => onNavigate("Dashboard")}>
-                        <span className="nav-icon">□</span>
+                        <SquaresFourIcon className="nav-icon" aria-hidden />
                         <span>Dashboard</span>
                     </button>
                 )}
 
                 <button className={`nav-item ${activeNav === "Courses" ? "active" : ""}`} onClick={() => onNavigate("Courses")}>
-                    <span className="nav-icon">□</span>
+                    <BookOpenIcon className="nav-icon" aria-hidden />
                     <span>Courses</span>
                 </button>
 
                 <button className={`nav-item ${activeNav === "Materials" ? "active" : ""}`} onClick={() => onNavigate("Materials")}>
-                    <span className="nav-icon">▤</span>
+                    <FileTextIcon className="nav-icon" aria-hidden />
                     <span>Materials</span>
                 </button>
 
                 <button className={`nav-item ${activeNav === "Settings" ? "active" : ""}`} onClick={() => onNavigate("Settings")}>
-                    <span className="nav-icon">⚙</span>
+                    <GearIcon className="nav-icon" aria-hidden />
                     <span>Settings</span>
                 </button>
             </nav>

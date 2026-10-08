@@ -1,0 +1,184 @@
+:root {
+    color-scheme: light dark;
+
+    /* Core palette */
+    --pine-950: #062d27;
+    --pine-800: #0b3a30;
+    --pine-700: #14594a;
+    --pine-600: #1b6e5a;
+    --pine-300: #9fb8b0;
+    --pine-100: #bfd0ca;
+    --mint-400: #4cc28f;
+    --mint-300: #7ddcaa;
+    --mint-50: #e3f2ea;
+
+    --white: #ffffff;
+    --black: #000000;
+    --paper: #f7f5f0;
+    --paper-sunken: #efece5;
+    --stone-200: #e2ddd2;
+    --stone-400: #8f897c;
+    --ink-900: #1b2420;
+    --ink-700: #4a5650;
+    --ink-500: #626d67;
+
+    --night-950: #08110f;
+    --night-900: #0d1412;
+    --night-800: #131c19;
+    --night-500: #66726c;
+    --mist-400: #7a8781;
+    --mist-300: #a2afa9;
+    --mist-100: #e4ebe7;
+
+    --amber-700: #8f5e0c;
+    --amber-400: #e3a53a;
+    --amber-50: #fbf0d9;
+    --blue-700: #2a5f9e;
+    --blue-300: #86b2ec;
+    --blue-50: #e4edf8;
+    --red-700: #b23a26;
+    --red-500: #e2543f;
+    --red-300: #ec8a78;
+    --red-50: #f9e5e0;
+
+    /* Surfaces */
+    --color-bg: light-dark(var(--paper), var(--night-900));
+    --color-surface: light-dark(var(--white), var(--night-800));
+    --color-surface-sunken: light-dark(var(--paper-sunken), var(--night-950));
+    --color-surface-hover: color-mix(in srgb, var(--color-text) 4%, transparent);
+    --color-border: light-dark(var(--stone-200), color-mix(in srgb, var(--white) 8%, transparent));
+    --color-border-strong: light-dark(var(--stone-400), var(--night-500));
+
+    /* Text */
+    --color-text: light-dark(var(--ink-900), var(--mist-100));
+    --color-text-secondary: light-dark(var(--ink-700), var(--mist-300));
+    --color-text-muted: light-dark(var(--ink-500), var(--mist-400));
+
+    /* Brand */
+    --color-primary: light-dark(var(--pine-700), var(--mint-400));
+    --color-primary-hover: light-dark(var(--pine-800), var(--mint-300));
+    --color-on-primary: light-dark(var(--white), var(--pine-950));
+    --color-primary-subtle: light-dark(var(--mint-50), color-mix(in srgb, var(--mint-400) 14%, transparent));
+    --color-focus-ring: color-mix(in srgb, var(--color-primary) 35%, transparent);
+
+    /* Accent */
+    --color-accent: light-dark(var(--amber-700), var(--amber-400));
+    --color-accent-subtle: light-dark(var(--amber-50), color-mix(in srgb, var(--amber-400) 14%, transparent));
+
+    /* Status */
+    --color-success: var(--color-primary);
+    --color-success-subtle: var(--color-primary-subtle);
+    --color-info: light-dark(var(--blue-700), var(--blue-300));
+    --color-info-subtle: light-dark(var(--blue-50), color-mix(in srgb, var(--blue-300) 14%, transparent));
+    --color-danger: light-dark(var(--red-700), var(--red-300));
+    --color-danger-subtle: light-dark(var(--red-50), color-mix(in srgb, var(--red-300) 14%, transparent));
+    --color-on-danger: light-dark(var(--white), var(--night-950));
+    --color-neutral: var(--color-text-secondary);
+    --color-neutral-subtle: var(--color-surface-sunken);
+    --color-live: var(--red-500);
+
+    /* Sidebar */
+    --color-chrome: light-dark(var(--pine-950), var(--night-950));
+    --color-chrome-text: var(--pine-100);
+    --color-chrome-text-strong: var(--white);
+    --color-chrome-text-muted: var(--pine-300);
+    --color-chrome-hover: color-mix(in srgb, var(--white) 7%, transparent);
+    --color-chrome-active: color-mix(in srgb, var(--mint-300) 14%, transparent);
+    --color-chrome-active-text: var(--mint-300);
+    --color-chrome-border: color-mix(in srgb, var(--white) 15%, transparent);
+
+    /* Video and captions */
+    --color-stage: light-dark(var(--pine-800), var(--night-950));
+    --color-stage-text: var(--white);
+    --color-stage-text-muted: var(--pine-100);
+    --color-caption: color-mix(in srgb, var(--black) 78%, transparent);
+    --color-caption-text: var(--white);
+
+    /* Typography */
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-serif: Georgia, "Times New Roman", serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --text-2xs: 0.6875rem;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.25rem;
+    --text-xl: 1.625rem;
+    --text-2xl: 2rem;
+
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+
+    --leading-tight: 1.1;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.7;
+
+    --tracking-caps: 0.1em;
+
+    /* Spacing */
+    --space-0-5: 0.125rem;
+    --space-1: 0.25rem;
+    --space-1-5: 0.375rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+
+    /* Sizes */
+    --size-dot: 0.5rem;
+    --size-glyph: 1.125rem;
+    --size-icon: 1.5rem;
+    --size-control-sm: 2.25rem;
+    --size-control: 2.75rem;
+    --size-logo: 2.75rem;
+    --size-logo-lg: 14rem;
+
+    /* Layout */
+    --layout-sidebar: 15.5rem;
+    --layout-sidebar-compact: 13rem;
+    --layout-sidebar-rail: 4.5rem;
+    --layout-header: 5rem;
+    --layout-header-compact: 4.5rem;
+    --layout-content: 75rem;
+    --layout-prose: 40rem;
+    --layout-aside: 20rem;
+    --layout-panel: 25rem;
+    --layout-stage: 14rem;
+    --layout-auth-card: 26rem;
+
+    /* Borders and radii */
+    --border-width: 0.0625rem;
+    --border-width-thick: 0.125rem;
+    --border-width-accent: 0.1875rem;
+
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-full: calc(infinity * 1rem);
+
+    /* Elevation */
+    --shadow-color: light-dark(color-mix(in srgb, var(--pine-950) 10%, transparent), color-mix(in srgb, var(--black) 50%, transparent));
+    --shadow-sm: 0 0.0625rem 0.125rem var(--shadow-color);
+    --shadow-md: 0 0.25rem 1rem var(--shadow-color);
+    --shadow-lg: 0 0.75rem 2rem var(--shadow-color);
+    --focus-ring: 0 0 0 0.1875rem var(--color-focus-ring);
+
+    /* Motion */
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+    /* Stacking */
+    --z-sidebar: 10;
+    --z-overlay: 100;
+    --z-modal: 200;
+}

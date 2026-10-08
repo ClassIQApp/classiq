@@ -1,16 +1,20 @@
-﻿type TopBarProps = {
+import { ChalkboardTeacherIcon, GraduationCapIcon } from "@phosphor-icons/react";
+
+type TopBarProps = {
     role: "teacher" | "student";
     onLogout: () => void;
 };
 
 export default function TopBar({ role, onLogout }: TopBarProps) {
+    const ModeIcon = role === "teacher" ? ChalkboardTeacherIcon : GraduationCapIcon;
+
     return (
         <header className="main-header">
             <div></div>
 
             <div className="header-right">
                 <span className="mode-label">
-                    ♧ &nbsp;
+                    <ModeIcon className="mode-icon" aria-hidden />
                     {role === "teacher" ? "Instructor Mode" : "Student Mode"}
                 </span>
 
