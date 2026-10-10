@@ -1,0 +1,27 @@
+.courses-container {
+    padding: 2rem;
+}
+
+.courses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.courses-title {
+    color: var(--color-text);
+}
+
+.resources-toggle-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+    transition: background var(--duration-base) var(--ease-standard);
+}
+
+.courses-default-text {
+    color: var(--color-text-secondary);
+}
