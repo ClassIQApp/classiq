@@ -1,6 +1,7 @@
 import LectureDetail from "../../components/lectures/lecture-detail";
 import LectureList from "../../components/lectures/lecture-list";
 import type { Course, LectureStatus } from "../../types/lecture";
+import CourseResources from "./CourseResources";
 import "./courses.css";
 import { useEffect, useRef, useState } from "react";
 
@@ -8,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 export default function Courses({ courses = [] }: { courses?: Course[] }) {
     const [courseId, setCourseId] = useState(courses[0]?.id ?? "");
     const [lectureId, setLectureId] = useState<string | null>(null);
+    const [showResources, setShowResources] = useState(false);
     const [query, setQuery] = useState("");
     const [status, setStatus] = useState<LectureStatus | "all">("all");
     const heading = useRef<HTMLHeadingElement>(null);
@@ -28,17 +30,28 @@ export default function Courses({ courses = [] }: { courses?: Course[] }) {
     return (
         <div className="courses-page">
             <header className="courses-heading">
-                <p className="courses-eyebrow">My courses{course ? ` / ${course.code}` : ""}</p>
-                <h1 ref={heading} tabIndex={-1}>
-                    {lecture ? lecture.title : (course?.name ?? "My Courses")}
-                </h1>
-                <p>
-                    {lecture
-                        ? "Review your lecture and the content available so far."
-                        : (course?.description ?? "Find your courses, lectures, and study content here.")}
-                </p>
+                <div className="courses-heading-top">
+                    <div>
+                        <p className="courses-eyebrow">My courses{course ? ` / ${course.code}` : ""}</p>
+                        <h1 ref={heading} tabIndex={-1}>
+                            {showResources ? "Course Resources" : lecture ? lecture.title : (course?.name ?? "My Courses")}
+                        </h1>
+                        <p>
+                            {showResources
+                                ? "Upload and view PDF lecture notes, assignments, or study guides."
+                                : lecture
+                                  ? "Review your lecture and the content available so far."
+                                  : (course?.description ?? "Find your courses, lectures, and study content here.")}
+                        </p>
+                    </div>
+                    <button onClick={() => setShowResources((current) => !current)} className="resources-toggle-btn" type="button">
+                        {showResources ? "Back to Courses" : "Resources"}
+                    </button>
+                </div>
             </header>
-            {lecture ? (
+            {showResources ? (
+                <CourseResources />
+            ) : lecture ? (
                 <LectureDetail lecture={lecture} onBack={() => setLectureId(null)} />
             ) : (
                 <LectureList

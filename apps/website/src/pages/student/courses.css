@@ -12,6 +12,13 @@
     margin-bottom: var(--space-8);
 }
 
+.courses-heading-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
 .courses-eyebrow {
     color: var(--color-primary);
     font-size: var(--text-xs);
@@ -28,6 +35,21 @@
 
 .courses-heading > p:not(.courses-eyebrow) {
     color: var(--color-text-secondary);
+}
+
+.resources-toggle-btn {
+    min-height: var(--size-control);
+    padding: var(--space-2) var(--space-4);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+}
+
+.resources-toggle-btn:hover {
+    filter: brightness(0.95);
 }
 
 .lecture-filters {

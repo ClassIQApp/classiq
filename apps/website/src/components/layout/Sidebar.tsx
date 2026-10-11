@@ -1,4 +1,5 @@
 import { BookOpenIcon, BroadcastIcon, FileTextIcon, GearIcon, SquaresFourIcon } from "@phosphor-icons/react";
+import React from "react";
 
 export type NavItem = "Live Lecture" | "Dashboard" | "Courses" | "Materials" | "Settings";
 
