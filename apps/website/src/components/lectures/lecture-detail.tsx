@@ -1,4 +1,4 @@
-import type { Lecture, LectureContentLink } from "../../types/lecture";
+import type { Lecture, LectureContentLink } from "../../api/lectures/types";
 import LectureStatus from "./lecture-status";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 

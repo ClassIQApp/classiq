@@ -1,4 +1,5 @@
-import type { Course, LectureStatus as Status } from "../../types/lecture";
+import type { Course } from "../../api/courses/types";
+import type { LectureStatus as Status } from "../../api/lectures/types";
 import LectureStatus from "./lecture-status";
 import { ArrowRightIcon, BookOpenIcon } from "@phosphor-icons/react";
 
