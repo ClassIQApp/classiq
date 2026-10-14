@@ -3,8 +3,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build && pnpm run zip:lambda",
-        "zip:lambda": "cd dist && zip -q -X -FS lambda.zip package.json index.mjs index.mjs.map",
+        "build": "tsx scripts/build.ts",
+        "build:http": "tsx scripts/build.ts http",
         "dev": "vite --host 127.0.0.1",
         "test": "vitest run",
         "lint": "pnpm exec eslint --cache --cache-location .cache/eslint . --fix",

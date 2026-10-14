@@ -8,7 +8,7 @@ import { ApiGatewayv2DomainProperties } from "aws-cdk-lib/aws-route53-targets";
 import { Construct } from "constructs";
 import { fileURLToPath } from "node:url";
 
-const apiZip = fileURLToPath(new URL("../../../api/dist/lambda.zip", import.meta.url));
+const apiZip = fileURLToPath(new URL("../../../api/dist/http/lambda.zip", import.meta.url));
 
 export interface ApiLambdaProps {
     readonly domainName: string;

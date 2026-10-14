@@ -1,7 +1,7 @@
 import { createApp } from "../app.ts";
 import { createDatabase } from "../db/client.ts";
-import app from "../index.ts";
-import { handler } from "../lambda.ts";
+import { handler } from "../runtimes/http-lambda.ts";
+import app from "../runtimes/local.ts";
 import type { LambdaEvent } from "hono/aws-lambda";
 import { describe, expect, it } from "vitest";
 
