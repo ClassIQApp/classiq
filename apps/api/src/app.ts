@@ -1,4 +1,6 @@
+import courseRoutes from "./routes/courses/index.ts";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import type { Pool } from "pg";
 
 export interface AppEnv {
@@ -15,6 +17,9 @@ export function createApp(getDb: () => Pool): Hono<AppEnv> {
 
         await next();
     });
+
+    app.use("/courses", cors());
+    app.route("/courses", courseRoutes);
 
     app.get("/", (c) => c.json({ message: "hello from node" }));
 

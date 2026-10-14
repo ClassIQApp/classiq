@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS lecture_chat_messages (
     id SERIAL PRIMARY KEY,
     content TEXT NOT NULL,
-    fk_sender_user_id INTEGER NOT NULL
+    fk_sender_user_id INTEGER
         REFERENCES users (id) ON DELETE SET NULL,
     fk_lecture_id INTEGER NOT NULL
         REFERENCES lectures (id) ON DELETE CASCADE,

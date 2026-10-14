@@ -1,3 +1,4 @@
+import { useCourses } from "./api/courses/use-courses";
 import AppShell from "./components/layout/AppShell";
 import type { NavItem } from "./components/layout/Sidebar";
 import "./index.css";
@@ -12,6 +13,7 @@ import TeacherCourses from "./pages/teacher/Courses";
 import TeacherLiveLecture from "./pages/teacher/LiveLecture";
 import TeacherMaterials from "./pages/teacher/Materials";
 import TeacherSettings from "./pages/teacher/Settings";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 type Role = "teacher" | "student";
@@ -20,10 +22,10 @@ function App() {
     const [role, setRole] = useState<Role | null>(null);
 
     const [activeNav, setActiveNav] = useState<NavItem>("Live Lecture");
+    const queryClient = useQueryClient();
+    const { data: courses = [], isPending, isError, refetch } = useCourses(role === "student");
 
-    function handleLogin(email: string, password: string) {
-        console.log("Temporary login:", email, password);
-
+    function handleLogin(email: string) {
         // TEMPORARY until the real backend authentication is ready.
         // This lets us test both interfaces using one shared sign-in page.
         if (email.toLowerCase().includes("teacher")) {
@@ -36,6 +38,7 @@ function App() {
     }
 
     function handleLogout() {
+        queryClient.clear();
         setRole(null);
         setActiveNav("Live Lecture");
     }
@@ -62,7 +65,21 @@ function App() {
         }
 
         if (activeNav === "Courses") {
-            return <StudentCourses />;
+            if (isPending) {
+                return <p role="status">Loading courses…</p>;
+            }
+            if (isError) {
+                return (
+                    <div role="alert">
+                        <p>Courses could not load.</p>
+                        <button type="button" onClick={() => void refetch()}>
+                            Retry
+                        </button>
+                    </div>
+                );
+            }
+
+            return <StudentCourses courses={courses} />;
         }
 
         if (activeNav === "Materials") {

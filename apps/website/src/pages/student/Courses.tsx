@@ -1,11 +1,11 @@
+import type { Course } from "../../api/courses/types";
+import type { LectureStatus } from "../../api/lectures/types";
 import LectureDetail from "../../components/lectures/lecture-detail";
 import LectureList from "../../components/lectures/lecture-list";
-import type { Course, LectureStatus } from "../../types/lecture";
+import "./CourseLectures.css";
 import CourseResources from "./CourseResources";
-import "./courses.css";
 import { useEffect, useRef, useState } from "react";
 
-// Supply courses here once the course and lecture API is connected.
 export default function Courses({ courses = [] }: { courses?: Course[] }) {
     const [courseId, setCourseId] = useState(courses[0]?.id ?? "");
     const [lectureId, setLectureId] = useState<string | null>(null);

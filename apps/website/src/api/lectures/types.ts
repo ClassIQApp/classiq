@@ -17,11 +17,3 @@ export interface Lecture {
     resources: LectureContentLink[];
     generatedContent: LectureContentLink[];
 }
-
-export interface Course {
-    id: string;
-    code: string;
-    name: string;
-    description: string;
-    lectures: Lecture[];
-}
