@@ -21,6 +21,7 @@
     },
     "prettier": "@classiq/prettier",
     "dependencies": {
+        "@aws-sdk/client-s3": "catalog:",
         "hono": "catalog:",
         "pg": "catalog:"
     },
