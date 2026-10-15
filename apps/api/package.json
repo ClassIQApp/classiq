@@ -21,8 +21,13 @@
     },
     "prettier": "@classiq/prettier",
     "dependencies": {
+        "@ai-sdk/deepseek": "catalog:",
+        "@ai-sdk/openai": "catalog:",
+        "ai": "catalog:",
         "hono": "catalog:",
-        "pg": "catalog:"
+        "p-timeout": "catalog:",
+        "pg": "catalog:",
+        "zod": "catalog:"
     },
     "devDependencies": {
         "@classiq/eslint": "workspace:*",
