@@ -22,6 +22,7 @@ export const options = [
             "unicorn/no-abusive-eslint-disable": "off",
             "unicorn/no-useless-undefined": "off",
             "unicorn/prevent-abbreviations": "off",
+            "unicorn/switch-case-braces": "off",
             "unicorn/no-for-loop": "error",
 
             "@typescript-eslint/no-unused-vars": "warn",
