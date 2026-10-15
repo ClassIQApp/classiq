@@ -5,6 +5,8 @@ import type { CourseResourceFile, CourseResourceFileReference, CourseResourceFil
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3ServiceException, type S3Client } from "@aws-sdk/client-s3";
 import { Readable } from "node:stream";
 
+const encodeIdentifier = (id: string) => encodeURIComponent(id).replaceAll(".", "%2E");
+
 export class S3CourseResourceFileFacade implements CourseResourceFileRepository {
     private readonly client: S3Client;
     private readonly bucketName: string;
@@ -72,11 +74,11 @@ export class S3CourseResourceFileFacade implements CourseResourceFileRepository 
     }
 
     private constructObjectKey({ courseId, lectureId, assetId, kind }: CourseResourceFileReference): string {
-        const coursePrefix = `courses/${courseId}`;
-        const prefix = lectureId === undefined ? coursePrefix : `${coursePrefix}/lectures/${lectureId}`;
+        const coursePrefix = `courses/${encodeIdentifier(courseId)}`;
+        const prefix = lectureId === undefined ? coursePrefix : `${coursePrefix}/lectures/${encodeIdentifier(lectureId)}`;
         const collection = kind === "recording" ? "recordings" : "resources";
 
-        return `${prefix}/${collection}/${assetId}`;
+        return `${prefix}/${collection}/${encodeIdentifier(assetId)}`;
     }
 
     private convertError(error: unknown, operation: "upload" | "fetch" | "delete"): CourseResourceFileError {
