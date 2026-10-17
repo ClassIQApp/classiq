@@ -23,6 +23,7 @@
     "dependencies": {
         "@ai-sdk/deepseek": "catalog:",
         "@ai-sdk/openai": "catalog:",
+        "@aws-sdk/client-s3": "catalog:",
         "ai": "catalog:",
         "hono": "catalog:",
         "p-timeout": "catalog:",
