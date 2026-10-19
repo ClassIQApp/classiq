@@ -4,17 +4,18 @@ export function createDatabase(databaseUrl: string): Pool {
     return new Pool({ connectionString: databaseUrl, max: 10 });
 }
 
-let database: Pool | undefined;
+export function createDatabaseGetter(databaseUrl: string | undefined): () => Pool {
+    let database: Pool | undefined;
 
-export function getDatabase(): Pool {
-    if (!database) {
-        const databaseUrl = process.env.DATABASE_URL;
-        if (!databaseUrl) {
-            throw new Error("DATABASE_URL is required");
+    return () => {
+        if (!database) {
+            if (!databaseUrl) {
+                throw new Error("DATABASE_URL is required");
+            }
+
+            database = createDatabase(databaseUrl);
         }
 
-        database = createDatabase(databaseUrl);
-    }
-
-    return database;
+        return database;
+    };
 }

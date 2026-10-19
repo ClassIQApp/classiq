@@ -15,9 +15,10 @@ React + Vite single-page app (SPA) static site. Local dev server runs on `http:/
 
 ## `apps/api`
 
-A Hono REST API app (`src/index.ts`) defines the whole API.
-Vite's dev server runs it locally, and `src/lambda.ts` wraps it with `hono/aws-lambda` for production.
-`vite build` bundles and zips it into `dist/lambda.zip`, which infra deploys as a single Lambda behind one API Gateway route.
+A Hono REST API app (`src/app.ts`) defines the whole API with an injected database getter.
+Vite runs `src/dev.ts` locally, and `src/lambda.ts` composes the app with `hono/aws-lambda` for production.
+Each entrypoint owns its lazy database connection pool. `pnpm build` bundles the named entrypoints in `scripts/build.ts`
+into separate `dist/<name>/lambda.zip` archives. Infra deploys `dist/http/lambda.zip` behind API Gateway.
 
 This setup allows us to run a real server for local development, but easily deploy it to an HTTP REST API Lambda for production deployment.
 

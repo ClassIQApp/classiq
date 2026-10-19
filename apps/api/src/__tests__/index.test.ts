@@ -1,6 +1,6 @@
 import { createApp } from "../app.ts";
 import { createDatabase } from "../db/client.ts";
-import app from "../index.ts";
+import app from "../dev.ts";
 import { handler } from "../lambda.ts";
 import type { LambdaEvent } from "hono/aws-lambda";
 import { describe, expect, it } from "vitest";
