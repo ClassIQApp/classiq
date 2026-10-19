@@ -4,7 +4,7 @@ const messages: Record<CourseErrorCode, string> = {
     invalid_reference: "The course reference is invalid.",
     invalid_course: "The course metadata is invalid.",
     not_found: "The course was not found.",
-    conflict: "The course code or slug is already in use.",
+    conflict: "The course slug is already in use.",
     provider_error: "The course provider could not complete the request.",
 };
 

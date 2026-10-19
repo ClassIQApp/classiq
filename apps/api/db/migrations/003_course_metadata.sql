@@ -1,3 +1,3 @@
 ALTER TABLE courses
-    ADD COLUMN code TEXT UNIQUE,
+    ADD COLUMN code TEXT,
     ADD COLUMN description TEXT;
