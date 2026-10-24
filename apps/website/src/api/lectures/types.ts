@@ -17,3 +17,12 @@ export interface Lecture {
     resources: LectureContentLink[];
     generatedContent: LectureContentLink[];
 }
+
+export interface ListCourseLecturesResponse {
+    items: Lecture[];
+}
+
+export interface LectureApiError {
+    code: string;
+    message: string;
+}
