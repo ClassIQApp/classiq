@@ -1,13 +1,11 @@
-import { LectureFacade } from "../lecture/lecture-facade.ts";
 import type { LectureRepository } from "../lecture/lecture-repository.ts";
-import type { CourseRepository } from "./course-repository.ts";
 import { courses } from "./data.ts";
 
-export class CourseFacade implements CourseRepository {
+export class CourseFacade {
     private readonly lectureRepository: LectureRepository;
 
-    constructor() {
-        this.lectureRepository = new LectureFacade();
+    constructor(lectureRepository: LectureRepository) {
+        this.lectureRepository = lectureRepository;
     }
 
     async listCourses() {

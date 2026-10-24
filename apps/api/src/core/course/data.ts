@@ -1,6 +1,6 @@
 import type { Course } from "./model.ts";
 
-export const courses: Omit<Course, "lectures">[] = [
+export const courses: Omit<Course, "slug">[] = [
     {
         id: "1",
         code: "CSI 4500",
