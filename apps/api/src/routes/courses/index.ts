@@ -3,9 +3,8 @@ import { LectureFacade } from "../../core/lecture/lecture-facade.ts";
 import type { ListCourseLecturesResponse } from "../../core/lecture/model.ts";
 import { Hono } from "hono";
 
-const courses = new CourseFacade();
 const lectures = new LectureFacade();
-
+const courses = new CourseFacade(lectures);
 const routes = new Hono();
 
 /* Get all courses */
