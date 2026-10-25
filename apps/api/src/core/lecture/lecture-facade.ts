@@ -1,8 +1,9 @@
 import { lecturesByCourseId } from "./data.ts";
 import type { LectureRepository } from "./lecture-repository.ts";
+import type { Lecture } from "./model.ts";
 
 export class LectureFacade implements LectureRepository {
-    async listCourseLectures(courseId: string) {
+    async listCourseLectures(courseId: string): Promise<Lecture[]> {
         return lecturesByCourseId[courseId] ?? [];
     }
 }

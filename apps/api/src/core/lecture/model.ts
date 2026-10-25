@@ -6,6 +6,7 @@ export interface LectureContentLink {
     description: string;
     href: string;
 }
+
 export interface Lecture {
     id: string;
     title: string;
@@ -15,4 +16,15 @@ export interface Lecture {
     transcript?: LectureContentLink;
     resources: LectureContentLink[];
     generatedContent: LectureContentLink[];
+}
+
+/* API response when requesting lectures for a course */
+export interface ListCourseLecturesResponse {
+    items: Lecture[];
+}
+
+/* Standard error returned by lecture API endpoints */
+export interface LectureApiError {
+    code: string;
+    message: string;
 }
