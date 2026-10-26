@@ -41,3 +41,7 @@ pnpm dev           # API server on `http://localhost:3000`, website server on `h
 pnpm cdk:synth     # build deps, then synthesize cdk
 pnpm cdk:deploy    # deploy resources to AWS
 ```
+
+Have Docker running before starting `pnpm dev`. The API dev script starts the local PostgreSQL container, waits until it is healthy, and applies pending migrations before starting the API server. It also loads `apps/api/.env.development` for the API's database connection. The same setup runs when starting the API directly with `pnpm --filter @classiq/api dev`.
+
+The database keeps its data between runs and stays running after the dev servers stop. To stop it, run `pnpm --filter @classiq/api db:stop`.
