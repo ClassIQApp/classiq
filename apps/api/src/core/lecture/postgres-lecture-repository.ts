@@ -25,7 +25,11 @@ function toLecture(row: LectureRow): Lecture {
 }
 
 export class PostgresLectureRepository implements LectureRepository {
-    constructor(private readonly database: Pool) {}
+    private readonly database: Pool;
+
+    constructor(database: Pool) {
+        this.database = database;
+    }
 
     async listCourseLectures(courseId: string): Promise<Lecture[]> {
         const result = await this.database.query<LectureRow>(
@@ -90,7 +94,13 @@ export class PostgresLectureRepository implements LectureRepository {
             [input.courseId, input.title, input.description],
         );
 
-        return toLecture(result.rows[0]);
+        const row = result.rows[0];
+
+        if (!row) {
+            throw new Error("Lecture creation returned no record");
+        }
+
+        return toLecture(row);
     }
 
     async updateLecture(lectureId: string, input: UpdateLectureInput): Promise<Lecture | null> {

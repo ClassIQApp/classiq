@@ -26,6 +26,7 @@
         "@ai-sdk/openai": "catalog:",
         "@aws-sdk/client-s3": "catalog:",
         "ai": "catalog:",
+        "better-auth": "catalog:",
         "hono": "catalog:",
         "p-timeout": "catalog:",
         "pg": "catalog:",

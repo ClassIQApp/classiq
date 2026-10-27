@@ -16,6 +16,8 @@ export default defineConfig(({ command }) => ({
     ],
     server: {
         port: 3000,
+
+        cors: false,
     },
     ssr: {
         noExternal: command === "build" ? true : ["hono"],
