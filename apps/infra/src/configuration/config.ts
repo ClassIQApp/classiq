@@ -7,9 +7,15 @@ export interface DeploymentConfig {
     };
     readonly domainName: string;
     readonly apiDomainName: string;
+    readonly apiEnvironment: Readonly<Record<string, string>>;
 }
 
 export function readDeploymentConfig(): DeploymentConfig {
+    const secret = requireEnv("BETTER_AUTH_SECRET");
+    if (secret.trim().length < 32) {
+        throw new Error("BETTER_AUTH_SECRET must contain at least 32 characters");
+    }
+
     return {
         env: {
             account: requireEnv("CDK_DEFAULT_ACCOUNT"),
@@ -17,6 +23,13 @@ export function readDeploymentConfig(): DeploymentConfig {
         },
         domainName: DOMAIN_NAME,
         apiDomainName: `api.${DOMAIN_NAME}`,
+        apiEnvironment: {
+            NODE_ENV: "production",
+            DATABASE_URL: requireEnv("DATABASE_URL"),
+            BETTER_AUTH_SECRET: secret,
+            BETTER_AUTH_URL: `https://api.${DOMAIN_NAME}`,
+            AUTH_TRUSTED_ORIGINS: `https://${DOMAIN_NAME}`,
+        },
     };
 }
 

@@ -34,3 +34,6 @@ jobs:
                   aws-region: ${{ vars.AWS_REGION }}
 
             - run: pnpm exec turbo run deploy --filter=@classiq/infra -- --require-approval never
+              env:
+                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+                  BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}

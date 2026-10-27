@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build && pnpm run zip:lambda",
         "zip:lambda": "cd dist && zip -q -X -FS lambda.zip package.json index.mjs index.mjs.map",
-        "dev": "pnpm run db:prepare && dotenv -e .env.development -- vite --host 127.0.0.1",
+        "dev": "pnpm run db:prepare && dotenv --override --no-expand -e .env.development -- vite --host 127.0.0.1",
         "test": "vitest run",
         "lint": "pnpm exec eslint --cache --cache-location .cache/eslint . --fix",
         "lint:check": "pnpm exec eslint --cache --cache-location .cache/eslint-check . --max-warnings=0",
@@ -14,11 +14,12 @@
         "db:prepare": "pnpm run db:start && pnpm run db:migrate",
         "db:stop": "docker compose down",
         "db:clean": "docker compose down --volumes",
-        "db:migrate": "dotenv -e .env.development -- tsx scripts/migrate.ts",
+        "db:migrate": "dotenv --override --no-expand -e .env.development -- tsx scripts/migrate.ts",
         "db:new": "tsx scripts/new-migration.ts",
         "check-types": "pnpm exec tsc --noEmit",
         "clean": "rm -rf dist .turbo .cache",
-        "fullclean": "pnpm run clean && rm -rf node_modules"
+        "fullclean": "pnpm run clean && rm -rf node_modules",
+        "db:migrate:prod": "dotenv --override --no-expand -e .env.production -- tsx scripts/migrate.ts"
     },
     "prettier": "@classiq/prettier",
     "dependencies": {

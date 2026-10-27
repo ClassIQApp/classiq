@@ -35,6 +35,7 @@ export class AppStack extends Stack {
             domainName: deploymentConfig.apiDomainName,
             hostedZone: this.hostedZone,
             allowedOrigin: `https://${deploymentConfig.domainName}`,
+            environment: deploymentConfig.apiEnvironment,
         });
 
         this.fileStorage = new FileStorage(this, "FileStorage", [`https://${deploymentConfig.domainName}`]);

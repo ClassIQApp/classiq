@@ -3,8 +3,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite",
+        "build": "dotenv --override --no-expand -e .env.production -- vite build",
+        "dev": "dotenv --override --no-expand -e .env.development -- vite",
         "preview": "vite preview",
         "lint": "pnpm exec eslint --cache --cache-location .cache/eslint . --fix",
         "lint:check": "pnpm exec eslint --cache --cache-location .cache/eslint-check . --max-warnings=0",
@@ -31,6 +31,7 @@
         "eslint": "catalog:",
         "prettier": "catalog:",
         "typescript": "catalog:",
-        "vite": "catalog:"
+        "vite": "catalog:",
+        "dotenv-cli": "catalog:"
     }
 }

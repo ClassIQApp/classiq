@@ -14,6 +14,7 @@ export interface ApiLambdaProps {
     readonly domainName: string;
     readonly hostedZone: IHostedZone;
     readonly allowedOrigin: string;
+    readonly environment: Readonly<Record<string, string>>;
 }
 
 export class ApiLambda extends Construct {
@@ -21,12 +22,13 @@ export class ApiLambda extends Construct {
     public readonly certificate: Certificate;
     public readonly api: HttpApi;
 
-    constructor(scope: Construct, id: string, { domainName, hostedZone, allowedOrigin }: ApiLambdaProps) {
+    constructor(scope: Construct, id: string, { domainName, hostedZone, allowedOrigin, environment }: ApiLambdaProps) {
         super(scope, id);
 
         this.handler = new NodeLambda(this, "Fn", {
             functionName: `${id}-fn`,
             codePath: apiZip,
+            environment,
         });
 
         this.certificate = new Certificate(this, "Certificate", {
@@ -45,8 +47,16 @@ export class ApiLambda extends Construct {
                 domainName: apiDomainName,
             },
             corsPreflight: {
+                allowCredentials: true,
                 allowOrigins: [allowedOrigin],
-                allowMethods: [CorsHttpMethod.GET, CorsHttpMethod.POST, CorsHttpMethod.PUT, CorsHttpMethod.DELETE, CorsHttpMethod.OPTIONS],
+                allowMethods: [
+                    CorsHttpMethod.GET,
+                    CorsHttpMethod.POST,
+                    CorsHttpMethod.PUT,
+                    CorsHttpMethod.PATCH,
+                    CorsHttpMethod.DELETE,
+                    CorsHttpMethod.OPTIONS,
+                ],
                 allowHeaders: ["Content-Type", "Authorization"],
             },
         });

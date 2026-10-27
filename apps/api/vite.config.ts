@@ -2,6 +2,7 @@ import devServer from "@hono/vite-dev-server";
 import { defineConfig } from "vite";
 
 export default defineConfig(({ command }) => ({
+    envDir: false,
     plugins: [
         devServer({
             entry: "src/index.ts",
