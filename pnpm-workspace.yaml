@@ -46,6 +46,7 @@ catalog:
     "@tanstack/react-query": ^5.104.2
     "@aws-sdk/client-s3": 3.1147.0
     dotenv-cli: ^11.0.0
+    better-auth: 1.7.14
 
 catalogMode: strict
 
@@ -65,3 +66,11 @@ minimumReleaseAgeExclude:
     - pg-connection-string@2.14.1
     - pg-protocol@1.16.1
     - pg@8.23.1
+    - "@better-auth/core@1.7.14"
+    - "@better-auth/drizzle-adapter@1.7.14"
+    - "@better-auth/kysely-adapter@1.7.14"
+    - "@better-auth/memory-adapter@1.7.14"
+    - "@better-auth/mongo-adapter@1.7.14"
+    - "@better-auth/prisma-adapter@1.7.14"
+    - "@better-auth/telemetry@1.7.14"
+    - better-auth@1.7.14
