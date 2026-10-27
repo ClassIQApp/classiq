@@ -62,6 +62,8 @@ export interface UploadStorage {
     verify(asset: UploadAsset): Promise<void>;
 
     download(asset: UploadAsset): Promise<{ url: string; expiresAt: string }>;
+
+    read(asset: UploadAsset): Promise<Uint8Array>;
 }
 
 export function publicAsset(asset: UploadAsset) {

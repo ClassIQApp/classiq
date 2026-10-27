@@ -46,12 +46,13 @@ function fixture(indexResource?: (asset: UploadAsset) => Promise<unknown>) {
         })),
         verify: vi.fn(async () => {}),
         download: vi.fn(async () => ({ url: "https://files.test/get", expiresAt: new Date().toISOString() })),
+        read: vi.fn(async () => new Uint8Array()),
     } satisfies UploadStorage;
     const app = new Hono().route(
         "/courses",
         createUploadRoutes({
-            repository,
-            storage,
+            getRepository: () => repository,
+            getStorage: () => storage,
             indexResource,
             requireCourseRole: (role) => async (c, next) => {
                 const granted = c.req.header("test-role");
@@ -83,22 +84,31 @@ function fixture(indexResource?: (asset: UploadAsset) => Promise<unknown>) {
 const recording = "1/lectures/2/recording";
 
 describe("authorized upload router", () => {
-    it("leaves upload endpoints unmounted in the application until authorization is integrated", async () => {
-        const app = createApp(() => {
-            throw new Error("Database must not be accessed");
+    it("mounts upload endpoints behind sessions without building storage for anonymous requests", async () => {
+        const getUploadStorage = vi.fn<() => UploadStorage>(() => {
+            throw new Error("Storage must not be built");
         });
+        const app = createApp(
+            () => {
+                throw new Error("Database must not be accessed");
+            },
+            { getAuth: () => ({ handler: async () => new Response(), api: { getSession: async () => null } }), getUploadStorage },
+        );
 
         const recordingResponse = await app.request("/courses/1/lectures/2/recording/upload", { method: "POST" });
         const resourceResponse = await app.request("/courses/1/resources/upload", { method: "POST" });
 
-        expect(recordingResponse.status).toBe(404);
-        expect(resourceResponse.status).toBe(404);
+        expect(recordingResponse.status).toBe(401);
+        expect(resourceResponse.status).toBe(401);
+        expect(getUploadStorage).not.toHaveBeenCalled();
     });
 
     it("requires injected authorization at construction", () => {
         const { repository, storage } = fixture();
 
-        expect(() => createUploadRoutes({ repository, storage, requireCourseRole: undefined! })).toThrow("authorization");
+        expect(() =>
+            createUploadRoutes({ getRepository: () => repository, getStorage: () => storage, requireCourseRole: undefined! }),
+        ).toThrow("authorization");
     });
 
     it.each([`${recording}/upload`, `${recording}/complete`, "1/resources/upload", "1/resources/3/complete"])(

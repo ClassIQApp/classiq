@@ -27,6 +27,7 @@ test("API deploys auth configuration and permits credentialed browser requests",
             AllowCredentials: true,
             AllowOrigins: ["https://classiq.live"],
             AllowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            AllowHeaders: ["Content-Type", "Authorization", "Idempotency-Key"],
         },
     });
 });

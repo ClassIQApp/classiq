@@ -1,9 +1,19 @@
+import type { CourseMembership } from "../course-access/model.ts";
+import { PostgresCourseMembershipFacade } from "../course-access/postgres-course-membership-facade.ts";
 import type { CourseRepository } from "./course-repository.ts";
 import { CourseError } from "./errors.ts";
-import { courseSchema, type Course, type CourseMetadataUpdate, type CourseRegistration } from "./model.ts";
+import {
+    courseSchema,
+    memberCourseSchema,
+    type Course,
+    type CourseMetadataUpdate,
+    type CourseRegistration,
+    type MemberCourse,
+} from "./model.ts";
 import { DatabaseError, type Pool, type QueryConfig } from "pg";
 
 type CourseRow = Omit<Course, "id"> & { id: number };
+type MemberCourseRow = CourseRow & { role: string };
 
 const table = "courses";
 const columns = {
@@ -14,7 +24,7 @@ const columns = {
     description: "description",
 } as const satisfies Record<keyof Course, string>;
 const selection = Object.entries(columns)
-    .map(([property, column]) => `${column} AS "${property}"`)
+    .map(([property, column]) => `${table}.${column} AS "${property}"`)
     .join(", ");
 
 // https://www.postgresql.org/docs/current/errcodes-appendix.html
@@ -31,7 +41,7 @@ export class PostgresCourseFacade implements CourseRepository {
         this.client = client;
     }
 
-    async register(registration: CourseRegistration): Promise<Course> {
+    async register(registration: CourseRegistration, creator: Omit<CourseMembership, "courseId">): Promise<MemberCourse> {
         const request = {
             text: `
                 INSERT INTO ${table} (${columns.code}, ${columns.name}, ${columns.slug}, ${columns.description})
@@ -41,12 +51,28 @@ export class PostgresCourseFacade implements CourseRepository {
             values: [registration.code, registration.name, registration.slug, registration.description],
         };
 
-        const [course] = await this.query(request);
-        if (!course) {
-            throw new CourseError("provider_error");
-        }
+        const transaction = await this.client.connect();
 
-        return course;
+        try {
+            await transaction.query("BEGIN");
+
+            const [course] = await this.query(request, transaction);
+            if (!course) {
+                throw new CourseError("provider_error");
+            }
+
+            const membership = await new PostgresCourseMembershipFacade(transaction).create({ ...creator, courseId: course.id });
+
+            await transaction.query("COMMIT");
+
+            return { ...course, role: membership.role };
+        } catch (error) {
+            await transaction.query("ROLLBACK");
+
+            throw this.convertError(error);
+        } finally {
+            transaction.release();
+        }
     }
 
     async fetch(courseId: string): Promise<Course | undefined> {
@@ -60,8 +86,25 @@ export class PostgresCourseFacade implements CourseRepository {
         return course;
     }
 
-    async listCourses(): Promise<Course[]> {
-        return this.query({ text: `SELECT ${selection} FROM ${table} ORDER BY ${columns.id}` });
+    async listMemberCourses(userId: string): Promise<MemberCourse[]> {
+        const request = {
+            text: `
+                SELECT ${selection}, course_memberships.role AS "role"
+                FROM ${table}
+                JOIN course_memberships ON course_memberships.course_id = ${table}.${columns.id}
+                WHERE course_memberships.user_id = $1
+                ORDER BY ${table}.${columns.id}
+            `,
+            values: [userId],
+        };
+
+        try {
+            const response = await this.client.query<MemberCourseRow>(request);
+
+            return response.rows.map((row) => this.convertMemberCourse(row));
+        } catch (error) {
+            throw this.convertError(error);
+        }
     }
 
     async updateMetadata(courseId: string, update: CourseMetadataUpdate): Promise<Course | undefined> {
@@ -84,9 +127,9 @@ export class PostgresCourseFacade implements CourseRepository {
         return course;
     }
 
-    private async query(request: QueryConfig<(string | undefined)[]>): Promise<Course[]> {
+    private async query(request: QueryConfig<(string | undefined)[]>, client: Pick<Pool, "query"> = this.client): Promise<Course[]> {
         try {
-            const response = await this.client.query<CourseRow>(request);
+            const response = await client.query<CourseRow>(request);
 
             return response.rows.map((row) => this.convertCourse(row));
         } catch (error) {
@@ -96,6 +139,15 @@ export class PostgresCourseFacade implements CourseRepository {
 
     private convertCourse(row: CourseRow): Course {
         const course = courseSchema.safeParse({ ...row, id: String(row.id) });
+        if (!course.success) {
+            throw new CourseError("provider_error");
+        }
+
+        return course.data;
+    }
+
+    private convertMemberCourse(row: MemberCourseRow): MemberCourse {
+        const course = memberCourseSchema.safeParse({ ...row, id: String(row.id) });
         if (!course.success) {
             throw new CourseError("provider_error");
         }
