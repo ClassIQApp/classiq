@@ -2,6 +2,19 @@ import type { Lecture, LectureContentLink } from "../../api/lectures/types";
 import LectureStatus from "./lecture-status";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 
+const headingByStatus: Record<Lecture["status"], string> = {
+    pending: "Awaiting recording upload",
+    uploaded: "Recording uploaded",
+    ready: "Ready to review",
+    processing: "Preparing your lecture",
+    failed: "Processing failed",
+};
+
+const unavailableMessageByStatus: Partial<Record<Lecture["status"], string>> = {
+    processing: "This content will appear when processing finishes.",
+    failed: "This content is unavailable because lecture processing failed.",
+};
+
 function ContentSection({
     title,
     description,
@@ -40,12 +53,7 @@ function ContentSection({
 }
 
 export default function LectureDetail({ lecture, onBack }: { lecture: Lecture; onBack: () => void }) {
-    const pendingMessage =
-        lecture.status === "processing"
-            ? "This content will appear when processing finishes."
-            : lecture.status === "failed"
-              ? "This content is unavailable because lecture processing failed."
-              : "No content has been added yet.";
+    const pendingMessage = unavailableMessageByStatus[lecture.status] ?? "No content has been added yet.";
 
     return (
         <div className="lecture-detail">
@@ -55,13 +63,7 @@ export default function LectureDetail({ lecture, onBack }: { lecture: Lecture; o
             <LectureStatus status={lecture.status} />
             <p>{lecture.description}</p>
             <div className={`lecture-state-message lecture-state-${lecture.status}`}>
-                <strong>
-                    {lecture.status === "ready"
-                        ? "Ready to review"
-                        : lecture.status === "processing"
-                          ? "Preparing your lecture"
-                          : "Processing failed"}
-                </strong>
+                <strong>{headingByStatus[lecture.status]}</strong>
                 <p>{lecture.statusMessage}</p>
             </div>
             <div className="lecture-content-grid">

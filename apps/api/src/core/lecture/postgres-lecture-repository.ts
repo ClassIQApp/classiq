@@ -82,7 +82,7 @@ export class PostgresLectureRepository implements LectureRepository {
                 status,
                 status_message
             )
-            VALUES ($1, $2, $3, 'processing', '')
+            VALUES ($1, $2, $3, 'pending', 'Awaiting recording upload.')
             RETURNING
                 id,
                 fk_course_id,

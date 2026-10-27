@@ -32,6 +32,25 @@ export default function LectureList({
             `${lecture.title} ${lecture.description}`.toLowerCase().includes(normalizedQuery),
     );
 
+    let emptyState = {
+        title: "No courses yet",
+        description: "Your courses and lectures will appear here when available.",
+    };
+
+    if (course) {
+        emptyState = {
+            title: "No lectures yet",
+            description: "Lectures will appear here when your instructor adds them.",
+        };
+
+        if (courseLectures.length > 0) {
+            emptyState = {
+                title: "No matching lectures",
+                description: "Try a different search or processing state.",
+            };
+        }
+    }
+
     return (
         <section aria-labelledby="lecture-list-heading">
             <div className="lecture-filters">
@@ -65,12 +84,22 @@ export default function LectureList({
                         value={status}
                         onChange={(event) => {
                             const value = event.target.value;
-                            if (value === "all" || value === "ready" || value === "processing" || value === "failed") {
+
+                            if (
+                                value === "pending" ||
+                                value === "uploaded" ||
+                                value === "all" ||
+                                value === "ready" ||
+                                value === "processing" ||
+                                value === "failed"
+                            ) {
                                 onStatusChange(value);
                             }
                         }}
                     >
                         <option value="all">All states</option>
+                        <option value="pending">Awaiting upload</option>
+                        <option value="uploaded">Uploaded</option>
                         <option value="ready">Ready</option>
                         <option value="processing">Processing</option>
                         <option value="failed">Failed</option>
@@ -109,14 +138,8 @@ export default function LectureList({
             ) : (
                 <div className="lecture-empty">
                     <BookOpenIcon size={32} aria-hidden />
-                    <h3>{course ? (courseLectures.length === 0 ? "No lectures yet" : "No matching lectures") : "No courses yet"}</h3>
-                    <p>
-                        {course
-                            ? courseLectures.length === 0
-                                ? "Lectures will appear here when your instructor adds them."
-                                : "Try a different search or processing state."
-                            : "Your courses and lectures will appear here when available."}
-                    </p>
+                    <h3>{emptyState.title}</h3>
+                    <p>{emptyState.description}</p>
                     {courseLectures.length > 0 && (
                         <button
                             type="button"
