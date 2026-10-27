@@ -1,3 +1,4 @@
+import { PostgresLectureRepository } from "../core/lecture/postgres-lecture-repository.ts";
 import { PostgresUploadRepository } from "../core/uploads/postgres-upload-repository.ts";
 import { runMigrations } from "../db/migrate.ts";
 import { randomUUID } from "node:crypto";
@@ -43,6 +44,19 @@ describe.skipIf(!testUrl)("Postgres upload persistence", () => {
         const row = await db.query("SELECT status FROM lectures WHERE id = $1", [lectureId]);
 
         expect(row.rows[0].status).toBe("pending");
+    });
+
+    it("creates lectures awaiting upload rather than pretending processing has started", async () => {
+        const lectures = new PostgresLectureRepository(db);
+
+        const lecture = await lectures.createLecture({
+            courseId,
+            title: "New recording",
+            description: "Awaiting its first recording upload.",
+        });
+
+        expect(lecture.status).toBe("pending");
+        expect(lecture.statusMessage).toBe("Awaiting recording upload.");
     });
 
     it("serializes competing recording initiation and completion, persisting one asset", async () => {

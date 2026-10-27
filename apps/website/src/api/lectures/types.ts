@@ -1,4 +1,4 @@
-export type LectureStatus = "ready" | "processing" | "failed";
+export type LectureStatus = "pending" | "uploaded" | "ready" | "processing" | "failed";
 
 export interface LectureContentLink {
     id: string;
