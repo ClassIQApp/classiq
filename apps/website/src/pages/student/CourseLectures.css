@@ -171,12 +171,16 @@
     font-weight: var(--weight-semibold);
 }
 
+.lecture-status-uploaded,
+.lecture-state-uploaded,
 .lecture-status-ready,
 .lecture-state-ready {
     background: var(--color-success-subtle);
     color: var(--color-success);
 }
 
+.lecture-status-pending,
+.lecture-state-pending,
 .lecture-status-processing,
 .lecture-state-processing {
     background: var(--color-accent-subtle);

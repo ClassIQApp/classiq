@@ -9,13 +9,15 @@ import {
 } from "./model.ts";
 import { DatabaseError, type Pool, type QueryConfig } from "pg";
 
-type CourseResourceRow = Omit<CourseResource, "id" | "courseId" | "contentLength"> & {
+type CourseResourceRow = Omit<CourseResource, "id" | "courseId" | "contentLength" | "lectureId"> & {
     id: number;
     courseId: number;
     contentLength: string | null;
+    lectureId: number | null;
 };
 
 const table = "course_resources";
+
 const columns = {
     id: "id",
     courseId: "fk_course_id",
@@ -23,12 +25,13 @@ const columns = {
     contentType: "content_type",
     contentLength: "content_length",
     uploadStatus: "upload_status",
+    lectureId: "fk_lecture_id",
 } as const satisfies Record<keyof CourseResource, string>;
+
 const selection = Object.entries(columns)
     .map(([property, column]) => `${column} AS "${property}"`)
     .join(", ");
 
-// https://www.postgresql.org/docs/current/errcodes-appendix.html
 const postgresErrorCodes = {
     invalidTextRepresentation: "22P02",
     numericValueOutOfRange: "22003",
@@ -36,7 +39,7 @@ const postgresErrorCodes = {
 } as const;
 
 export class PostgresCourseResourceFacade implements CourseResourceRepository {
-    private readonly client: Pool;
+    private readonly client: Pick<Pool, "query">;
 
     constructor(client: typeof this.client) {
         this.client = client;
@@ -53,6 +56,7 @@ export class PostgresCourseResourceFacade implements CourseResourceRepository {
         };
 
         const [resource] = await this.query(request);
+
         if (!resource) {
             throw new CourseResourceError("provider_error");
         }
@@ -118,6 +122,7 @@ export class PostgresCourseResourceFacade implements CourseResourceRepository {
             ...row,
             id: String(row.id),
             courseId: String(row.courseId),
+            lectureId: row.lectureId === null ? undefined : String(row.lectureId),
             contentLength: row.contentLength === null ? null : Number(row.contentLength),
         });
 

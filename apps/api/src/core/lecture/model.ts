@@ -1,4 +1,4 @@
-export type LectureStatus = "ready" | "processing" | "failed";
+export type LectureStatus = "pending" | "uploaded" | "ready" | "processing" | "failed";
 
 export interface LectureContentLink {
     id: string;
@@ -18,12 +18,10 @@ export interface Lecture {
     generatedContent: LectureContentLink[];
 }
 
-/* API response when requesting lectures for a course */
 export interface ListCourseLecturesResponse {
     items: Lecture[];
 }
 
-/* Standard error returned by lecture API endpoints */
 export interface LectureApiError {
     code: string;
     message: string;
