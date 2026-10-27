@@ -1,16 +1,17 @@
+import { useAuth } from "../auth/provider";
 import type { ListCoursesResponse } from "./types";
 import { useQuery } from "@tanstack/react-query";
 
-export function useCourses(enabled: boolean) {
+export function useCourses(enabled = true) {
+    const { state, apiFetch } = useAuth();
+    const userId = state.status === "authenticated" ? state.user.id : null;
+
     return useQuery({
-        queryKey: ["courses"],
-        enabled,
+        queryKey: ["courses", userId],
+        enabled: enabled && userId !== null,
+        retry: false,
         queryFn: async ({ signal }) => {
-            const apiUrl = import.meta.env.VITE_API_URL;
-            const response = await fetch(`${apiUrl}/courses`, { signal });
-            if (!response.ok) {
-                throw new Error("Course request failed");
-            }
+            const response = await apiFetch("/courses", { signal });
 
             const data: ListCoursesResponse = await response.json();
 
