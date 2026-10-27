@@ -31,7 +31,8 @@
         "p-timeout": "catalog:",
         "pg": "catalog:",
         "zod": "catalog:",
-        "@aws-sdk/s3-request-presigner": "catalog:"
+        "@aws-sdk/s3-request-presigner": "catalog:",
+        "unpdf": "catalog:"
     },
     "devDependencies": {
         "@classiq/eslint": "workspace:*",

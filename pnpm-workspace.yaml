@@ -48,6 +48,7 @@ catalog:
     "@aws-sdk/s3-request-presigner": 3.1147.0
     dotenv-cli: ^11.0.0
     better-auth: 1.7.14
+    unpdf: 1.8.1
 
 catalogMode: strict
 

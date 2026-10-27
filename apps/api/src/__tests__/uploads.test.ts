@@ -8,7 +8,7 @@ const uploadId = "738f48a8-f87a-4686-bb67-a812a4350ace";
 
 const input = { name: "lecture.webm", contentType: "audio/webm", contentLength: 1024 };
 
-function fixture() {
+function fixture(indexResource?: (asset: UploadAsset) => Promise<unknown>) {
     const asset: UploadAsset = {
         id: "80df9e7e-ecc4-47b1-a781-d25eec7bc433",
         uploadId,
@@ -52,6 +52,7 @@ function fixture() {
         createUploadRoutes({
             repository,
             storage,
+            indexResource,
             requireCourseRole: (role) => async (c, next) => {
                 const granted = c.req.header("test-role");
 
@@ -232,5 +233,35 @@ describe("authorized upload router", () => {
 
         expect(download.status).toBe(200);
         expect(download.headers.get("cache-control")).toContain("no-store");
+    });
+
+    it("indexes completed resources but not recordings", async () => {
+        const indexResource = vi.fn(async () => {});
+        const { request, asset } = fixture(indexResource);
+
+        const recordingResponse = await request(`${recording}/complete`, { uploadId });
+
+        expect(recordingResponse.status).toBe(200);
+        expect(indexResource).not.toHaveBeenCalled();
+
+        Object.assign(asset, { kind: "resource", resourceId: "3", uploadStatus: "pending" });
+
+        const resourceResponse = await request("1/resources/3/complete", { uploadId });
+
+        expect(resourceResponse.status).toBe(200);
+        expect(indexResource).toHaveBeenCalledWith(expect.objectContaining({ resourceId: "3", uploadStatus: "uploaded" }));
+    });
+
+    it("completes the upload even when indexing fails", async () => {
+        const { request, asset } = fixture(async () => {
+            throw new Error("index unavailable");
+        });
+
+        Object.assign(asset, { kind: "resource", resourceId: "3" });
+
+        const response = await request("1/resources/3/complete", { uploadId });
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({ id: "3", uploadStatus: "uploaded" });
     });
 });

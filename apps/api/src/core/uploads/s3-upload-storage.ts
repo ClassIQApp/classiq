@@ -95,6 +95,20 @@ export class S3UploadStorage implements UploadStorage {
         return { url, expiresAt: new Date(Date.now() + DOWNLOAD_SECONDS * 1000).toISOString() };
     }
 
+    async read(asset: UploadAsset): Promise<Uint8Array> {
+        try {
+            const object = await this.client.send(new GetObjectCommand(this.location(asset)));
+
+            if (!object.Body) {
+                throw new Error("Object has no body");
+            }
+
+            return await object.Body.transformToByteArray();
+        } catch {
+            throw new UploadError(503, "STORAGE_UNAVAILABLE", "File storage could not read the upload.");
+        }
+    }
+
     private location(asset: UploadAsset) {
         const reference =
             asset.kind === "recording"
