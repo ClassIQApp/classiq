@@ -30,7 +30,8 @@
         "hono": "catalog:",
         "p-timeout": "catalog:",
         "pg": "catalog:",
-        "zod": "catalog:"
+        "zod": "catalog:",
+        "@aws-sdk/s3-request-presigner": "catalog:"
     },
     "devDependencies": {
         "@classiq/eslint": "workspace:*",
