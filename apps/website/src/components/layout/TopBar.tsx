@@ -1,12 +1,24 @@
 import { ChalkboardTeacherIcon, GraduationCapIcon } from "@phosphor-icons/react";
 
 type TopBarProps = {
-    role: "teacher" | "student";
+    role: "teacher" | "student" | "account";
+    user?: { name: string; email: string };
+    loggingOut?: boolean;
     onLogout: () => void;
 };
 
-export default function TopBar({ role, onLogout }: TopBarProps) {
+export default function TopBar({ role, onLogout, user, loggingOut }: TopBarProps) {
     const ModeIcon = role === "teacher" ? ChalkboardTeacherIcon : GraduationCapIcon;
+    const labelByRole = {
+        teacher: "Instructor Mode",
+        student: "Student Mode",
+        account: user?.name || user?.email,
+    };
+    const avatarByRole = {
+        teacher: "T",
+        student: "S",
+        account: (user?.name || user?.email || "").slice(0, 1).toUpperCase(),
+    };
 
     return (
         <header className="main-header">
@@ -14,18 +26,18 @@ export default function TopBar({ role, onLogout }: TopBarProps) {
 
             <div className="header-right">
                 <span className="mode-label">
-                    <ModeIcon className="mode-icon" aria-hidden />
-                    {role === "teacher" ? "Instructor Mode" : "Student Mode"}
+                    {role !== "account" && <ModeIcon className="mode-icon" aria-hidden />}
+                    {labelByRole[role]}
                 </span>
 
                 <div className="header-divider" />
 
                 <div className="profile">
-                    <div className="avatar">{role === "teacher" ? "T" : "S"}</div>
+                    <div className="avatar">{avatarByRole[role]}</div>
                 </div>
 
-                <button className="logout-button" onClick={onLogout}>
-                    Log Out
+                <button className="logout-button" onClick={onLogout} disabled={loggingOut}>
+                    {loggingOut ? "Logging out…" : "Log Out"}
                 </button>
             </div>
         </header>

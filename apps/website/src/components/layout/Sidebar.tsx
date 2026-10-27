@@ -5,10 +5,19 @@ export type NavItem = "Live Lecture" | "Dashboard" | "Courses" | "Materials" | "
 type SidebarProps = {
     activeNav: NavItem;
     onNavigate: (item: NavItem) => void;
-    role: "teacher" | "student";
+    role: "teacher" | "student" | "account";
 };
 
 export default function Sidebar({ activeNav, onNavigate, role }: SidebarProps) {
+    const primaryNavigationByRole = {
+        teacher: "Live Lecture",
+        student: "Dashboard",
+        account: null,
+    } satisfies Record<SidebarProps["role"], NavItem | null>;
+
+    const primaryNavigation = primaryNavigationByRole[role];
+    const PrimaryIcon = role === "teacher" ? BroadcastIcon : SquaresFourIcon;
+
     return (
         <aside className="sidebar">
             <div className="brand">
@@ -18,18 +27,13 @@ export default function Sidebar({ activeNav, onNavigate, role }: SidebarProps) {
             </div>
 
             <nav className="side-nav">
-                {role === "teacher" ? (
+                {primaryNavigation && (
                     <button
-                        className={`nav-item ${activeNav === "Live Lecture" ? "active" : ""}`}
-                        onClick={() => onNavigate("Live Lecture")}
+                        className={`nav-item ${activeNav === primaryNavigation ? "active" : ""}`}
+                        onClick={() => onNavigate(primaryNavigation)}
                     >
-                        <BroadcastIcon className="nav-icon" aria-hidden />
-                        <span>Live Lecture</span>
-                    </button>
-                ) : (
-                    <button className={`nav-item ${activeNav === "Dashboard" ? "active" : ""}`} onClick={() => onNavigate("Dashboard")}>
-                        <SquaresFourIcon className="nav-icon" aria-hidden />
-                        <span>Dashboard</span>
+                        <PrimaryIcon className="nav-icon" aria-hidden />
+                        <span>{primaryNavigation}</span>
                     </button>
                 )}
 
@@ -38,10 +42,12 @@ export default function Sidebar({ activeNav, onNavigate, role }: SidebarProps) {
                     <span>Courses</span>
                 </button>
 
-                <button className={`nav-item ${activeNav === "Materials" ? "active" : ""}`} onClick={() => onNavigate("Materials")}>
-                    <FileTextIcon className="nav-icon" aria-hidden />
-                    <span>Materials</span>
-                </button>
+                {role !== "account" && (
+                    <button className={`nav-item ${activeNav === "Materials" ? "active" : ""}`} onClick={() => onNavigate("Materials")}>
+                        <FileTextIcon className="nav-icon" aria-hidden />
+                        <span>Materials</span>
+                    </button>
+                )}
 
                 <button className={`nav-item ${activeNav === "Settings" ? "active" : ""}`} onClick={() => onNavigate("Settings")}>
                     <GearIcon className="nav-icon" aria-hidden />

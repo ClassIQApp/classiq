@@ -1,103 +1,111 @@
+import { AuthProvider, useAuth } from "./api/auth/provider";
 import { useCourses } from "./api/courses/use-courses";
 import AppShell from "./components/layout/AppShell";
 import type { NavItem } from "./components/layout/Sidebar";
 import "./index.css";
 import Login from "./pages/login";
 import StudentCourses from "./pages/student/Courses";
-// Student pages
-import StudentDashboard from "./pages/student/Dashboard";
-import StudentMaterials from "./pages/student/Materials";
-import StudentSettings from "./pages/student/Settings";
-import TeacherCourses from "./pages/teacher/Courses";
-// Teacher pages
-import TeacherLiveLecture from "./pages/teacher/LiveLecture";
-import TeacherMaterials from "./pages/teacher/Materials";
-import TeacherSettings from "./pages/teacher/Settings";
-import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-type Role = "teacher" | "student";
+function Account() {
+    const { state, controller } = useAuth();
+    const [activeNav, setActiveNav] = useState<NavItem>("Courses");
+    const [loggingOut, setLoggingOut] = useState(false);
+    const [logoutError, setLogoutError] = useState<string | null>(null);
+    const { data: courses = [], isPending, isError, error, refetch } = useCourses();
 
-function App() {
-    const [role, setRole] = useState<Role | null>(null);
+    async function handleLogout() {
+        if (loggingOut) {
+            return;
+        }
 
-    const [activeNav, setActiveNav] = useState<NavItem>("Live Lecture");
-    const queryClient = useQueryClient();
-    const { data: courses = [], isPending, isError, refetch } = useCourses(role === "student");
+        setLoggingOut(true);
+        setLogoutError(null);
 
-    function handleLogin(email: string) {
-        // TEMPORARY until the real backend authentication is ready.
-        // This lets us test both interfaces using one shared sign-in page.
-        if (email.toLowerCase().includes("teacher")) {
-            setRole("teacher");
-            setActiveNav("Live Lecture");
-        } else {
-            setRole("student");
-            setActiveNav("Dashboard");
+        try {
+            await controller.logout();
+
+            setActiveNav("Courses");
+        } catch (error) {
+            setLogoutError(error instanceof Error ? error.message : "Could not log out. Please try again.");
+        } finally {
+            setLoggingOut(false);
         }
     }
 
-    function handleLogout() {
-        queryClient.clear();
-        setRole(null);
-        setActiveNav("Live Lecture");
+    if (state.status === "loading") {
+        return (
+            <p className="auth-status" role="status">
+                Restoring your session…
+            </p>
+        );
     }
 
-    if (!role) {
-        return <Login onLogin={handleLogin} />;
+    if (state.status === "error") {
+        return (
+            <div className="auth-status" role="alert">
+                <p>{state.message}</p>
+                <button type="button" onClick={() => void controller.restore()}>
+                    Retry
+                </button>
+            </div>
+        );
     }
+
+    if (state.status === "anonymous") {
+        return <Login onAuthenticate={(input) => controller.authenticate(input)} />;
+    }
+
+    const user = state.user;
 
     function showPage() {
-        if (role === "teacher") {
-            if (activeNav === "Courses") {
-                return <TeacherCourses />;
-            }
-
-            if (activeNav === "Materials") {
-                return <TeacherMaterials />;
-            }
-
-            if (activeNav === "Settings") {
-                return <TeacherSettings />;
-            }
-
-            return <TeacherLiveLecture />;
-        }
-
-        if (activeNav === "Courses") {
-            if (isPending) {
-                return <p role="status">Loading courses…</p>;
-            }
-            if (isError) {
-                return (
-                    <div role="alert">
-                        <p>Courses could not load.</p>
-                        <button type="button" onClick={() => void refetch()}>
-                            Retry
-                        </button>
-                    </div>
-                );
-            }
-
-            return <StudentCourses courses={courses} />;
-        }
-
-        if (activeNav === "Materials") {
-            return <StudentMaterials />;
-        }
-
         if (activeNav === "Settings") {
-            return <StudentSettings />;
+            return (
+                <section>
+                    <h1>Account Settings</h1>
+                    <p>{user.name}</p>
+                    <p>{user.email}</p>
+                </section>
+            );
         }
 
-        return <StudentDashboard />;
+        if (isPending) {
+            return <p role="status">Loading courses…</p>;
+        }
+
+        if (isError) {
+            return (
+                <div role="alert">
+                    <p>{error.message}</p>
+                    <button type="button" onClick={() => void refetch()}>
+                        Retry
+                    </button>
+                </div>
+            );
+        }
+
+        return <StudentCourses key={user.id} courses={courses} />;
     }
 
     return (
-        <AppShell activeNav={activeNav} onNavigate={setActiveNav} role={role} onLogout={handleLogout}>
+        <AppShell
+            activeNav={activeNav}
+            onNavigate={setActiveNav}
+            role="account"
+            user={state.user}
+            onLogout={() => void handleLogout()}
+            loggingOut={loggingOut}
+        >
+            {logoutError && <p role="alert">{logoutError}</p>}
             {showPage()}
         </AppShell>
     );
 }
 
-export default App;
+export default function App() {
+    return (
+        <AuthProvider>
+            <Account />
+        </AuthProvider>
+    );
+}

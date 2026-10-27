@@ -1,3 +1,4 @@
+import { useAuth } from "../../api/auth/provider";
 import type { Course } from "../../api/courses/types";
 import { useCourses } from "../../api/courses/use-courses";
 import "./TeacherCourses.css";
@@ -21,6 +22,7 @@ function createSlug(value: string) {
 }
 
 export default function Courses() {
+    const { apiFetch } = useAuth();
     const { data: courses = [], isPending, isError, refetch } = useCourses(true);
 
     const queryClient = useQueryClient();
@@ -34,9 +36,7 @@ export default function Courses() {
 
     const createCourse = useMutation({
         mutationFn: async (course: CourseInput) => {
-            const apiUrl = import.meta.env.VITE_API_URL;
-
-            const response = await fetch(`${apiUrl}/courses`, {
+            const response = await apiFetch("/courses", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -63,9 +63,7 @@ export default function Courses() {
 
     const updateCourse = useMutation({
         mutationFn: async ({ courseId, course }: { courseId: string; course: CourseInput }) => {
-            const apiUrl = import.meta.env.VITE_API_URL;
-
-            const response = await fetch(`${apiUrl}/courses/${courseId}`, {
+            const response = await apiFetch(`/courses/${courseId}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
