@@ -1,5 +1,7 @@
 import type { AppEnv } from "../../app.ts";
-import { CourseFacade } from "../../core/course/course-facade.ts";
+import { CourseService } from "../../core/course/course-service.ts";
+import type { CourseMetadataUpdate, CourseRegistration } from "../../core/course/model.ts";
+import { PostgresCourseFacade } from "../../core/course/postgres-course-facade.ts";
 import type { CreateLectureInput, UpdateLectureInput } from "../../core/lecture/lecture-repository.ts";
 import type { LectureApiError, ListCourseLecturesResponse } from "../../core/lecture/model.ts";
 import { PostgresLectureRepository } from "../../core/lecture/postgres-lecture-repository.ts";
@@ -10,12 +12,64 @@ const routes = new Hono<AppEnv>();
 /* Get all courses */
 routes.get("/", async (c) => {
     const database = c.get("getDb")();
+
+    const courseRepository = new PostgresCourseFacade(database);
+    const courseService = new CourseService(courseRepository);
     const lectures = new PostgresLectureRepository(database);
-    const courses = new CourseFacade(lectures);
+
+    const courses = await courseService.listCourses();
 
     return c.json({
-        items: await courses.listCourses(),
+        items: await Promise.all(
+            courses.map(async (course) => ({
+                id: course.id,
+                code: course.code ?? "",
+                name: course.name,
+                description: course.description ?? "",
+                lectures: await lectures.listCourseLectures(course.id),
+            })),
+        ),
     });
+});
+
+/* Create a course */
+routes.post("/", async (c) => {
+    const body = await c.req.json<CourseRegistration>();
+
+    const database = c.get("getDb")();
+    const courseRepository = new PostgresCourseFacade(database);
+    const courseService = new CourseService(courseRepository);
+
+    const course = await courseService.registerCourse(body);
+
+    return c.json(course, 201);
+});
+
+/* Get one course */
+routes.get("/:courseId", async (c) => {
+    const courseId = c.req.param("courseId");
+
+    const database = c.get("getDb")();
+    const courseRepository = new PostgresCourseFacade(database);
+    const courseService = new CourseService(courseRepository);
+
+    const course = await courseService.fetchCourse(courseId);
+
+    return c.json(course);
+});
+
+/* Update course settings */
+routes.patch("/:courseId", async (c) => {
+    const courseId = c.req.param("courseId");
+    const body = await c.req.json<CourseMetadataUpdate>();
+
+    const database = c.get("getDb")();
+    const courseRepository = new PostgresCourseFacade(database);
+    const courseService = new CourseService(courseRepository);
+
+    const course = await courseService.updateCourseMetadata(courseId, body);
+
+    return c.json(course);
 });
 
 /* Get all lectures for one course */
@@ -35,6 +89,7 @@ routes.get("/:courseId/lectures", async (c) => {
 /* Create a new lecture */
 routes.post("/:courseId/lectures", async (c) => {
     const courseId = c.req.param("courseId");
+
     const body = await c.req.json<{
         title?: string;
         description?: string;
