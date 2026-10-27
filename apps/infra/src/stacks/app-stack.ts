@@ -37,7 +37,8 @@ export class AppStack extends Stack {
             allowedOrigin: `https://${deploymentConfig.domainName}`,
         });
 
-        this.fileStorage = new FileStorage(this, "FileStorage");
+        this.fileStorage = new FileStorage(this, "FileStorage", [`https://${deploymentConfig.domainName}`]);
+
         this.fileStorage.grantReadWrite(this.apiLambda.handler);
         this.apiLambda.handler.addEnvironment("COURSE_RESOURCE_FILES_BUCKET_NAME", this.fileStorage.bucket.bucketName);
 

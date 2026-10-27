@@ -19,7 +19,7 @@ export class S3CourseResourceFileFacade implements CourseResourceFileRepository 
     async upload(reference: CourseResourceFileReference, upload: CourseResourceFileUpload): Promise<CourseResourceFile> {
         const request = new PutObjectCommand({
             Bucket: this.bucketName,
-            Key: this.constructObjectKey(reference),
+            Key: courseResourceObjectKey(reference),
             Body: upload.body,
             ContentType: upload.contentType,
             ContentLength: upload.contentLength,
@@ -43,11 +43,12 @@ export class S3CourseResourceFileFacade implements CourseResourceFileRepository 
     async fetch(reference: CourseResourceFileReference): Promise<DownloadedCourseResourceFile> {
         const request = new GetObjectCommand({
             Bucket: this.bucketName,
-            Key: this.constructObjectKey(reference),
+            Key: courseResourceObjectKey(reference),
         });
 
         try {
             const response = await this.client.send(request);
+
             if (!(response.Body instanceof Readable)) {
                 throw new CourseResourceFileError("provider_error");
             }
@@ -64,21 +65,13 @@ export class S3CourseResourceFileFacade implements CourseResourceFileRepository 
     }
 
     async delete(reference: CourseResourceFileReference): Promise<void> {
-        const request = new DeleteObjectCommand({ Bucket: this.bucketName, Key: this.constructObjectKey(reference) });
+        const request = new DeleteObjectCommand({ Bucket: this.bucketName, Key: courseResourceObjectKey(reference) });
 
         try {
             await this.client.send(request);
         } catch (error) {
             throw this.convertError(error, "delete");
         }
-    }
-
-    private constructObjectKey({ courseId, lectureId, assetId, kind }: CourseResourceFileReference): string {
-        const coursePrefix = `courses/${encodeIdentifier(courseId)}`;
-        const prefix = lectureId === undefined ? coursePrefix : `${coursePrefix}/lectures/${encodeIdentifier(lectureId)}`;
-        const collection = kind === "recording" ? "recordings" : "resources";
-
-        return `${prefix}/${collection}/${encodeIdentifier(assetId)}`;
     }
 
     private convertError(error: unknown, operation: "upload" | "fetch" | "delete"): CourseResourceFileError {
@@ -88,6 +81,7 @@ export class S3CourseResourceFileFacade implements CourseResourceFileRepository 
 
         if (error instanceof S3ServiceException) {
             let code: CourseResourceFileErrorCode = "provider_error";
+
             if (operation === "fetch" && error.name === "NoSuchKey") {
                 code = "not_found";
             } else if (error.$metadata.httpStatusCode === 403) {
@@ -104,4 +98,12 @@ export class S3CourseResourceFileFacade implements CourseResourceFileRepository 
 
         return new CourseResourceFileError("provider_error");
     }
+}
+
+export function courseResourceObjectKey({ courseId, lectureId, assetId, kind }: CourseResourceFileReference): string {
+    const coursePrefix = `courses/${encodeIdentifier(courseId)}`;
+    const prefix = lectureId === undefined ? coursePrefix : `${coursePrefix}/lectures/${encodeIdentifier(lectureId)}`;
+    const collection = kind === "recording" ? "recordings" : "resources";
+
+    return `${prefix}/${collection}/${encodeIdentifier(assetId)}`;
 }
