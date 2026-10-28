@@ -4,7 +4,7 @@ import { useCourses, useCreateCourse, useUpdateCourse } from "../../api/courses/
 import CourseCard from "../../components/courses/course-card";
 import CourseForm from "../../components/courses/course-form";
 import "./TeacherCourses.css";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import type { ReactNode } from "react";
 
 const emptyCourse: CourseSettingsUpdate = { code: "", name: "", description: "" };
@@ -128,9 +128,8 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
             )}
 
             {editingCourse && (
-                <>
+                <Fragment key={editingCourse.id}>
                     <CourseForm
-                        key={editingCourse.id}
                         eyebrow="Course Settings"
                         title={editingCourse.name}
                         description="Update the course information Members will see."
@@ -144,7 +143,7 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
                     />
 
                     {renderInviteForm?.(editingCourse.id)}
-                </>
+                </Fragment>
             )}
 
             <section className="teacher-course-list-section">
