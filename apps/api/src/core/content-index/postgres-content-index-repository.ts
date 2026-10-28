@@ -4,10 +4,12 @@ import type {
     ContentChunk,
     ContentLocation,
     ContentPassage,
+    ContentScope,
     ContentSource,
     ContentSourceKind,
     ContentSourceReference,
     ContentSourceStatus,
+    IndexedPassage,
     ParsedContentSearchQuery,
 } from "./model.ts";
 import { DatabaseError, type Pool, type PoolClient } from "pg";
@@ -23,6 +25,25 @@ const SOURCE_COLUMNS = `
     content_hash,
     indexed_at,
     (SELECT count(*) FROM content_chunks WHERE content_chunks.source_id = content_sources.id) AS chunk_count
+`;
+
+const PASSAGE_COLUMNS = `
+    chunk.id,
+    source.kind,
+    source.course_id,
+    COALESCE(source.lecture_id, resource.fk_lecture_id) AS lecture_id,
+    source.resource_id,
+    COALESCE(lecture.title, resource.name, '') AS title,
+    chunk.content,
+    chunk.page_number,
+    chunk.start_seconds,
+    chunk.end_seconds
+`;
+
+const PASSAGE_JOINS = `
+    JOIN content_sources AS source ON source.id = chunk.source_id
+    LEFT JOIN lectures AS lecture ON lecture.id = source.lecture_id
+    LEFT JOIN course_resources AS resource ON resource.id = source.resource_id
 `;
 
 interface SourceRow {
@@ -49,6 +70,9 @@ interface PassageRow {
     page_number: number | null;
     start_seconds: number | null;
     end_seconds: number | null;
+}
+
+interface ScoredPassageRow extends PassageRow {
     score: number;
 }
 
@@ -73,7 +97,7 @@ function toLocation(row: Pick<PassageRow, "page_number" | "start_seconds" | "end
     return row.page_number === null ? { startSeconds: row.start_seconds!, endSeconds: row.end_seconds! } : { pageNumber: row.page_number };
 }
 
-function toPassage(row: PassageRow): ContentPassage {
+function toPassage(row: PassageRow): IndexedPassage {
     return {
         id: String(row.id),
         kind: row.kind,
@@ -83,7 +107,6 @@ function toPassage(row: PassageRow): ContentPassage {
         title: row.title,
         content: row.content,
         ...toLocation(row),
-        score: row.score,
     };
 }
 
@@ -154,25 +177,12 @@ export class PostgresContentIndexRepository implements ContentIndexRepository {
     }
 
     async search(query: ParsedContentSearchQuery): Promise<ContentPassage[]> {
-        const result = await this.db.query<PassageRow>(
+        const result = await this.db.query<ScoredPassageRow>(
             `
-            SELECT
-                chunk.id,
-                source.kind,
-                source.course_id,
-                COALESCE(source.lecture_id, resource.fk_lecture_id) AS lecture_id,
-                source.resource_id,
-                COALESCE(lecture.title, resource.name, '') AS title,
-                chunk.content,
-                chunk.page_number,
-                chunk.start_seconds,
-                chunk.end_seconds,
-                ts_rank_cd(chunk.search_vector, query.terms) AS score
+            SELECT ${PASSAGE_COLUMNS}, ts_rank_cd(chunk.search_vector, query.terms) AS score
             FROM content_chunks AS chunk
             CROSS JOIN websearch_to_tsquery('english', $2) AS query(terms)
-            JOIN content_sources AS source ON source.id = chunk.source_id
-            LEFT JOIN lectures AS lecture ON lecture.id = source.lecture_id
-            LEFT JOIN course_resources AS resource ON resource.id = source.resource_id
+            ${PASSAGE_JOINS}
             WHERE chunk.course_id = $1
                 AND source.status = 'indexed'
                 AND chunk.search_vector @@ query.terms
@@ -182,6 +192,24 @@ export class PostgresContentIndexRepository implements ContentIndexRepository {
             LIMIT $5
             `,
             [query.courseId, query.text, query.lectureId ?? null, query.kinds ?? null, query.limit],
+        );
+
+        return result.rows.map((row) => ({ ...toPassage(row), score: row.score }));
+    }
+
+    async listPassages(scope: ContentScope, limit: number): Promise<IndexedPassage[]> {
+        const result = await this.db.query<PassageRow>(
+            `
+            SELECT ${PASSAGE_COLUMNS}
+            FROM content_chunks AS chunk
+            ${PASSAGE_JOINS}
+            WHERE chunk.course_id = $1
+                AND source.status = 'indexed'
+                AND ($2::int IS NULL OR source.lecture_id = $2 OR resource.fk_lecture_id = $2)
+            ORDER BY source.kind DESC, source.id, chunk.position
+            LIMIT $3
+            `,
+            [scope.courseId, scope.lectureId ?? null, limit],
         );
 
         return result.rows.map((row) => toPassage(row));

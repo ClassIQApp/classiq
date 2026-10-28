@@ -33,6 +33,7 @@ function fixture() {
             return source;
         }),
         search: vi.fn(async () => []),
+        listPassages: vi.fn(async () => []),
     } satisfies ContentIndexRepository;
 
     return { repository, service: new ContentIndexService(repository) };
@@ -143,5 +144,20 @@ describe("ContentIndexService", () => {
 
         expect(await rejection(service.search(query as never))).toBe("invalid_query");
         expect(repository.search).not.toHaveBeenCalled();
+    });
+
+    it("lists passages for a course or lecture with a bounded limit", async () => {
+        const { repository, service } = fixture();
+
+        await service.listPassages({ courseId: "1", lectureId: "2" });
+
+        expect(repository.listPassages).toHaveBeenCalledWith({ courseId: "1", lectureId: "2" }, 2000);
+    });
+
+    it.each([{ courseId: "0" }, { courseId: "1", lectureId: "x" }])("rejects invalid passage scope %o", async (scope) => {
+        const { repository, service } = fixture();
+
+        expect(await rejection(service.listPassages(scope))).toBe("invalid_query");
+        expect(repository.listPassages).not.toHaveBeenCalled();
     });
 });

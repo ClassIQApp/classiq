@@ -1,4 +1,12 @@
-import type { ContentChunk, ContentPassage, ContentSource, ContentSourceReference, ParsedContentSearchQuery } from "./model.ts";
+import type {
+    ContentChunk,
+    ContentPassage,
+    ContentScope,
+    ContentSource,
+    ContentSourceReference,
+    IndexedPassage,
+    ParsedContentSearchQuery,
+} from "./model.ts";
 
 export interface ContentIndexRepository {
     findSource(reference: ContentSourceReference): Promise<ContentSource | undefined>;
@@ -10,4 +18,7 @@ export interface ContentIndexRepository {
     markFailed(reference: ContentSourceReference, message: string): Promise<ContentSource>;
 
     search(query: ParsedContentSearchQuery): Promise<ContentPassage[]>;
+
+    /** Lists indexed passages in reading order: transcripts first, then resources, each by position. */
+    listPassages(scope: ContentScope, limit: number): Promise<IndexedPassage[]>;
 }

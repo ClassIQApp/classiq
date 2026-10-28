@@ -1,3 +1,4 @@
+import { createLlmService } from "./core/ai/create-llm-service.ts";
 import { createAuth, type AuthenticatedUser, type AuthService } from "./core/auth/auth.ts";
 import { readAuthConfig, type AuthConfig } from "./core/auth/config.ts";
 import { requireSession } from "./core/auth/middleware.ts";
@@ -10,12 +11,16 @@ import { PostgresCourseMembershipFacade } from "./core/course-access/postgres-co
 import { CourseInvitationService } from "./core/course-invitation/course-invitation-service.ts";
 import { PostgresCourseInvitationFacade } from "./core/course-invitation/postgres-course-invitation-facade.ts";
 import { readCourseResourceFileConfig } from "./core/course-resource/file/config.ts";
+import { PostgresQuizRepository } from "./core/quiz/postgres-quiz-repository.ts";
+import { QuizGenerator } from "./core/quiz/quiz-generator.ts";
+import { QuizService } from "./core/quiz/quiz-service.ts";
 import type { UploadAsset, UploadStorage } from "./core/uploads/model.ts";
 import { PostgresUploadRepository } from "./core/uploads/postgres-upload-repository.ts";
 import { S3UploadStorage } from "./core/uploads/s3-upload-storage.ts";
 import authRoutes from "./routes/auth/index.ts";
 import courseRoutes from "./routes/courses/index.ts";
 import { createCourseInvitationRoutes, createInvitationRoutes } from "./routes/invitations/index.ts";
+import { createQuizRoutes } from "./routes/quizzes/index.ts";
 import { createUploadRoutes } from "./routes/uploads/index.ts";
 import { S3Client } from "@aws-sdk/client-s3";
 import { Hono } from "hono";
@@ -51,6 +56,7 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     let uploadStorage: UploadStorage | undefined;
     let resourceIndexer: ResourceContentIndexer | undefined;
     let invitationService: CourseInvitationService | undefined;
+    let quizService: QuizService | undefined;
     const getConfig = () => (config ??= (options.getAuthConfig ?? readAuthConfig)());
     const getAuth = options.getAuth ?? (() => (auth ??= createAuth(getDb(), getConfig())));
     const getUploadStorage = options.getUploadStorage ?? (() => (uploadStorage ??= createUploadStorage()));
@@ -58,6 +64,12 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
         (invitationService ??= new CourseInvitationService(
             new PostgresCourseInvitationFacade(getDb()),
             new PostgresCourseMembershipFacade(getDb()),
+        ));
+    const getQuizService = () =>
+        (quizService ??= new QuizService(
+            new PostgresQuizRepository(getDb()),
+            new ContentIndexService(new PostgresContentIndexRepository(getDb())),
+            new QuizGenerator(createLlmService()),
         ));
     const getResourceIndexer = () =>
         (resourceIndexer ??= new ResourceContentIndexer(new ContentIndexService(new PostgresContentIndexRepository(getDb()))));
@@ -102,6 +114,7 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             indexResource,
         }),
     );
+    app.route("/courses", createQuizRoutes<AppEnv>({ requireCourseRole, getUserId: (c) => c.get("user").id, getService: getQuizService }));
     app.route("/courses/:courseId/invitations", createCourseInvitationRoutes<AppEnv>({ requireCourseRole, getInvitationService }));
     app.route("/invitations", createInvitationRoutes<AppEnv>({ requireSession, getInvitationService }));
     app.get("/", (c) => c.json({ message: "hello from node" }));
