@@ -1,6 +1,7 @@
 import type { Course } from "../../api/courses/types";
 import type { LectureStatus as Status } from "../../api/lectures/types";
 import LectureStatus from "./lecture-status";
+import LectureUploadForm from "./lecture-upload-form";
 import { ArrowRightIcon, BookOpenIcon } from "@phosphor-icons/react";
 
 interface LectureListProps {
@@ -26,6 +27,7 @@ export default function LectureList({
 }: LectureListProps) {
     const normalizedQuery = query.trim().toLowerCase();
     const courseLectures = course?.lectures ?? [];
+
     const lectures = courseLectures.filter(
         (lecture) =>
             (status === "all" || lecture.status === status) &&
@@ -40,7 +42,10 @@ export default function LectureList({
     if (course) {
         emptyState = {
             title: "No lectures yet",
-            description: "Lectures will appear here when your instructor adds them.",
+            description:
+                course.role === "teacher"
+                    ? "Upload your first lecture recording to get started."
+                    : "Lectures will appear here when your instructor adds them.",
         };
 
         if (courseLectures.length > 0) {
@@ -62,6 +67,7 @@ export default function LectureList({
                         onChange={(event) => onCourseChange(event.target.value)}
                     >
                         {courses.length === 0 && <option value="">No courses available</option>}
+
                         {courses.map((item) => (
                             <option key={item.id} value={item.id}>
                                 {item.code} · {item.name}
@@ -69,6 +75,7 @@ export default function LectureList({
                         ))}
                     </select>
                 </label>
+
                 <label>
                     Find a lecture
                     <input
@@ -78,6 +85,7 @@ export default function LectureList({
                         onChange={(event) => onQueryChange(event.target.value)}
                     />
                 </label>
+
                 <label>
                     Processing state
                     <select
@@ -106,12 +114,19 @@ export default function LectureList({
                     </select>
                 </label>
             </div>
+
             <div className="lecture-list-heading">
-                <h2 id="lecture-list-heading">Lectures</h2>
-                <p role="status">
-                    {lectures.length} of {courseLectures.length} lectures
-                </p>
+                <div>
+                    <h2 id="lecture-list-heading">Lectures</h2>
+
+                    <p role="status">
+                        {lectures.length} of {courseLectures.length} lectures
+                    </p>
+                </div>
+
+                {course?.role === "teacher" && <LectureUploadForm courseId={course.id} />}
             </div>
+
             {lectures.length > 0 ? (
                 <ul className="lecture-list" role="list">
                     {lectures.map((lecture) => (
@@ -120,15 +135,20 @@ export default function LectureList({
                                 <span className="lecture-card-top">
                                     <LectureStatus status={lecture.status} />
                                 </span>
+
                                 <span className="lecture-card-title">{lecture.title}</span>
+
                                 <span className="lecture-card-description">{lecture.description}</span>
+
                                 <span className="lecture-card-bottom">
                                     <span>
                                         {lecture.transcript ? "Transcript available" : "Transcript unavailable"} ·{" "}
                                         {lecture.resources.length} {lecture.resources.length === 1 ? "resource" : "resources"}
                                     </span>
+
                                     <span className="lecture-open">
-                                        View lecture <ArrowRightIcon size={18} aria-hidden />
+                                        View lecture
+                                        <ArrowRightIcon size={18} aria-hidden />
                                     </span>
                                 </span>
                             </button>
@@ -138,8 +158,11 @@ export default function LectureList({
             ) : (
                 <div className="lecture-empty">
                     <BookOpenIcon size={32} aria-hidden />
+
                     <h3>{emptyState.title}</h3>
+
                     <p>{emptyState.description}</p>
+
                     {courseLectures.length > 0 && (
                         <button
                             type="button"

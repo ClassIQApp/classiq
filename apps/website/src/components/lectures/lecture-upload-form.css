@@ -1,0 +1,106 @@
+.lecture-upload-open {
+    min-height: var(--size-control);
+    padding: var(--space-2) var(--space-4);
+    border: var(--border-width) solid var(--color-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+}
+
+.lecture-upload-open:hover {
+    filter: brightness(0.95);
+}
+
+.lecture-upload-panel {
+    margin-bottom: var(--space-5);
+    padding: var(--space-5);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.lecture-upload-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+.lecture-upload-heading h3 {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-lg);
+}
+
+.lecture-upload-heading p {
+    color: var(--color-text-secondary);
+}
+
+.lecture-upload-form {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.lecture-upload-form label {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+}
+
+.lecture-upload-form input,
+.lecture-upload-form textarea {
+    width: 100%;
+    padding: var(--space-3);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+}
+
+.lecture-upload-form textarea {
+    resize: vertical;
+}
+
+.lecture-upload-file {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.lecture-upload-progress {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.lecture-upload-progress progress {
+    width: 100%;
+}
+
+.lecture-upload-progress span {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.lecture-upload-error {
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-danger-subtle);
+    color: var(--color-danger);
+}
+
+.lecture-upload-success {
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-success-subtle);
+    color: var(--color-success);
+}
+
+@media (max-width: 48rem) {
+    .lecture-upload-heading {
+        flex-direction: column;
+    }
+}
