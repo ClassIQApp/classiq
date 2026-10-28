@@ -11,7 +11,7 @@ const AuthContext = createContext<{ state: SessionState; controller: SessionCont
 export function AuthProvider({ children }: { children: ReactNode }) {
     const queryClient = useQueryClient();
     const [controller] = useState(() => {
-        const request = createApiFetch(import.meta.env.VITE_API_URL ?? "");
+        const request = createApiFetch(import.meta.env?.VITE_API_URL ?? "");
         const authApi = createAuthApi(request);
 
         return new SessionController(authApi, () => {
@@ -19,10 +19,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             queryClient.clear();
         });
     });
-    const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
+    const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
     const apiFetch = useMemo(
         () =>
-            createApiFetch(import.meta.env.VITE_API_URL ?? "", fetch, () => {
+            createApiFetch(import.meta.env?.VITE_API_URL ?? "", fetch, () => {
                 if (controller.state === state) {
                     controller.expire();
                 }

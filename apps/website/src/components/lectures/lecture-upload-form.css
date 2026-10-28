@@ -104,3 +104,19 @@
         flex-direction: column;
     }
 }
+
+.lecture-upload-open {
+    margin-bottom: var(--space-5);
+}
+
+.lecture-recording {
+    display: grid;
+    gap: var(--space-3);
+    margin-block: var(--space-5);
+}
+
+.lecture-recording video,
+.lecture-recording audio {
+    width: 100%;
+    max-height: 32rem;
+}

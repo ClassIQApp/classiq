@@ -1,5 +1,6 @@
 import type { Lecture, LectureContentLink } from "../../api/lectures/types";
 import LectureStatus from "./lecture-status";
+import RecordingPlayer from "./recording-player";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 
 const headingByStatus: Record<Lecture["status"], string> = {
@@ -52,7 +53,7 @@ function ContentSection({
     );
 }
 
-export default function LectureDetail({ lecture, onBack }: { lecture: Lecture; onBack: () => void }) {
+export default function LectureDetail({ courseId, lecture, onBack }: { courseId: string; lecture: Lecture; onBack: () => void }) {
     const pendingMessage = unavailableMessageByStatus[lecture.status] ?? "No content has been added yet.";
 
     return (
@@ -66,6 +67,9 @@ export default function LectureDetail({ lecture, onBack }: { lecture: Lecture; o
                 <strong>{headingByStatus[lecture.status]}</strong>
                 <p>{lecture.statusMessage}</p>
             </div>
+            {lecture.status !== "pending" && (
+                <RecordingPlayer key={`${courseId}:${lecture.id}`} courseId={courseId} lectureId={lecture.id} />
+            )}
             <div className="lecture-content-grid">
                 <ContentSection
                     title="Transcript"

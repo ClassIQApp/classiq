@@ -4,6 +4,7 @@ import InviteForm from "./components/invitations/InviteForm";
 import PendingInvitations from "./components/invitations/PendingInvitations";
 import AppShell from "./components/layout/AppShell";
 import type { NavItem } from "./components/layout/Sidebar";
+import "./components/lectures/lecture-upload-form.css";
 import "./index.css";
 import CoursePage from "./pages/courses/course-page";
 import Login from "./pages/login";

@@ -1,9 +1,8 @@
 import { useAuth } from "../../api/auth/provider";
-import { completeRecordingUpload, createRecordingUpload, uploadRecordingFile } from "../../api/lectures/recording-upload";
-import "./lecture-upload-form.css";
+import { RecordingSession } from "../../api/lectures/recording-session";
 import { useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface LectureUploadFormProps {
     courseId: string;
@@ -14,7 +13,22 @@ const supportedTypes = new Set(["audio/mpeg", "audio/mp4", "audio/wav", "audio/x
 const maxFileSize = 500 * 1024 ** 2;
 
 export default function LectureUploadForm({ courseId }: LectureUploadFormProps) {
+    const { state } = useAuth();
+
+    return <RecordingForm key={`${state.status === "authenticated" ? state.user.id : state.status}:${courseId}`} courseId={courseId} />;
+}
+
+function RecordingForm({ courseId }: LectureUploadFormProps) {
     const { apiFetch } = useAuth();
+    const session = useRef(new RecordingSession());
+    const active = useRef<AbortController | null>(null);
+
+    useEffect(
+        () => () => {
+            active.current?.abort();
+        },
+        [apiFetch, courseId],
+    );
     const queryClient = useQueryClient();
 
     const [open, setOpen] = useState(false);
@@ -27,6 +41,7 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
     const [error, setError] = useState("");
 
     function reset() {
+        session.current = new RecordingSession();
         setTitle("");
         setDescription("");
         setFile(null);
@@ -42,18 +57,21 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
 
         if (!selected) {
             setFile(null);
+
             return;
         }
 
         if (!supportedTypes.has(selected.type)) {
             setFile(null);
             setError("Choose a supported audio or video recording.");
+
             return;
         }
 
-        if (selected.size > maxFileSize) {
+        if (selected.size === 0 || selected.size > maxFileSize) {
             setFile(null);
-            setError("Recording must be 500 MB or smaller.");
+            setError("Choose a nonempty recording of 500 MB or smaller.");
+
             return;
         }
 
@@ -65,8 +83,12 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
 
         if (!file) {
             setError("Choose a recording file.");
+
             return;
         }
+
+        const controller = new AbortController();
+        active.current = controller;
 
         try {
             setUploading(true);
@@ -74,29 +96,15 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
             setMessage("");
             setProgress(0);
 
-            const lectureResponse = await apiFetch(`/courses/${courseId}/lectures`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    title,
-                    description,
-                }),
-            });
+            await session.current.run(apiFetch, courseId, title, description, file, controller.signal, setProgress, () =>
+                queryClient.invalidateQueries({ queryKey: ["courses"] }),
+            );
 
-            const lecture: { id: string } = await lectureResponse.json();
+            if (controller.signal.aborted) {
+                return;
+            }
 
-            const ticket = await createRecordingUpload(apiFetch, courseId, lecture.id, file);
-
-            await uploadRecordingFile(ticket, file, setProgress);
-
-            await completeRecordingUpload(apiFetch, courseId, lecture.id, ticket.uploadId);
-
-            await queryClient.invalidateQueries({
-                queryKey: ["courses"],
-            });
-
+            session.current = new RecordingSession();
             setMessage("Lecture recording uploaded successfully.");
 
             setTitle("");
@@ -104,9 +112,15 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
             setFile(null);
             setProgress(100);
         } catch (uploadError) {
+            if (controller.signal.aborted) {
+                return;
+            }
+
             setError(uploadError instanceof Error ? uploadError.message : "Lecture recording could not be uploaded.");
         } finally {
-            setUploading(false);
+            if (!controller.signal.aborted) {
+                setUploading(false);
+            }
         }
     }
 
@@ -125,6 +139,16 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
         );
     }
 
+    let submitLabel = "Upload Lecture";
+
+    if (session.current.lectureId) {
+        submitLabel = "Retry recording";
+    }
+
+    if (uploading) {
+        submitLabel = "Uploading…";
+    }
+
     return (
         <div className="lecture-upload-panel">
             <div className="lecture-upload-heading">
@@ -136,10 +160,11 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
                 <button
                     type="button"
                     className="lecture-text-button"
-                    disabled={uploading}
                     onClick={() => {
-                        reset();
-                        setOpen(false);
+                        active.current?.abort();
+                        void queryClient.invalidateQueries({ queryKey: ["courses"] });
+                        setUploading(false);
+                        setError("Upload paused. Retry to resume this lecture.");
                     }}
                 >
                     Cancel
@@ -153,7 +178,7 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
                         type="text"
                         value={title}
                         placeholder="Introduction to Operating Systems"
-                        disabled={uploading}
+                        disabled={uploading || !!session.current.lectureId}
                         required
                         onChange={(event) => setTitle(event.target.value)}
                     />
@@ -165,7 +190,7 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
                         value={description}
                         placeholder="Enter a short lecture description"
                         rows={3}
-                        disabled={uploading}
+                        disabled={uploading || !!session.current.lectureId}
                         required
                         onChange={(event) => setDescription(event.target.value)}
                     />
@@ -176,7 +201,7 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
                     <input
                         type="file"
                         accept="audio/mpeg,audio/mp4,audio/wav,audio/x-wav,audio/webm,video/mp4,video/webm"
-                        disabled={uploading}
+                        disabled={uploading || !!session.current.lectureId}
                         onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
                     />
                 </label>
@@ -211,7 +236,7 @@ export default function LectureUploadForm({ courseId }: LectureUploadFormProps) 
                     type="submit"
                     disabled={uploading || !title.trim() || !description.trim() || !file}
                 >
-                    {uploading ? "Uploading..." : "Upload Lecture"}
+                    {submitLabel}
                 </button>
             </form>
         </div>
