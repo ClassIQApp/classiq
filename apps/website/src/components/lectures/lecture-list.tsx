@@ -123,9 +123,9 @@ export default function LectureList({
                         {lectures.length} of {courseLectures.length} lectures
                     </p>
                 </div>
-
-                {course?.role === "teacher" && <LectureUploadForm courseId={course.id} />}
             </div>
+
+            {course?.role === "teacher" && <LectureUploadForm key={course.id} courseId={course.id} />}
 
             {lectures.length > 0 ? (
                 <ul className="lecture-list" role="list">

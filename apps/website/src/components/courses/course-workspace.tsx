@@ -44,7 +44,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
         }
 
         if (lecture) {
-            return <LectureDetail lecture={lecture} onBack={() => setView({ name: "lectures" })} />;
+            return <LectureDetail courseId={course.id} lecture={lecture} onBack={() => setView({ name: "lectures" })} />;
         }
 
         return (

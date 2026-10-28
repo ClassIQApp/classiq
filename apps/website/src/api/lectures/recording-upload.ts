@@ -1,4 +1,5 @@
 import type { ApiFetch } from "../auth/client";
+import { uploadFile } from "../files/upload-file";
 
 export interface RecordingUploadTicket {
     uploadId: string;
@@ -23,11 +24,15 @@ export async function createRecordingUpload(
     courseId: string,
     lectureId: string,
     file: File,
+    idempotencyKey: string = crypto.randomUUID(),
+    signal?: AbortSignal,
 ): Promise<RecordingUploadTicket> {
     const response = await apiFetch(`/courses/${courseId}/lectures/${lectureId}/recording/upload`, {
         method: "POST",
+        signal,
         headers: {
             "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
         },
         body: JSON.stringify({
             name: file.name,
@@ -39,45 +44,13 @@ export async function createRecordingUpload(
     return response.json();
 }
 
-export function uploadRecordingFile(ticket: RecordingUploadTicket, file: File, onProgress: (progress: number) => void): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const request = new XMLHttpRequest();
-
-        request.open(ticket.method, ticket.url);
-
-        for (const [name, value] of Object.entries(ticket.headers)) {
-            request.setRequestHeader(name, value);
-        }
-
-        request.upload.addEventListener("progress", (event) => {
-            if (!event.lengthComputable) {
-                return;
-            }
-
-            onProgress(Math.round((event.loaded / event.total) * 100));
-        });
-
-        request.addEventListener("load", () => {
-            if (request.status >= 200 && request.status < 300) {
-                onProgress(100);
-                resolve();
-
-                return;
-            }
-
-            reject(new Error("Recording upload failed."));
-        });
-
-        request.addEventListener("error", () => {
-            reject(new Error("Recording upload was interrupted."));
-        });
-
-        request.addEventListener("abort", () => {
-            reject(new Error("Recording upload was interrupted."));
-        });
-
-        request.send(file);
-    });
+export function uploadRecordingFile(
+    ticket: RecordingUploadTicket,
+    file: File,
+    onProgress: (progress: number) => void,
+    signal?: AbortSignal,
+): Promise<void> {
+    return uploadFile(ticket, file, onProgress, signal);
 }
 
 export async function completeRecordingUpload(
@@ -85,12 +58,14 @@ export async function completeRecordingUpload(
     courseId: string,
     lectureId: string,
     uploadId: string,
+    signal?: AbortSignal,
 ): Promise<RecordingAsset> {
     const response = await apiFetch(`/courses/${courseId}/lectures/${lectureId}/recording/complete`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
+        signal,
         body: JSON.stringify({
             uploadId,
         }),
