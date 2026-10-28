@@ -87,3 +87,23 @@
     background: var(--color-primary);
     color: var(--color-on-primary);
 }
+
+.resources-item {
+    gap: 1rem;
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
+}
+
+.resources-item p {
+    margin: 0.4rem 0 0;
+    color: var(--color-text-secondary);
+}
+
+.resources-card progress {
+    width: 100%;
+}
+
+.resources-container button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
