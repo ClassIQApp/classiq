@@ -1,14 +1,14 @@
 import { AuthProvider } from "../src/api/auth/provider";
 import type { Course } from "../src/api/courses/types";
 import type { Lecture } from "../src/api/lectures/types";
+import { createResourcesApi, resourceQueryKey } from "../src/api/resources/client";
 import CourseCard from "../src/components/courses/course-card";
 import CourseForm from "../src/components/courses/course-form";
-import CourseResources from "../src/components/courses/course-resources";
+import { ResourceLibrary } from "../src/components/courses/course-resources";
 import CourseWorkspace from "../src/components/courses/course-workspace";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const lecture: Lecture = {
@@ -35,8 +35,8 @@ const joined: Course = { id: "20", code: "MAT 1300", name: "Calculus", descripti
 function ignore() {}
 
 test("course cards show each role and offer settings only to the Teacher", () => {
-    const teacherMarkup = renderAuthenticated(<CourseCard course={taught} onOpen={ignore} onEditSettings={ignore} />);
-    const memberMarkup = renderAuthenticated(<CourseCard course={joined} onOpen={ignore} onEditSettings={ignore} />);
+    const teacherMarkup = renderToStaticMarkup(<CourseCard course={taught} onOpen={ignore} onEditSettings={ignore} />);
+    const memberMarkup = renderToStaticMarkup(<CourseCard course={joined} onOpen={ignore} onEditSettings={ignore} />);
 
     assert.match(teacherMarkup, /course-role-teacher">Teacher</);
     assert.match(teacherMarkup, /Course Settings/);
@@ -50,7 +50,13 @@ test("course cards show each role and offer settings only to the Teacher", () =>
 
 test("switching from a taught course to a joined course keeps navigation and removes upload controls", () => {
     const render = (course: Course) =>
-        renderAuthenticated(<CourseWorkspace course={course} courses={[taught, joined]} onCourseChange={ignore} onClose={ignore} />);
+        renderToStaticMarkup(
+            <QueryClientProvider client={new QueryClient()}>
+                <AuthProvider>
+                    <CourseWorkspace course={course} courses={[taught, joined]} onCourseChange={ignore} onClose={ignore} />
+                </AuthProvider>
+            </QueryClientProvider>,
+        );
     const teacherMarkup = render(taught);
     const memberMarkup = render(joined);
 
@@ -66,8 +72,17 @@ test("switching from a taught course to a joined course keeps navigation and rem
 });
 
 test("Members can view resources but cannot select files to upload", () => {
-    const teacherMarkup = renderAuthenticated(<CourseResources canManage />);
-    const memberMarkup = renderAuthenticated(<CourseResources canManage={false} />);
+    const client = new QueryClient();
+    const api = createResourcesApi(async () => Response.json({ items: [] }));
+    client.setQueryData(resourceQueryKey("account", "10"), []);
+    const render = (canManage: boolean) =>
+        renderToStaticMarkup(
+            <QueryClientProvider client={client}>
+                <ResourceLibrary courseId="10" lectures={[]} canManage={canManage} accountId="account" api={api} />
+            </QueryClientProvider>,
+        );
+    const teacherMarkup = render(true);
+    const memberMarkup = render(false);
 
     assert.match(teacherMarkup, /type="file"/);
     assert.doesNotMatch(memberMarkup, /type="file"|Upload/);
@@ -75,7 +90,7 @@ test("Members can view resources but cannot select files to upload", () => {
 });
 
 test("the course form submits from the keyboard and requires a nonblank code and name", () => {
-    const markup = renderAuthenticated(
+    const markup = renderToStaticMarkup(
         <CourseForm
             eyebrow="Course Settings"
             title="Operating Systems"
@@ -101,7 +116,7 @@ test("the course form submits from the keyboard and requires a nonblank code and
 });
 
 test("a pending course form disables its fields and actions", () => {
-    const markup = renderAuthenticated(
+    const markup = renderToStaticMarkup(
         <CourseForm
             eyebrow="New Course"
             title="Create Course"
@@ -122,10 +137,23 @@ test("a pending course form disables its fields and actions", () => {
     assert.doesNotMatch(markup, /role="alert"/);
 });
 
-function renderAuthenticated(children: ReactNode) {
-    return renderToStaticMarkup(
-        <QueryClientProvider client={new QueryClient()}>
-            <AuthProvider>{children}</AuthProvider>
+test("the persisted resource list exposes only completed downloads and explains incomplete files", () => {
+    const client = new QueryClient();
+    const api = createResourcesApi(async () => Response.json({ items: [] }));
+    client.setQueryData(resourceQueryKey("account", "10"), [
+        { id: "1", name: "Ready.pdf", contentLength: 1024, uploadStatus: "uploaded" },
+        { id: "2", name: "Pending.pdf", contentLength: 2048, uploadStatus: "pending" },
+        { id: "3", name: "Failed.pdf", contentLength: 1024, uploadStatus: "failed" },
+    ]);
+    const markup = renderToStaticMarkup(
+        <QueryClientProvider client={client}>
+            <ResourceLibrary courseId="10" lectures={[]} canManage={false} accountId="account" api={api} />
         </QueryClientProvider>,
     );
-}
+
+    assert.match(markup, /Ready.pdf/);
+    assert.match(markup, /Awaiting upload verification/);
+    assert.match(markup, /Upload failed/);
+    assert.equal(markup.match(/Open \/ download PDF/g)?.length, 1);
+    assert.doesNotMatch(markup, /type="file"|blob:/);
+});

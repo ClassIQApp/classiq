@@ -40,7 +40,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
 
     function showContent() {
         if (view.name === "resources") {
-            return <CourseResources canManage={course.role === "teacher"} />;
+            return <CourseResources courseId={course.id} lectures={course.lectures} canManage={course.role === "teacher"} />;
         }
 
         if (lecture) {
