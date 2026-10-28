@@ -1,20 +1,15 @@
 import { LlmError } from "../../core/ai/errors.ts";
-import type { LlmService } from "../../core/ai/llm-service.ts";
-import { ContentIndexService } from "../../core/content-index/content-index-service.ts";
-import { PostgresContentIndexRepository } from "../../core/content-index/postgres-content-index-repository.ts";
+import type { CourseRole } from "../../core/course-access/model.ts";
 import { QuizError } from "../../core/quiz/errors.ts";
-import { PostgresQuizRepository } from "../../core/quiz/postgres-quiz-repository.ts";
-import { QuizGenerator } from "../../core/quiz/quiz-generator.ts";
-import { QuizService } from "../../core/quiz/quiz-service.ts";
+import type { QuizService } from "../../core/quiz/quiz-service.ts";
 import { Hono, type Context, type Env, type MiddlewareHandler } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import type { Pool } from "pg";
 
 export interface QuizRouteDependencies<E extends Env> {
-    requireCourseRole: (role: "member" | "teacher") => MiddlewareHandler<E>;
+    requireCourseRole: (role: CourseRole) => MiddlewareHandler<E>;
     /** Reads the signed-in user's id; attempts always belong to this user. */
     getUserId: (c: Context) => string;
-    service: QuizService;
+    getService: () => QuizService;
 }
 
 const errorResponses: Record<QuizError["code"], [ContentfulStatusCode, string]> = {
@@ -26,7 +21,7 @@ const errorResponses: Record<QuizError["code"], [ContentfulStatusCode, string]> 
 };
 
 export function createQuizRoutes<E extends Env>(dependencies: QuizRouteDependencies<E>) {
-    const { requireCourseRole, getUserId, service } = dependencies;
+    const { requireCourseRole, getUserId, getService } = dependencies;
 
     if (typeof requireCourseRole !== "function" || typeof getUserId !== "function") {
         throw new TypeError("Course authorization middleware is required");
@@ -80,7 +75,7 @@ export function createQuizRoutes<E extends Env>(dependencies: QuizRouteDependenc
         }
 
         const { lectureId, questionCount } = body as { lectureId?: string; questionCount?: number };
-        const quiz = await service.generateQuiz(
+        const quiz = await getService().generateQuiz(
             {
                 courseId: c.req.param("courseId")!,
                 lectureId,
@@ -95,47 +90,32 @@ export function createQuizRoutes<E extends Env>(dependencies: QuizRouteDependenc
 
     /* List a course's quizzes, optionally for one lecture */
     routes.get("/:courseId/quizzes", member, async (c) => {
-        return c.json({ items: await service.listQuizzes(c.req.param("courseId")!, c.req.query("lectureId")) });
+        return c.json({ items: await getService().listQuizzes(c.req.param("courseId")!, c.req.query("lectureId")) });
     });
 
     /* Get a quiz to take; answers are only revealed after submitting */
     routes.get("/:courseId/quizzes/:quizId", member, async (c) => {
-        return c.json(await service.getQuiz(c.req.param("courseId")!, c.req.param("quizId")!));
+        return c.json(await getService().getQuiz(c.req.param("courseId")!, c.req.param("quizId")!));
     });
 
     /* Submit answers and get the scored result with the answer review */
     routes.post("/:courseId/quizzes/:quizId/attempts", member, async (c) => {
-        const result = await service.submitAttempt(c.req.param("courseId")!, c.req.param("quizId")!, getUserId(c), await c.req.json());
+        const result = await getService().submitAttempt(c.req.param("courseId")!, c.req.param("quizId")!, getUserId(c), await c.req.json());
 
         return c.json(result, 201);
     });
 
     /* List the signed-in user's attempts at a quiz */
     routes.get("/:courseId/quizzes/:quizId/attempts", member, async (c) => {
-        return c.json({ items: await service.listAttempts(c.req.param("courseId")!, c.req.param("quizId")!, getUserId(c)) });
+        return c.json({ items: await getService().listAttempts(c.req.param("courseId")!, c.req.param("quizId")!, getUserId(c)) });
     });
 
     /* Review one of the signed-in user's attempts */
     routes.get("/:courseId/quizzes/:quizId/attempts/:attemptId", member, async (c) => {
-        return c.json(await service.getAttempt(c.req.param("courseId")!, c.req.param("quizId")!, c.req.param("attemptId")!, getUserId(c)));
+        return c.json(
+            await getService().getAttempt(c.req.param("courseId")!, c.req.param("quizId")!, c.req.param("attemptId")!, getUserId(c)),
+        );
     });
 
     return routes;
-}
-
-export function createPersistentQuizRoutes<E extends Env>(options: {
-    requireCourseRole: QuizRouteDependencies<E>["requireCourseRole"];
-    getUserId: QuizRouteDependencies<E>["getUserId"];
-    database: Pool;
-    llm: LlmService;
-}) {
-    return createQuizRoutes<E>({
-        requireCourseRole: options.requireCourseRole,
-        getUserId: options.getUserId,
-        service: new QuizService(
-            new PostgresQuizRepository(options.database),
-            new ContentIndexService(new PostgresContentIndexRepository(options.database)),
-            new QuizGenerator(options.llm),
-        ),
-    });
 }

@@ -77,7 +77,11 @@ function fixture(generate = vi.fn(async () => ({ title: quiz.title, model: "gpt-
     const service = new QuizService(repository, { listPassages: vi.fn(async () => [passage]) }, { generate });
     const app = new Hono().route(
         "/courses",
-        createQuizRoutes({ service, requireCourseRole: requireTestRole, getUserId: (c) => c.req.header("test-user") ?? "9" }),
+        createQuizRoutes({
+            getService: () => service,
+            requireCourseRole: requireTestRole,
+            getUserId: (c) => c.req.header("test-user") ?? "9",
+        }),
     );
 
     function request(method: string, path: string, body?: unknown, role = "member") {
@@ -92,21 +96,30 @@ function fixture(generate = vi.fn(async () => ({ title: quiz.title, model: "gpt-
 }
 
 describe("quiz router", () => {
-    it("leaves quiz endpoints unmounted in the application until authorization is integrated", async () => {
-        const app = createApp(() => {
-            throw new Error("Database must not be accessed");
-        });
+    it("mounts quiz endpoints behind sessions without building the quiz service for anonymous requests", async () => {
+        const app = createApp(
+            () => {
+                throw new Error("Database must not be accessed");
+            },
+            { getAuth: () => ({ handler: async () => new Response(), api: { getSession: async () => null } }) },
+        );
 
-        const response = await app.request("/courses/1/quizzes/10/attempts", { method: "POST" });
+        const generateResponse = await app.request("/courses/1/quizzes", { method: "POST" });
+        const attemptResponse = await app.request("/courses/1/quizzes/10/attempts", { method: "POST" });
 
-        expect(response.status).toBe(404);
+        expect(generateResponse.status).toBe(401);
+        expect(attemptResponse.status).toBe(401);
     });
 
     it("requires injected authorization and user lookup at construction", () => {
         const service = new QuizService(fixture().repository, { listPassages: vi.fn() }, { generate: vi.fn() });
 
-        expect(() => createQuizRoutes({ service, requireCourseRole: undefined!, getUserId: () => "1" })).toThrow("authorization");
-        expect(() => createQuizRoutes({ service, requireCourseRole: requireTestRole, getUserId: undefined! })).toThrow("authorization");
+        expect(() => createQuizRoutes({ getService: () => service, requireCourseRole: undefined!, getUserId: () => "1" })).toThrow(
+            "authorization",
+        );
+        expect(() => createQuizRoutes({ getService: () => service, requireCourseRole: requireTestRole, getUserId: undefined! })).toThrow(
+            "authorization",
+        );
     });
 
     it("lets teachers generate quizzes but not members", async () => {
@@ -165,7 +178,7 @@ describe("quiz router", () => {
         const app = new Hono().route(
             "/courses",
             createQuizRoutes({
-                service: new QuizService(repository, { listPassages: vi.fn() }, { generate: vi.fn() }),
+                getService: () => new QuizService(repository, { listPassages: vi.fn() }, { generate: vi.fn() }),
                 requireCourseRole: requireTestRole,
                 getUserId: () => "42",
             }),
