@@ -6,12 +6,16 @@ import { PostgresContentIndexRepository } from "./core/content-index/postgres-co
 import { ResourceContentIndexer } from "./core/content-index/resource-content-indexer.ts";
 import { requireCourseRole } from "./core/course-access/middleware.ts";
 import type { CourseRole } from "./core/course-access/model.ts";
+import { PostgresCourseMembershipFacade } from "./core/course-access/postgres-course-membership-facade.ts";
+import { CourseInvitationService } from "./core/course-invitation/course-invitation-service.ts";
+import { PostgresCourseInvitationFacade } from "./core/course-invitation/postgres-course-invitation-facade.ts";
 import { readCourseResourceFileConfig } from "./core/course-resource/file/config.ts";
 import type { UploadAsset, UploadStorage } from "./core/uploads/model.ts";
 import { PostgresUploadRepository } from "./core/uploads/postgres-upload-repository.ts";
 import { S3UploadStorage } from "./core/uploads/s3-upload-storage.ts";
 import authRoutes from "./routes/auth/index.ts";
 import courseRoutes from "./routes/courses/index.ts";
+import { createCourseInvitationRoutes, createInvitationRoutes } from "./routes/invitations/index.ts";
 import { createUploadRoutes } from "./routes/uploads/index.ts";
 import { S3Client } from "@aws-sdk/client-s3";
 import { Hono } from "hono";
@@ -46,9 +50,15 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     let config: AuthConfig | undefined;
     let uploadStorage: UploadStorage | undefined;
     let resourceIndexer: ResourceContentIndexer | undefined;
+    let invitationService: CourseInvitationService | undefined;
     const getConfig = () => (config ??= (options.getAuthConfig ?? readAuthConfig)());
     const getAuth = options.getAuth ?? (() => (auth ??= createAuth(getDb(), getConfig())));
     const getUploadStorage = options.getUploadStorage ?? (() => (uploadStorage ??= createUploadStorage()));
+    const getInvitationService = () =>
+        (invitationService ??= new CourseInvitationService(
+            new PostgresCourseInvitationFacade(getDb()),
+            new PostgresCourseMembershipFacade(getDb()),
+        ));
     const getResourceIndexer = () =>
         (resourceIndexer ??= new ResourceContentIndexer(new ContentIndexService(new PostgresContentIndexRepository(getDb()))));
 
@@ -92,6 +102,8 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             indexResource,
         }),
     );
+    app.route("/courses/:courseId/invitations", createCourseInvitationRoutes<AppEnv>({ requireCourseRole, getInvitationService }));
+    app.route("/invitations", createInvitationRoutes<AppEnv>({ requireSession, getInvitationService }));
     app.get("/", (c) => c.json({ message: "hello from node" }));
 
     return app;

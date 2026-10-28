@@ -1,5 +1,7 @@
 import type { AuthUser } from "./api/auth/client";
 import { AuthProvider, useAuth } from "./api/auth/provider";
+import InviteForm from "./components/invitations/InviteForm";
+import PendingInvitations from "./components/invitations/PendingInvitations";
 import AppShell from "./components/layout/AppShell";
 import type { NavItem } from "./components/layout/Sidebar";
 import "./index.css";
@@ -44,7 +46,13 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
             );
         }
 
-        return <Courses onOpenCourse={setSelectedCourseId} />;
+        return (
+            <Courses
+                onOpenCourse={setSelectedCourseId}
+                pendingInvitations={<PendingInvitations />}
+                renderInviteForm={(courseId) => <InviteForm courseId={courseId} />}
+            />
+        );
     }
 
     return (
