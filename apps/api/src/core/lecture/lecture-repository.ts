@@ -16,9 +16,9 @@ export interface UpdateLectureInput {
 export interface LectureRepository {
     listCourseLectures(courseId: string): Promise<Lecture[]>;
 
-    getLecture(lectureId: string): Promise<Lecture | null>;
+    getLecture(courseId: string, lectureId: string): Promise<Lecture | null>;
 
     createLecture(input: CreateLectureInput): Promise<Lecture>;
 
-    updateLecture(lectureId: string, input: UpdateLectureInput): Promise<Lecture | null>;
+    updateLecture(courseId: string, lectureId: string, input: UpdateLectureInput): Promise<Lecture | null>;
 }

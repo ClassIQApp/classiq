@@ -7,6 +7,7 @@ import {
     type Course,
     type CourseMetadataUpdate,
     type CourseRegistration,
+    type MemberCourse,
 } from "./model.ts";
 
 export class CourseService {
@@ -16,13 +17,13 @@ export class CourseService {
         this.courseRepository = courseRepository;
     }
 
-    async registerCourse(registration: CourseRegistration): Promise<Course> {
+    async registerCourse(registration: CourseRegistration, creatorId: string): Promise<MemberCourse> {
         const parsedRegistration = courseRegistrationSchema.safeParse(registration);
         if (!parsedRegistration.success) {
             throw new CourseError("invalid_course");
         }
 
-        return this.courseRepository.register(parsedRegistration.data);
+        return this.courseRepository.register(parsedRegistration.data, { userId: creatorId, role: "teacher" });
     }
 
     async fetchCourse(courseId: string): Promise<Course> {
@@ -34,8 +35,8 @@ export class CourseService {
         return course;
     }
 
-    async listCourses(): Promise<Course[]> {
-        return this.courseRepository.listCourses();
+    async listMemberCourses(userId: string): Promise<MemberCourse[]> {
+        return this.courseRepository.listMemberCourses(userId);
     }
 
     async updateCourseMetadata(courseId: string, update: CourseMetadataUpdate): Promise<Course> {

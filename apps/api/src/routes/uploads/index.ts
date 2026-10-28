@@ -1,7 +1,4 @@
-import { ContentIndexService } from "../../core/content-index/content-index-service.ts";
-import { PostgresContentIndexRepository } from "../../core/content-index/postgres-content-index-repository.ts";
-import { ResourceContentIndexer } from "../../core/content-index/resource-content-indexer.ts";
-import type { CourseResourceFileConfig } from "../../core/course-resource/file/config.ts";
+import type { CourseRole } from "../../core/course-access/model.ts";
 import {
     UploadError,
     publicAsset,
@@ -11,11 +8,7 @@ import {
     type UploadRepository,
     type UploadStorage,
 } from "../../core/uploads/model.ts";
-import { PostgresUploadRepository } from "../../core/uploads/postgres-upload-repository.ts";
-import { S3UploadStorage } from "../../core/uploads/s3-upload-storage.ts";
-import type { S3Client } from "@aws-sdk/client-s3";
 import { Hono, type Env, type MiddlewareHandler } from "hono";
-import type { Pool } from "pg";
 import { z } from "zod";
 
 const id = z
@@ -55,9 +48,9 @@ const resourceInput = baseInput
 const completionInput = z.object({ uploadId: z.uuid() }).strict();
 
 export interface UploadRouteDependencies<E extends Env> {
-    requireCourseRole: (role: "member" | "teacher") => MiddlewareHandler<E>;
-    repository: UploadRepository;
-    storage: UploadStorage;
+    requireCourseRole: (role: CourseRole) => MiddlewareHandler<E>;
+    getRepository: () => UploadRepository;
+    getStorage: () => UploadStorage;
     /** Indexes a completed resource for retrieval. Failures are recorded by the indexer and never fail the upload. */
     indexResource?: (asset: UploadAsset) => Promise<unknown>;
 }
@@ -77,7 +70,7 @@ const validateParents: MiddlewareHandler = async (c, next) => {
 };
 
 export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDependencies<E>) {
-    const { requireCourseRole, repository, storage, indexResource } = dependencies;
+    const { requireCourseRole, getRepository, getStorage, indexResource } = dependencies;
 
     if (typeof requireCourseRole !== "function") {
         throw new TypeError("Course authorization middleware is required");
@@ -111,9 +104,9 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
     });
 
     async function find(courseId: string, kind: UploadKind, parentId: string) {
-        await repository.checkParent(courseId, kind === "recording" ? parentId : undefined);
+        await getRepository().checkParent(courseId, kind === "recording" ? parentId : undefined);
 
-        const asset = await repository.find(courseId, kind, parentId);
+        const asset = await getRepository().find(courseId, kind, parentId);
 
         if (!asset) {
             throw new UploadError(404, "NOT_FOUND", "File was not found.");
@@ -133,13 +126,13 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
                 body.lectureId = c.req.param("lectureId");
             }
 
-            await repository.checkParent(c.req.param("courseId")!, body.lectureId);
+            await getRepository().checkParent(c.req.param("courseId")!, body.lectureId);
 
             const idempotencyKey = z.uuid().optional().parse(c.req.header("Idempotency-Key"));
 
-            const asset = await repository.initiate(kind, c.req.param("courseId")!, body, idempotencyKey);
+            const asset = await getRepository().initiate(kind, c.req.param("courseId")!, body, idempotencyKey);
 
-            return c.json(await storage.ticket(asset), 201);
+            return c.json(await getStorage().ticket(asset), 201);
         });
 
         routes.post(`${item}/complete`, validateParents, teacher, async (c) => {
@@ -156,10 +149,10 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
             }
 
             if (asset.uploadStatus !== "uploaded") {
-                await storage.verify(asset);
+                await getStorage().verify(asset);
             }
 
-            const completed = await repository.complete(asset);
+            const completed = await getRepository().complete(asset);
 
             if (kind === "resource" && indexResource) {
                 try {
@@ -181,7 +174,7 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
 
             c.header("Cache-Control", "private, no-store");
 
-            return c.json(await storage.download(asset));
+            return c.json(await getStorage().download(asset));
         });
 
         routes.get(root, validateParents, member, async (c) => {
@@ -191,30 +184,13 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
                 return c.json(publicAsset(await find(c.req.param("courseId")!, kind, c.req.param("lectureId")!)));
             }
 
-            await repository.checkParent(c.req.param("courseId")!);
+            await getRepository().checkParent(c.req.param("courseId")!);
 
-            const assets = await repository.listResources(c.req.param("courseId")!);
+            const assets = await getRepository().listResources(c.req.param("courseId")!);
 
             return c.json({ items: assets.map((asset) => publicAsset(asset)) });
         });
     }
 
     return routes;
-}
-
-export function createPersistentUploadRoutes<E extends Env>(options: {
-    requireCourseRole: UploadRouteDependencies<E>["requireCourseRole"];
-    database: Pool;
-    s3: S3Client;
-    fileConfig: CourseResourceFileConfig;
-}) {
-    const storage = new S3UploadStorage(options.fileConfig, options.s3);
-    const indexer = new ResourceContentIndexer(new ContentIndexService(new PostgresContentIndexRepository(options.database)));
-
-    return createUploadRoutes<E>({
-        requireCourseRole: options.requireCourseRole,
-        repository: new PostgresUploadRepository(options.database),
-        storage,
-        indexResource: (asset) => indexer.index({ courseId: asset.courseId, resourceId: asset.resourceId! }, () => storage.read(asset)),
-    });
 }

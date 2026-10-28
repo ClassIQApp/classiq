@@ -57,7 +57,7 @@ export class ApiLambda extends Construct {
                     CorsHttpMethod.DELETE,
                     CorsHttpMethod.OPTIONS,
                 ],
-                allowHeaders: ["Content-Type", "Authorization"],
+                allowHeaders: ["Content-Type", "Authorization", "Idempotency-Key"],
             },
         });
 

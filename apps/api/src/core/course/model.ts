@@ -1,3 +1,4 @@
+import { courseRoleSchema } from "../course-access/model.ts";
 import * as z from "zod/mini";
 
 const nonemptyText = z.string().check(z.refine((value) => value.trim().length > 0));
@@ -25,3 +26,6 @@ export const courseSchema = z.strictObject({
     description: z.nullable(z.string()),
 });
 export type Course = z.infer<typeof courseSchema>;
+
+export const memberCourseSchema = z.extend(courseSchema, { role: courseRoleSchema });
+export type MemberCourse = z.infer<typeof memberCourseSchema>;

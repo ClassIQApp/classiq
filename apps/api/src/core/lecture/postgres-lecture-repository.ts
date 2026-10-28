@@ -1,6 +1,6 @@
 import type { CreateLectureInput, LectureRepository, UpdateLectureInput } from "./lecture-repository.ts";
 import type { Lecture } from "./model.ts";
-import type { Pool } from "pg";
+import { DatabaseError, type Pool } from "pg";
 
 interface LectureRow {
     id: number;
@@ -10,6 +10,12 @@ interface LectureRow {
     status: Lecture["status"];
     status_message: string;
 }
+
+// https://www.postgresql.org/docs/current/errcodes-appendix.html
+const postgresErrorCodes = {
+    invalidTextRepresentation: "22P02",
+    numericValueOutOfRange: "22003",
+} as const;
 
 function toLecture(row: LectureRow): Lecture {
     return {
@@ -32,7 +38,7 @@ export class PostgresLectureRepository implements LectureRepository {
     }
 
     async listCourseLectures(courseId: string): Promise<Lecture[]> {
-        const result = await this.database.query<LectureRow>(
+        const rows = await this.query(
             `
             SELECT
                 id,
@@ -48,11 +54,11 @@ export class PostgresLectureRepository implements LectureRepository {
             [courseId],
         );
 
-        return result.rows.map((row) => toLecture(row));
+        return rows.map((row) => toLecture(row));
     }
 
-    async getLecture(lectureId: string): Promise<Lecture | null> {
-        const result = await this.database.query<LectureRow>(
+    async getLecture(courseId: string, lectureId: string): Promise<Lecture | null> {
+        const rows = await this.query(
             `
             SELECT
                 id,
@@ -62,18 +68,19 @@ export class PostgresLectureRepository implements LectureRepository {
                 status,
                 status_message
             FROM lectures
-            WHERE id = $1
+            WHERE fk_course_id = $1
+                AND id = $2
             `,
-            [lectureId],
+            [courseId, lectureId],
         );
 
-        const row = result.rows[0];
+        const row = rows[0];
 
         return row ? toLecture(row) : null;
     }
 
     async createLecture(input: CreateLectureInput): Promise<Lecture> {
-        const result = await this.database.query<LectureRow>(
+        const rows = await this.query(
             `
             INSERT INTO lectures (
                 fk_course_id,
@@ -94,7 +101,7 @@ export class PostgresLectureRepository implements LectureRepository {
             [input.courseId, input.title, input.description],
         );
 
-        const row = result.rows[0];
+        const row = rows[0];
 
         if (!row) {
             throw new Error("Lecture creation returned no record");
@@ -103,17 +110,18 @@ export class PostgresLectureRepository implements LectureRepository {
         return toLecture(row);
     }
 
-    async updateLecture(lectureId: string, input: UpdateLectureInput): Promise<Lecture | null> {
-        const result = await this.database.query<LectureRow>(
+    async updateLecture(courseId: string, lectureId: string, input: UpdateLectureInput): Promise<Lecture | null> {
+        const rows = await this.query(
             `
             UPDATE lectures
             SET
-                title = COALESCE($2, title),
-                description = COALESCE($3, description),
-                status = COALESCE($4, status),
-                status_message = COALESCE($5, status_message),
+                title = COALESCE($3, title),
+                description = COALESCE($4, description),
+                status = COALESCE($5, status),
+                status_message = COALESCE($6, status_message),
                 last_updated_at = CURRENT_TIMESTAMP
-            WHERE id = $1
+            WHERE fk_course_id = $1
+                AND id = $2
             RETURNING
                 id,
                 fk_course_id,
@@ -122,11 +130,28 @@ export class PostgresLectureRepository implements LectureRepository {
                 status,
                 status_message
             `,
-            [lectureId, input.title ?? null, input.description ?? null, input.status ?? null, input.statusMessage ?? null],
+            [courseId, lectureId, input.title ?? null, input.description ?? null, input.status ?? null, input.statusMessage ?? null],
         );
 
-        const row = result.rows[0];
+        const row = rows[0];
 
         return row ? toLecture(row) : null;
+    }
+
+    private async query(text: string, values: (string | null)[]): Promise<LectureRow[]> {
+        try {
+            const result = await this.database.query<LectureRow>(text, values);
+
+            return result.rows;
+        } catch (error) {
+            if (
+                error instanceof DatabaseError &&
+                (error.code === postgresErrorCodes.invalidTextRepresentation || error.code === postgresErrorCodes.numericValueOutOfRange)
+            ) {
+                return [];
+            }
+
+            throw error;
+        }
     }
 }
