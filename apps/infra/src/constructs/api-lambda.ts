@@ -8,6 +8,8 @@ import { ApiGatewayv2DomainProperties } from "aws-cdk-lib/aws-route53-targets";
 import { Construct } from "constructs";
 import { fileURLToPath } from "node:url";
 
+export const API_FUNCTION_NAME = "ApiLambda-fn";
+
 const apiZip = fileURLToPath(new URL("../../../api/dist/lambda.zip", import.meta.url));
 
 export interface ApiLambdaProps {
@@ -18,15 +20,17 @@ export interface ApiLambdaProps {
 }
 
 export class ApiLambda extends Construct {
+    public readonly domainName: string;
     public readonly handler: NodeLambda;
     public readonly certificate: Certificate;
     public readonly api: HttpApi;
 
     constructor(scope: Construct, id: string, { domainName, hostedZone, allowedOrigin, environment }: ApiLambdaProps) {
         super(scope, id);
+        this.domainName = domainName;
 
         this.handler = new NodeLambda(this, "Fn", {
-            functionName: `${id}-fn`,
+            functionName: API_FUNCTION_NAME,
             codePath: apiZip,
             environment,
         });
