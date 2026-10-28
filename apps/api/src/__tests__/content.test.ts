@@ -38,6 +38,7 @@ function fixture(search: ContentIndexRepository["search"] = async () => [passage
         replaceChunks: vi.fn(),
         markFailed: vi.fn(),
         search: vi.fn(search),
+        listPassages: vi.fn(),
     } satisfies ContentIndexRepository;
     const app = new Hono().route(
         "/courses",

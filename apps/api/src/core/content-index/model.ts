@@ -65,8 +65,14 @@ export const contentSearchQuerySchema = z.strictObject({
 export type ContentSearchQuery = z.input<typeof contentSearchQuerySchema>;
 export type ParsedContentSearchQuery = z.infer<typeof contentSearchQuerySchema>;
 
-/** A retrieved chunk, traceable to the lecture timestamp or resource page it came from. */
-export interface ContentPassage extends ContentLocation {
+export const contentScopeSchema = z.strictObject({
+    courseId: id,
+    lectureId: z.optional(id),
+});
+export type ContentScope = z.infer<typeof contentScopeSchema>;
+
+/** An indexed chunk, traceable to the lecture timestamp or resource page it came from. */
+export interface IndexedPassage extends ContentLocation {
     readonly id: string;
     readonly kind: ContentSourceKind;
     readonly courseId: string;
@@ -74,5 +80,8 @@ export interface ContentPassage extends ContentLocation {
     readonly resourceId?: string;
     readonly title: string;
     readonly content: string;
+}
+
+export interface ContentPassage extends IndexedPassage {
     readonly score: number;
 }

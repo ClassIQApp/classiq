@@ -2,15 +2,18 @@ import { chunkSections, DEFAULT_CHUNKING, type ChunkingOptions } from "./chunker
 import type { ContentIndexRepository } from "./content-index-repository.ts";
 import { ContentIndexError } from "./errors.ts";
 import {
+    contentScopeSchema,
     contentSearchQuerySchema,
     contentSourceReferenceSchema,
     resourcePageSchema,
     transcriptSegmentSchema,
     type ContentPassage,
+    type ContentScope,
     type ContentSearchQuery,
     type ContentSection,
     type ContentSource,
     type ContentSourceReference,
+    type IndexedPassage,
 } from "./model.ts";
 import { createHash } from "node:crypto";
 import * as z from "zod/mini";
@@ -21,6 +24,8 @@ const sectionsSchemaByKind = {
 } as const;
 
 const MAX_STATUS_MESSAGE_LENGTH = 500;
+
+const MAX_LISTED_PASSAGES = 2000;
 
 interface ContentIndexServiceOptions {
     readonly chunking?: ChunkingOptions;
@@ -76,6 +81,17 @@ export class ContentIndexService {
         }
 
         return this.repository.search(parsedQuery.data);
+    }
+
+    /** Lists up to 2000 indexed passages for a course or one lecture, in reading order. */
+    async listPassages(scope: ContentScope): Promise<IndexedPassage[]> {
+        const parsedScope = contentScopeSchema.safeParse(scope);
+
+        if (!parsedScope.success) {
+            throw new ContentIndexError("invalid_query");
+        }
+
+        return this.repository.listPassages(parsedScope.data, MAX_LISTED_PASSAGES);
     }
 
     private parseReference(reference: ContentSourceReference): ContentSourceReference {
