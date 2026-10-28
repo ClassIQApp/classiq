@@ -397,3 +397,32 @@
         flex-direction: column;
     }
 }
+
+.course-sections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+}
+
+.course-section-button {
+    min-height: var(--size-control);
+    padding: var(--space-2) var(--space-4);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+}
+
+.course-section-button[aria-current="page"] {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+}
+
+.course-section-button:focus-visible {
+    outline: var(--border-width-thick) solid var(--color-primary);
+    outline-offset: var(--space-1);
+}

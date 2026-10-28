@@ -212,6 +212,7 @@
 /*Main*/
 
 .main-content {
+    align-content: start;
     min-height: calc(100vh - var(--header-height));
     padding: var(--space-8);
     background: var(--color-bg);

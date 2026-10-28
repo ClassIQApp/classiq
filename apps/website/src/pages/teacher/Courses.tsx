@@ -1,147 +1,80 @@
-import { useAuth } from "../../api/auth/provider";
-import type { Course } from "../../api/courses/types";
-import { useCourses } from "../../api/courses/use-courses";
+import { ApiError } from "../../api/auth/client";
+import type { CourseSettingsUpdate } from "../../api/courses/types";
+import { useCourses, useCreateCourse, useUpdateCourse } from "../../api/courses/use-courses";
+import CourseCard from "../../components/courses/course-card";
+import CourseForm from "../../components/courses/course-form";
 import "./TeacherCourses.css";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { FormEvent } from "react";
 import { useState } from "react";
+import type { ReactNode } from "react";
 
-interface CourseInput {
-    code: string;
-    name: string;
-    slug: string;
-    description: string;
-}
+const emptyCourse: CourseSettingsUpdate = { code: "", name: "", description: "" };
 
 function createSlug(value: string) {
     return value
         .trim()
         .toLowerCase()
-        .replaceAll(/[^a-z0-9]+/g, "-")
+        .replaceAll(/[^\p{L}\p{N}]+/gu, "-")
         .replaceAll(/^-+|-+$/g, "");
 }
 
-export default function Courses() {
-    const { apiFetch } = useAuth();
-    const { data: courses = [], isPending, isError, refetch } = useCourses(true);
-
-    const queryClient = useQueryClient();
-
-    const [showCreateForm, setShowCreateForm] = useState(false);
-    const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-
-    const [code, setCode] = useState("");
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-
-    const createCourse = useMutation({
-        mutationFn: async (course: CourseInput) => {
-            const response = await apiFetch("/courses", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(course),
-            });
-
-            if (!response.ok) {
-                throw new Error("Course creation failed");
-            }
-
-            return response.json();
-        },
-
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({
-                queryKey: ["courses"],
-            });
-
-            clearForm();
-            setShowCreateForm(false);
-        },
-    });
-
-    const updateCourse = useMutation({
-        mutationFn: async ({ courseId, course }: { courseId: string; course: CourseInput }) => {
-            const response = await apiFetch(`/courses/${courseId}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(course),
-            });
-
-            if (!response.ok) {
-                throw new Error("Course update failed");
-            }
-
-            return response.json();
-        },
-
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({
-                queryKey: ["courses"],
-            });
-
-            clearForm();
-            setEditingCourse(null);
-        },
-    });
-
-    function clearForm() {
-        setCode("");
-        setName("");
-        setDescription("");
+function describeCourseError(error: Error | null) {
+    if (!error) {
+        return null;
     }
 
+    if (error instanceof ApiError && error.code === "COURSE_CONFLICT") {
+        return "A course with this code and name already exists. Change the code or name and try again.";
+    }
+
+    return error.message;
+}
+
+interface CoursesProps {
+    onOpenCourse: (courseId: string) => void;
+    pendingInvitations?: ReactNode;
+    renderInviteForm?: (courseId: string) => ReactNode;
+}
+
+export default function Courses({ onOpenCourse, pendingInvitations, renderInviteForm }: CoursesProps) {
+    const { data: courses = [], isPending, isError, error, refetch } = useCourses();
+    const createCourse = useCreateCourse();
+    const updateCourse = useUpdateCourse();
+
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+
+    const editingCourse = courses.find((course) => course.id === editingCourseId && course.role === "teacher");
+
     function openCreateForm() {
-        clearForm();
-        setEditingCourse(null);
+        createCourse.reset();
+        setEditingCourseId(null);
         setShowCreateForm(true);
     }
 
-    function openEditForm(course: Course) {
+    function openEditForm(courseId: string) {
+        updateCourse.reset();
         setShowCreateForm(false);
-        setEditingCourse(course);
-
-        setCode(course.code);
-        setName(course.name);
-        setDescription(course.description);
+        setEditingCourseId(courseId);
     }
 
     function cancelForm() {
-        clearForm();
         setShowCreateForm(false);
-        setEditingCourse(null);
+        setEditingCourseId(null);
     }
 
-    function handleCreate(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-
-        createCourse.mutate({
-            code,
-            name,
-            slug: createSlug(`${code}-${name}`),
-            description,
-        });
+    function handleCreate(course: CourseSettingsUpdate) {
+        createCourse.mutate(
+            { ...course, slug: createSlug(`${course.code}-${course.name}`) },
+            { onSuccess: () => setShowCreateForm(false) },
+        );
     }
 
-    function handleUpdate(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-
+    function handleUpdate(update: CourseSettingsUpdate) {
         if (!editingCourse) {
             return;
         }
 
-        updateCourse.mutate({
-            courseId: editingCourse.id,
-            course: {
-                code,
-                name,
-                slug: createSlug(`${code}-${name}`),
-                description,
-            },
-        });
+        updateCourse.mutate({ courseId: editingCourse.id, update }, { onSuccess: () => setEditingCourseId(null) });
     }
 
     if (isPending) {
@@ -152,7 +85,7 @@ export default function Courses() {
         return (
             <div className="teacher-course-error" role="alert">
                 <h2>Courses could not load</h2>
-                <p>There was a problem loading your courses.</p>
+                <p>{error.message}</p>
 
                 <button className="teacher-course-primary-btn" type="button" onClick={() => void refetch()}>
                     Retry
@@ -165,9 +98,9 @@ export default function Courses() {
         <div className="teacher-courses-page">
             <header className="teacher-courses-header">
                 <div>
-                    <p className="teacher-courses-eyebrow">Course Management</p>
+                    <p className="teacher-courses-eyebrow">My Courses</p>
                     <h1>Courses</h1>
-                    <p className="teacher-courses-subtitle">Create courses and manage course information.</p>
+                    <p className="teacher-courses-subtitle">Open the courses you teach or have joined, or create a new course.</p>
                 </div>
 
                 {!showCreateForm && !editingCourse && (
@@ -177,115 +110,41 @@ export default function Courses() {
                 )}
             </header>
 
+            {pendingInvitations}
+
             {showCreateForm && (
-                <section className="teacher-course-form-card">
-                    <div className="teacher-course-form-heading">
-                        <div>
-                            <p className="teacher-courses-eyebrow">New Course</p>
-                            <h2>Create Course</h2>
-                            <p>Enter the information students will see for this course.</p>
-                        </div>
-                    </div>
-
-                    <form className="teacher-course-form" onSubmit={handleCreate}>
-                        <div className="teacher-course-form-grid">
-                            <label>
-                                Course Code
-                                <input
-                                    type="text"
-                                    value={code}
-                                    onChange={(event) => setCode(event.target.value)}
-                                    placeholder="CSI 4500"
-                                    required
-                                />
-                            </label>
-
-                            <label>
-                                Course Name
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={(event) => setName(event.target.value)}
-                                    placeholder="Operating Systems"
-                                    required
-                                />
-                            </label>
-                        </div>
-
-                        <label>
-                            Description
-                            <textarea
-                                value={description}
-                                onChange={(event) => setDescription(event.target.value)}
-                                placeholder="Enter a short course description"
-                                rows={4}
-                            />
-                        </label>
-
-                        {createCourse.isError && (
-                            <p className="teacher-course-form-error" role="alert">
-                                Course could not be created. Please try again.
-                            </p>
-                        )}
-
-                        <div className="teacher-course-form-actions">
-                            <button className="teacher-course-primary-btn" type="submit" disabled={createCourse.isPending}>
-                                {createCourse.isPending ? "Creating..." : "Create Course"}
-                            </button>
-
-                            <button className="teacher-course-secondary-btn" type="button" onClick={cancelForm}>
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </section>
+                <CourseForm
+                    eyebrow="New Course"
+                    title="Create Course"
+                    description="Enter the information Members will see. You will be this course's Teacher."
+                    initialValues={emptyCourse}
+                    submitLabel="Create Course"
+                    pendingLabel="Creating…"
+                    pending={createCourse.isPending}
+                    error={describeCourseError(createCourse.error)}
+                    onSubmit={handleCreate}
+                    onCancel={cancelForm}
+                />
             )}
 
             {editingCourse && (
-                <section className="teacher-course-form-card">
-                    <div className="teacher-course-form-heading">
-                        <div>
-                            <p className="teacher-courses-eyebrow">Course Settings</p>
-                            <h2>{editingCourse.name}</h2>
-                            <p>Update the course information students will see.</p>
-                        </div>
-                    </div>
+                <>
+                    <CourseForm
+                        key={editingCourse.id}
+                        eyebrow="Course Settings"
+                        title={editingCourse.name}
+                        description="Update the course information Members will see."
+                        initialValues={editingCourse}
+                        submitLabel="Save Changes"
+                        pendingLabel="Saving…"
+                        pending={updateCourse.isPending}
+                        error={describeCourseError(updateCourse.error)}
+                        onSubmit={handleUpdate}
+                        onCancel={cancelForm}
+                    />
 
-                    <form className="teacher-course-form" onSubmit={handleUpdate}>
-                        <div className="teacher-course-form-grid">
-                            <label>
-                                Course Code
-                                <input type="text" value={code} onChange={(event) => setCode(event.target.value)} required />
-                            </label>
-
-                            <label>
-                                Course Name
-                                <input type="text" value={name} onChange={(event) => setName(event.target.value)} required />
-                            </label>
-                        </div>
-
-                        <label>
-                            Description
-                            <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} />
-                        </label>
-
-                        {updateCourse.isError && (
-                            <p className="teacher-course-form-error" role="alert">
-                                Course could not be updated. Please try again.
-                            </p>
-                        )}
-
-                        <div className="teacher-course-form-actions">
-                            <button className="teacher-course-primary-btn" type="submit" disabled={updateCourse.isPending}>
-                                {updateCourse.isPending ? "Saving..." : "Save Changes"}
-                            </button>
-
-                            <button className="teacher-course-secondary-btn" type="button" onClick={cancelForm}>
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </section>
+                    {renderInviteForm?.(editingCourse.id)}
+                </>
             )}
 
             <section className="teacher-course-list-section">
@@ -299,7 +158,7 @@ export default function Courses() {
                 {courses.length === 0 ? (
                     <div className="teacher-course-empty">
                         <h3>No courses yet</h3>
-                        <p>Create your first course to get started.</p>
+                        <p>Create a course to teach it, or accept an invitation to join one.</p>
 
                         {!showCreateForm && (
                             <button className="teacher-course-primary-btn" type="button" onClick={openCreateForm}>
@@ -310,25 +169,12 @@ export default function Courses() {
                 ) : (
                     <ul className="teacher-course-grid" role="list">
                         {courses.map((course) => (
-                            <li className="teacher-course-card" key={course.id}>
-                                <div>
-                                    <span className="teacher-course-code">{course.code}</span>
-
-                                    <h3>{course.name}</h3>
-
-                                    <p className="teacher-course-description">{course.description || "No description added."}</p>
-                                </div>
-
-                                <div className="teacher-course-card-footer">
-                                    <span>
-                                        {course.lectures.length} {course.lectures.length === 1 ? "lecture" : "lectures"}
-                                    </span>
-
-                                    <button className="teacher-course-settings-btn" type="button" onClick={() => openEditForm(course)}>
-                                        Course Settings
-                                    </button>
-                                </div>
-                            </li>
+                            <CourseCard
+                                key={course.id}
+                                course={course}
+                                onOpen={() => onOpenCourse(course.id)}
+                                onEditSettings={() => openEditForm(course.id)}
+                            />
                         ))}
                     </ul>
                 )}
