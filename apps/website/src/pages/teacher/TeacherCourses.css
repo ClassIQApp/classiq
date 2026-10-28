@@ -225,6 +225,12 @@
     font-size: var(--text-sm);
 }
 
+.teacher-course-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
 .teacher-course-empty,
 .teacher-course-error {
     display: grid;
@@ -240,6 +246,27 @@
 .teacher-courses-page :is(button, input, textarea):focus-visible {
     outline: var(--border-width-thick) solid var(--color-primary);
     outline-offset: var(--space-1);
+}
+
+.course-role-badge {
+    display: inline-flex;
+    margin-left: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.course-role-teacher {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.course-role-member {
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
 }
 
 @media (max-width: 48rem) {

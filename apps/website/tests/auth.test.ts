@@ -54,9 +54,9 @@ test("native auth endpoints send cookies and JSON; restoration uses the server i
         assert.equal(init?.credentials, "include");
     }
 
-    assert.equal(calls[0].init?.method, "POST");
-    assert.equal(calls[0].init?.body, JSON.stringify({ name: "Alice", email: alice.email, password: "password123" }));
-    assert.equal(calls[3].init?.body, "{}");
+    assert.equal(calls[0]?.init?.method, "POST");
+    assert.equal(calls[0]?.init?.body, JSON.stringify({ name: "Alice", email: alice.email, password: "password123" }));
+    assert.equal(calls[3]?.init?.body, "{}");
 });
 
 test("successful requests cannot opt out of credentials; abort signals pass through", async () => {

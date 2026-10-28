@@ -39,6 +39,7 @@ test("the uploaded filter excludes pending recordings", () => {
         code: "CSI 4500",
         name: "Operating Systems",
         description: "Course recordings.",
+        role: "member",
         lectures: [lecture, { ...lecture, id: "2", title: "Not uploaded", status: "pending" }],
     };
 

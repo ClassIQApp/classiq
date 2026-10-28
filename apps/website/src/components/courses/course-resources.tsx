@@ -1,26 +1,26 @@
-import "./CourseResources.css";
 import { useState } from "react";
-import React from "react";
+import type { ChangeEvent } from "react";
 
 interface ResourceFile {
     name: string;
     url: string;
 }
 
-export default function CourseResources() {
+export default function CourseResources({ canManage }: { canManage: boolean }) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [resources, setResources] = useState<ResourceFile[]>([]);
 
-    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-        if (e.target.files && e.target.files[0]) {
-            setSelectedFile(e.target.files[0]);
+    function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+        if (event.target.files && event.target.files[0]) {
+            setSelectedFile(event.target.files[0]);
         }
     }
 
     function handleUpload() {
-        if (!selectedFile) return;
+        if (!selectedFile) {
+            return;
+        }
 
-        //temporary local URL so the PDF can be viewed in the browser
         const fileUrl = URL.createObjectURL(selectedFile);
         setResources([...resources, { name: selectedFile.name, url: fileUrl }]);
         setSelectedFile(null);
@@ -29,18 +29,26 @@ export default function CourseResources() {
     return (
         <div className="resources-container">
             <h2>Course Resources</h2>
-            <p className="resources-desc">Upload and view PDF lecture notes, assignments, or study guides.</p>
+            <p className="resources-desc">
+                {canManage
+                    ? "Upload and view PDF lecture notes, assignments, or study guides."
+                    : "View PDF lecture notes, assignments, or study guides."}
+            </p>
 
-            <div className="resources-card">
-                <label className="resources-label">Select PDF File</label>
-                <input type="file" accept=".pdf" onChange={handleFileChange} className="resources-input" />
+            {canManage && (
+                <div className="resources-card">
+                    <label className="resources-label">Select PDF File</label>
+                    <input type="file" accept=".pdf" onChange={handleFileChange} className="resources-input" />
 
-                {selectedFile && (
-                    <button onClick={handleUpload} className="resources-btn">
-                        Upload {selectedFile.name}
-                    </button>
-                )}
-            </div>
+                    {selectedFile && (
+                        <button onClick={handleUpload} className="resources-btn">
+                            Upload {selectedFile.name}
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {!canManage && <p>No resources have been shared yet.</p>}
 
             {resources.length > 0 && (
                 <div className="resources-list-section">
