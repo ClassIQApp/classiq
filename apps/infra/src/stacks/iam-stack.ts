@@ -1,7 +1,7 @@
 import type { AppStack } from "./app-stack.ts";
 import type { CloudFrontCertificateStack } from "./cloudfront-certificate-stack.ts";
 import { CfnOutput, Stack, type StackProps } from "aws-cdk-lib";
-import { ArnPrincipal, ManagedPolicy, OidcProviderNative, PolicyStatement, Role, User, WebIdentityPrincipal } from "aws-cdk-lib/aws-iam";
+import { Effect, ManagedPolicy, OidcProviderNative, PolicyStatement, Role, User, WebIdentityPrincipal } from "aws-cdk-lib/aws-iam";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import type { Construct } from "constructs";
 
@@ -25,123 +25,94 @@ export class IamStack extends Stack {
             },
         });
 
-        const devTeamUser = new User(this, "DevTeamUser", {
-            userName: "classiq-devteam",
-            password: passwordSecret.secretValue,
-            passwordResetRequired: true,
-            managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName("IAMUserChangePassword")],
-        });
-
-        const readOnlyRole = new Role(this, "ReadOnlyRole", {
-            roleName: "classiq-readonly",
-            description: "Read-only access to this project's resources.",
-            assumedBy: new ArnPrincipal(devTeamUser.userArn),
-        });
-
-        const { staticSite, apiLambda, hostedZone } = appStack;
-
-        readOnlyRole.addToPolicy(
+        const { staticSite, apiLambda, hostedZone, fileStorage } = appStack;
+        const access = [
             new PolicyStatement({
-                sid: "CloudFormationStacks",
+                sid: "ProjectBuckets",
+                actions: ["s3:*"],
+                resources: [
+                    staticSite.bucket.bucketArn,
+                    staticSite.bucket.arnForObjects("*"),
+                    fileStorage.bucket.bucketArn,
+                    fileStorage.bucket.arnForObjects("*"),
+                ],
+            }),
+            new PolicyStatement({
+                sid: "SiteDistribution",
+                actions: ["cloudfront:*"],
+                resources: [staticSite.distribution.distributionArn],
+            }),
+            new PolicyStatement({
+                sid: "ApiFunction",
+                actions: ["lambda:*"],
+                resources: [apiLambda.handler.functionArn, `${apiLambda.handler.functionArn}:*`],
+            }),
+            new PolicyStatement({
+                sid: "ApiLogs",
+                actions: ["logs:*"],
+                resources: [apiLambda.handler.functionLogGroup.logGroupArn, `${apiLambda.handler.functionLogGroup.logGroupArn}:*`],
+            }),
+            new PolicyStatement({
+                sid: "HttpApi",
+                actions: ["apigateway:GET", "apigateway:POST", "apigateway:PUT", "apigateway:PATCH", "apigateway:DELETE"],
+                resources: [
+                    `arn:${this.partition}:apigateway:${this.region}::/apis/${apiLambda.api.apiId}`,
+                    `arn:${this.partition}:apigateway:${this.region}::/apis/${apiLambda.api.apiId}/*`,
+                    `arn:${this.partition}:apigateway:${this.region}::/domainnames/${apiLambda.domainName}`,
+                    `arn:${this.partition}:apigateway:${this.region}::/domainnames/${apiLambda.domainName}/*`,
+                ],
+            }),
+            new PolicyStatement({
+                sid: "Certificates",
+                actions: ["acm:*"],
+                resources: [apiLambda.certificate.certificateArn, cloudFrontCertificateStack.certificate.certificateArn],
+            }),
+            new PolicyStatement({
+                sid: "HostedZone",
+                actions: [
+                    "route53:GetHostedZone",
+                    "route53:ListResourceRecordSets",
+                    "route53:ListTagsForResource",
+                    "route53:ChangeResourceRecordSets",
+                    "route53:ChangeTagsForResource",
+                    "route53:UpdateHostedZoneComment",
+                ],
+                resources: [`arn:${this.partition}:route53:::hostedzone/${hostedZone.hostedZoneId}`],
+            }),
+            new PolicyStatement({
+                sid: "InspectStacks",
                 actions: [
                     "cloudformation:DescribeStacks",
                     "cloudformation:DescribeStackEvents",
                     "cloudformation:DescribeStackResources",
+                    "cloudformation:ListStackResources",
                     "cloudformation:GetTemplate",
                 ],
                 resources: [appStack.stackId, cloudFrontCertificateStack.stackId, this.stackId],
             }),
-        );
-
-        readOnlyRole.addToPolicy(
             new PolicyStatement({
-                sid: "SiteBucket",
-                actions: ["s3:GetObject", "s3:GetBucketLocation", "s3:ListBucket"],
-                resources: [staticSite.bucket.bucketArn, `${staticSite.bucket.bucketArn}/*`],
+                sid: "OwnPassword",
+                actions: ["iam:ChangePassword", "iam:GetUser"],
+                resources: [this.formatArn({ service: "iam", region: "", resource: "user", resourceName: "classiq-devteam" })],
             }),
-        );
-
-        readOnlyRole.addToPolicy(
-            new PolicyStatement({
-                sid: "SiteDistribution",
-                actions: ["cloudfront:GetDistribution", "cloudfront:GetDistributionConfig", "cloudfront:ListTagsForResource"],
-                resources: [
-                    this.formatArn({
-                        service: "cloudfront",
-                        region: "",
-                        resource: "distribution",
-                        resourceName: staticSite.distribution.distributionId,
-                    }),
-                ],
-            }),
-        );
-
-        readOnlyRole.addToPolicy(
-            new PolicyStatement({
-                sid: "ApiFunction",
-                actions: ["lambda:GetFunction", "lambda:GetFunctionConfiguration", "lambda:ListVersionsByFunction"],
-                resources: [apiLambda.handler.functionArn],
-            }),
-        );
-
-        readOnlyRole.addToPolicy(
-            new PolicyStatement({
-                sid: "ApiFunctionLogs",
-                actions: ["logs:DescribeLogStreams", "logs:GetLogEvents", "logs:FilterLogEvents"],
-                resources: [apiLambda.handler.functionLogGroup.logGroupArn, `${apiLambda.handler.functionLogGroup.logGroupArn}:*`],
-            }),
-        );
-
-        readOnlyRole.addToPolicy(
-            new PolicyStatement({
-                sid: "HttpApi",
-                actions: ["apigateway:GET"],
-                resources: [
-                    `arn:${this.partition}:apigateway:${this.region}::/apis`,
-                    `arn:${this.partition}:apigateway:${this.region}::/apis/${apiLambda.api.apiId}`,
-                    `arn:${this.partition}:apigateway:${this.region}::/apis/${apiLambda.api.apiId}/*`,
-                ],
-            }),
-        );
-
-        readOnlyRole.addToPolicy(
-            new PolicyStatement({
-                sid: "Certificates",
-                actions: ["acm:DescribeCertificate", "acm:GetCertificate", "acm:ListTagsForCertificate"],
-                resources: [apiLambda.certificate.certificateArn, cloudFrontCertificateStack.certificate.certificateArn],
-            }),
-        );
-
-        readOnlyRole.addToPolicy(
-            new PolicyStatement({
-                sid: "HostedZone",
-                actions: ["route53:GetHostedZone", "route53:ListResourceRecordSets", "route53:ListTagsForResource"],
-                resources: [`arn:${this.partition}:route53:::hostedzone/${hostedZone.hostedZoneId}`],
-            }),
-        );
-
-        readOnlyRole.addToPolicy(
-            new PolicyStatement({
-                sid: "ConsoleListPages",
-                actions: [
-                    "cloudformation:ListStacks",
-                    "s3:ListAllMyBuckets",
-                    "lambda:ListFunctions",
-                    "cloudfront:ListDistributions",
-                    "route53:ListHostedZones",
-                    "acm:ListCertificates",
-                    "logs:DescribeLogGroups",
-                ],
-                resources: ["*"],
-            }),
-        );
-
-        devTeamUser.addToPolicy(
-            new PolicyStatement({
-                actions: ["sts:AssumeRole"],
-                resources: [readOnlyRole.roleArn],
-            }),
-        );
+        ];
+        const allowedResources = access.flatMap((statement) => statement.resources);
+        const allowedActions = [...new Set(access.flatMap((statement) => statement.actions))];
+        const projectAccess = new ManagedPolicy(this, "DevTeamProjectAccess", {
+            description: "ClassIQ resource access and an explicit ceiling against access outside the project.",
+            statements: [
+                ...access,
+                new PolicyStatement({ sid: "DenyOutsideProject", effect: Effect.DENY, actions: ["*"], notResources: allowedResources }),
+                new PolicyStatement({ sid: "DenyOtherActions", effect: Effect.DENY, notActions: allowedActions, resources: ["*"] }),
+            ],
+        });
+        const devTeamUser = new User(this, "DevTeamUser", {
+            userName: "classiq-devteam",
+            password: passwordSecret.secretValue,
+            passwordResetRequired: true,
+            managedPolicies: [projectAccess],
+            permissionsBoundary: projectAccess,
+        });
 
         const githubOidcProvider = new OidcProviderNative(this, "GitHubOidcProvider", {
             url: "https://token.actions.githubusercontent.com",
@@ -169,7 +140,7 @@ export class IamStack extends Stack {
 
         new CfnOutput(this, "DevTeamUserName", { value: devTeamUser.userName });
         new CfnOutput(this, "DevTeamPasswordSecretArn", { value: passwordSecret.secretArn });
-        new CfnOutput(this, "ReadOnlyRoleArn", { value: readOnlyRole.roleArn });
+        new CfnOutput(this, "DevTeamProjectAccessPolicyArn", { value: projectAccess.managedPolicyArn });
         new CfnOutput(this, "GitHubDeployRoleArn", { value: githubDeployRole.roleArn });
     }
 }

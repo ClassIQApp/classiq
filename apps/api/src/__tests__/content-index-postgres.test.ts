@@ -102,6 +102,18 @@ describe.skipIf(!testUrl)("Postgres content index", () => {
         expect(await service.search({ courseId, text: "enzyme", lectureId: String(Number(lectureId) + 1) })).toEqual([]);
     });
 
+    it("lists a lecture's passages in reading order, transcripts before resources", async () => {
+        const passages = await service.listPassages({ courseId, lectureId });
+
+        expect(passages.map((passage) => [passage.kind, passage.pageNumber ?? passage.startSeconds])).toEqual([
+            ["transcript", 0],
+            ["resource", 1],
+            ["resource", 4],
+        ]);
+        expect(passages[0]).not.toHaveProperty("score");
+        expect(await service.listPassages({ courseId: otherCourseId, lectureId })).toEqual([]);
+    });
+
     it("replaces old chunks when a source is re-indexed", async () => {
         await service.indexSource(transcript(), [{ startSeconds: 0, endSeconds: 5, text: "Today we cover allosteric regulation." }]);
 

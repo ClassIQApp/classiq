@@ -40,11 +40,11 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
 
     function showContent() {
         if (view.name === "resources") {
-            return <CourseResources canManage={course.role === "teacher"} />;
+            return <CourseResources courseId={course.id} lectures={course.lectures} canManage={course.role === "teacher"} />;
         }
 
         if (lecture) {
-            return <LectureDetail lecture={lecture} onBack={() => setView({ name: "lectures" })} />;
+            return <LectureDetail courseId={course.id} lecture={lecture} onBack={() => setView({ name: "lectures" })} />;
         }
 
         return (
