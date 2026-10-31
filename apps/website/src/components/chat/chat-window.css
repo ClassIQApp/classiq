@@ -1,0 +1,91 @@
+/*
+This .css file controls the CSS styles used in the chat tab of the courses view.
+Some classes are slightly-modified versions of classes from courses.css.
+*/
+
+/* .lecture-filters Modifications: */
+
+.chat-window-box {
+    display: grid;
+    padding: var(--space-5);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+}
+
+.chat-window-box label {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+}
+
+.chat-window-box input,
+.chat-window-box select,
+.chat-window-box textarea {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--size-control);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-regular);
+    /* transition: color 0.2s linear; */
+}
+
+.chat-window-box textarea {
+    resize: none;
+}
+
+/* Original classes: */
+
+.chat-window-messages {
+    max-height: 70vh;
+    overflow: auto;
+}
+
+select:invalid {
+    /* for graying out the LLM Model in the selector instead of leaving it the default */
+    color: gray;
+    option {
+        /* keeps the options default instead of inheriting gray */
+        color: var(--color-text);
+    }
+}
+
+.chat-window-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(8rem, 1fr); /* rem min here makes LLM Model dropdown always visible instead of making it squish down while keeping the main box resizable */
+    gap: var(--space-4);
+}
+
+@media (max-width: 28rem) {
+    .chat-window-fields {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chat-message-box-user {
+    background-color: var(--mint-50);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    margin-bottom: var(--space-3);
+    text-align: left;
+    width: 80%;
+    font-size: var(--text-sm);
+}
+
+.chat-message-box-ai {
+    background-color: var(--pine-300);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    margin-bottom: var(--space-3);
+    text-align: right;
+    width: 80%;
+    justify-self: end;
+    font-size: var(--text-sm);
+}
