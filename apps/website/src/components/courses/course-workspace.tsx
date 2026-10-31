@@ -1,5 +1,6 @@
 import type { Course } from "../../api/courses/types";
 import type { LectureStatus } from "../../api/lectures/types";
+import ChatWindow from "../chat/chat-window";
 import LectureDetail from "../lectures/lecture-detail";
 import LectureList from "../lectures/lecture-list";
 import CourseResources from "./course-resources";
@@ -9,13 +10,14 @@ import { FilesIcon, MagnifyingGlassIcon, PresentationIcon } from "@phosphor-icon
 import type { Icon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 
-type CourseSection = "lectures" | "resources" | "search";
+type CourseSection = "lectures" | "resources" | "search" | "chat";
 
 type CourseView = { name: CourseSection } | { name: "lecture"; lectureId: string; startSeconds?: number };
 
 const sectionLabelBySection: Record<CourseSection, string> = {
     lectures: "Lectures",
     resources: "Resources",
+    chat: "Chat",
     search: "Search",
 };
 
@@ -23,9 +25,10 @@ const iconBySection: Record<CourseSection, Icon> = {
     lectures: PresentationIcon,
     resources: FilesIcon,
     search: MagnifyingGlassIcon,
+    chat: FilesIcon, // someone add a new icon for this
 };
 
-const courseSections: CourseSection[] = ["lectures", "resources", "search"];
+const courseSections: CourseSection[] = ["lectures", "resources", "search", "chat"];
 
 interface CourseWorkspaceProps {
     course: Course;
@@ -64,6 +67,11 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
                     onOpenLecture={(lectureId, seconds) => setView({ name: "lecture", lectureId, startSeconds: seconds })}
                 />
             );
+        }
+
+        if (view.name === "chat") {
+            return <ChatWindow /* courseCode={course.code} courseName={course.name} */ />;
+            // pass other params in if needed by the ai
         }
 
         if (lecture) {
