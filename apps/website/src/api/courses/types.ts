@@ -9,6 +9,7 @@ export interface Course {
     description: string;
     role: CourseRole;
     lectures: Lecture[];
+    joinCode?: string;
 }
 
 export interface ListCoursesResponse {

@@ -25,6 +25,7 @@ function courseResponse(course: MemberCourse, lectures: Lecture[]) {
         name: course.name,
         description: course.description ?? "",
         role: course.role,
+        joinCode: course.joinCode ?? "",
         lectures,
     };
 }
@@ -73,6 +74,23 @@ routes.post("/", async (c) => {
     const course = await courseService.registerCourse(body, c.var.user.id);
 
     return c.json(courseResponse(course, []), 201);
+});
+
+/* Join a course using a join code */
+routes.post("/join", async (c) => {
+    const body = await c.req.json<{ joinCode?: string }>();
+
+    if (!body.joinCode) {
+        return c.json({ code: "INVALID_JOIN_CODE", message: "Join code is required." }, 400);
+    }
+
+    const database = c.get("getDb")();
+    const courseRepository = new PostgresCourseFacade(database);
+    const courseService = new CourseService(courseRepository);
+
+    const course = await courseService.joinCourseByCode(body.joinCode.trim().toUpperCase(), c.var.user.id);
+
+    return c.json(courseResponse(course, []), 200);
 });
 
 /* Get one course */
