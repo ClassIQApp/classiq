@@ -22,7 +22,9 @@ const columns = {
     name: "name",
     slug: "slug",
     description: "description",
+    joinCode: "join_code",
 } as const satisfies Record<keyof Course, string>;
+
 const selection = Object.entries(columns)
     .map(([property, column]) => `${table}.${column} AS "${property}"`)
     .join(", ");
@@ -41,14 +43,19 @@ export class PostgresCourseFacade implements CourseRepository {
         this.client = client;
     }
 
-    async register(registration: CourseRegistration, creator: Omit<CourseMembership, "courseId">): Promise<MemberCourse> {
+    async register(
+        registration: CourseRegistration & { joinCode?: string },
+        creator: Omit<CourseMembership, "courseId">,
+    ): Promise<MemberCourse> {
+        const joinCode = registration.joinCode || Math.random().toString(36).substring(2, 8).toUpperCase();
+
         const request = {
             text: `
-                INSERT INTO ${table} (${columns.code}, ${columns.name}, ${columns.slug}, ${columns.description})
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO ${table} (${columns.code}, ${columns.name}, ${columns.slug}, ${columns.description}, ${columns.joinCode})
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING ${selection}
             `,
-            values: [registration.code, registration.name, registration.slug, registration.description],
+            values: [registration.code, registration.name, registration.slug, registration.description, joinCode],
         };
 
         const transaction = await this.client.connect();
@@ -69,6 +76,39 @@ export class PostgresCourseFacade implements CourseRepository {
         } catch (error) {
             await transaction.query("ROLLBACK");
 
+            throw this.convertError(error);
+        } finally {
+            transaction.release();
+        }
+    }
+
+    async joinByCode(joinCode: string, userId: string): Promise<MemberCourse> {
+        const findRequest = {
+            text: `SELECT ${selection} FROM ${table} WHERE UPPER(${columns.joinCode}) = UPPER($1)`,
+            values: [joinCode.trim()],
+        };
+
+        const transaction = await this.client.connect();
+
+        try {
+            await transaction.query("BEGIN");
+
+            const [course] = await this.query(findRequest, transaction);
+            if (!course) {
+                throw new CourseError("not_found");
+            }
+
+            const membership = await new PostgresCourseMembershipFacade(transaction).create({
+                userId,
+                courseId: course.id,
+                role: "member",
+            });
+
+            await transaction.query("COMMIT");
+
+            return { ...course, role: membership.role };
+        } catch (error) {
+            await transaction.query("ROLLBACK");
             throw this.convertError(error);
         } finally {
             transaction.release();
@@ -107,7 +147,7 @@ export class PostgresCourseFacade implements CourseRepository {
         }
     }
 
-    async updateMetadata(courseId: string, update: CourseMetadataUpdate): Promise<Course | undefined> {
+    async updateMetadata(courseId: string, update: CourseMetadataUpdate & { joinCode?: string }): Promise<Course | undefined> {
         const request = {
             text: `
                 UPDATE ${table}
@@ -115,11 +155,12 @@ export class PostgresCourseFacade implements CourseRepository {
                     ${columns.name} = COALESCE($3, ${columns.name}),
                     ${columns.slug} = COALESCE($4, ${columns.slug}),
                     ${columns.description} = COALESCE($5, ${columns.description}),
+                    ${columns.joinCode} = COALESCE($6, ${columns.joinCode}),
                     last_updated_at = CURRENT_TIMESTAMP
                 WHERE ${columns.id} = $1
                 RETURNING ${selection}
             `,
-            values: [courseId, update.code, update.name, update.slug, update.description],
+            values: [courseId, update.code, update.name, update.slug, update.description, update.joinCode],
         };
 
         const [course] = await this.query(request);

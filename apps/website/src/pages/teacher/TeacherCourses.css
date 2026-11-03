@@ -288,3 +288,46 @@
         font-size: var(--text-xl);
     }
 }
+
+.teacher-join-code-section {
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: var(--border-width) solid var(--color-border);
+}
+
+.teacher-join-code-title {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+}
+
+.teacher-join-code-desc {
+    margin-bottom: var(--space-4);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.teacher-join-code-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.teacher-join-code-value {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--size-control);
+    padding: var(--space-2) var(--space-4);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-family: monospace;
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.1em;
+}
+
+.teacher-join-code-copy-btn {
+    white-space: nowrap;
+}
