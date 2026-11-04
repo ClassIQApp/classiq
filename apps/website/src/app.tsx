@@ -9,6 +9,7 @@ import "./index.css";
 import CoursePage from "./pages/courses/course-page";
 import Login from "./pages/login";
 import Courses from "./pages/teacher/Courses";
+import "./styles/controls.css";
 import { useState } from "react";
 
 interface AccountHomeProps {
@@ -57,7 +58,15 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
     }
 
     return (
-        <AppShell activeNav={activeNav} onNavigate={navigate} role="account" user={user} onLogout={onLogout} loggingOut={loggingOut}>
+        <AppShell
+            activeNav={activeNav}
+            onNavigate={navigate}
+            role="account"
+            user={user}
+            onLogout={onLogout}
+            loggingOut={loggingOut}
+            viewKey={`${activeNav}:${selectedCourseId ?? ""}`}
+        >
             {logoutError && <p role="alert">{logoutError}</p>}
             {showPage()}
         </AppShell>

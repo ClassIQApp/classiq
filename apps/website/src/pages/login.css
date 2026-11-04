@@ -1,5 +1,6 @@
 .login-page {
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -10,8 +11,6 @@
 .login-card {
     width: 100%;
     max-width: var(--layout-auth-card);
-    background: var(--color-surface);
-    border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius-xl);
     padding: var(--space-10);
     box-shadow: var(--shadow-lg);
@@ -30,9 +29,17 @@
     display: block;
 }
 
+.login-heading {
+    margin: 0 0 var(--space-2);
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    letter-spacing: var(--tracking-display);
+}
+
 .login-subtitle {
     margin: 0 0 var(--space-8);
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
 }
@@ -43,60 +50,29 @@
     gap: var(--space-4);
 }
 
-.login-form label {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    color: var(--color-text-secondary);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
-}
-
-.login-form input {
-    width: 100%;
-    height: var(--size-control);
-    padding: 0 var(--space-3);
-    border: var(--border-width) solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-size: var(--text-sm);
-    outline: none;
-    transition:
-        border-color var(--duration-base) var(--ease-standard),
-        box-shadow var(--duration-base) var(--ease-standard);
-}
-
-.login-form input::placeholder {
-    color: var(--color-text-muted);
-}
-
-.login-form input:focus {
-    border-color: var(--color-primary);
-    box-shadow: var(--focus-ring);
-}
-
 .sign-in-button {
     width: 100%;
-    height: var(--size-control);
+    min-height: var(--size-control-lg);
     margin-top: var(--space-1);
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    color: var(--color-on-primary);
+}
+
+.login-hint {
+    margin: 0;
+    color: var(--color-text-muted);
     font-size: var(--text-sm);
-    font-weight: var(--weight-bold);
-    cursor: pointer;
-    transition: background var(--duration-base) var(--ease-standard);
+    line-height: var(--leading-normal);
 }
 
-.sign-in-button:hover {
-    background: var(--color-primary-hover);
+.login-error {
+    margin: 0;
 }
 
-.sign-in-button:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
+.login-switch {
+    display: flex;
+    width: fit-content;
+    margin: var(--space-5) auto 0;
+    padding: var(--space-2);
+    font-weight: var(--weight-medium);
 }
 
 .login-footer {
@@ -104,58 +80,22 @@
     padding-top: var(--space-5);
     border-top: var(--border-width) solid var(--color-border);
     color: var(--color-text-muted);
-    font-size: var(--text-2xs);
+    font-size: var(--text-xs);
     text-align: center;
-}
-
-.login-heading {
-    margin: 0 0 var(--space-3);
-    font-size: var(--text-xl);
-    color: var(--color-text);
-}
-
-.login-hint,
-.login-error {
-    margin: 0;
-    font-size: var(--text-sm);
-    line-height: var(--leading-normal);
-}
-
-.login-error {
-    color: var(--color-text);
-    border-left: 3px solid var(--color-primary);
-    padding-left: var(--space-3);
-}
-
-.login-hint {
-    color: var(--color-text-muted);
-}
-
-.login-switch {
-    display: block;
-    margin: var(--space-5) auto 0;
-    padding: var(--space-2);
-    border: 0;
-    background: transparent;
-    color: var(--color-primary);
-    cursor: pointer;
-    font: inherit;
-    font-size: var(--text-sm);
-}
-
-.login-switch:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-}
-
-.login-switch:disabled,
-.sign-in-button:disabled {
-    opacity: 0.65;
-    cursor: wait;
 }
 
 .auth-status {
     max-width: var(--layout-auth-card);
     margin: var(--space-10) auto;
     padding: var(--space-6);
+}
+
+@media (max-width: 30rem) {
+    .login-page {
+        padding: var(--space-4);
+    }
+
+    .login-card {
+        padding: var(--space-6);
+    }
 }

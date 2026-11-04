@@ -1,5 +1,6 @@
 import { useAuth } from "../../api/auth/provider";
 import { RecordingSession } from "../../api/lectures/recording-session";
+import { PlusIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -134,7 +135,8 @@ function RecordingForm({ courseId }: LectureUploadFormProps) {
                     setOpen(true);
                 }}
             >
-                + Upload Lecture
+                <PlusIcon className="button-icon" weight="bold" aria-hidden />
+                Upload Lecture
             </button>
         );
     }

@@ -5,6 +5,8 @@ import LectureList from "../lectures/lecture-list";
 import CourseResources from "./course-resources";
 import CourseRoleBadge from "./course-role-badge";
 import CourseSearch from "./course-search";
+import { FilesIcon, MagnifyingGlassIcon, PresentationIcon } from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 
 type CourseSection = "lectures" | "resources" | "search";
@@ -15,6 +17,12 @@ const sectionLabelBySection: Record<CourseSection, string> = {
     lectures: "Lectures",
     resources: "Resources",
     search: "Search",
+};
+
+const iconBySection: Record<CourseSection, Icon> = {
+    lectures: PresentationIcon,
+    resources: FilesIcon,
+    search: MagnifyingGlassIcon,
 };
 
 const courseSections: CourseSection[] = ["lectures", "resources", "search"];
@@ -31,6 +39,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
     const [query, setQuery] = useState("");
     const [status, setStatus] = useState<LectureStatus | "all">("all");
 
+    const workspace = useRef<HTMLDivElement>(null);
     const heading = useRef<HTMLHeadingElement>(null);
 
     const lecture = view.name === "lecture" ? course.lectures.find((item) => item.id === view.lectureId) : undefined;
@@ -38,7 +47,8 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
     const activeSection = view.name === "lecture" ? "lectures" : view.name;
 
     useEffect(() => {
-        heading.current?.focus();
+        workspace.current?.scrollIntoView({ block: "start" });
+        heading.current?.focus({ preventScroll: true });
     }, [view.name]);
 
     function showContent() {
@@ -82,7 +92,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
     }
 
     return (
-        <div className="courses-page">
+        <div ref={workspace} className="courses-page">
             <header className="courses-heading">
                 <button type="button" className="lecture-text-button" onClick={onClose}>
                     ← All courses
@@ -95,17 +105,23 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
                 </h1>
                 <p>{lecture ? "Review your lecture and the content available so far." : course.description}</p>
                 <nav className="course-sections" aria-label="Course sections">
-                    {courseSections.map((section) => (
-                        <button
-                            key={section}
-                            type="button"
-                            className="course-section-button"
-                            aria-current={activeSection === section ? "page" : undefined}
-                            onClick={() => setView({ name: section })}
-                        >
-                            {sectionLabelBySection[section]}
-                        </button>
-                    ))}
+                    {courseSections.map((section) => {
+                        const SectionIcon = iconBySection[section];
+                        const active = activeSection === section;
+
+                        return (
+                            <button
+                                key={section}
+                                type="button"
+                                className="course-section-button"
+                                aria-current={active ? "page" : undefined}
+                                onClick={() => setView({ name: section })}
+                            >
+                                <SectionIcon className="course-section-icon" weight={active ? "fill" : "regular"} aria-hidden />
+                                {sectionLabelBySection[section]}
+                            </button>
+                        );
+                    })}
                 </nav>
             </header>
             {showContent()}

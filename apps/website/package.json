@@ -16,6 +16,8 @@
     },
     "prettier": "@classiq/prettier",
     "dependencies": {
+        "@fontsource-variable/fraunces": "catalog:",
+        "@fontsource-variable/inter": "catalog:",
         "@phosphor-icons/react": "catalog:",
         "@tanstack/react-query": "catalog:",
         "react": "catalog:",
