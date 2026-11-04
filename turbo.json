@@ -29,7 +29,11 @@
         "DEEPSEEK_KEY_FILE",
         "FFMPEG_PATH",
         "FFPROBE_PATH",
-        "PROCESSING_LIVE_SMOKE"
+        "PROCESSING_LIVE_SMOKE",
+        "PROCESSING_ENABLED",
+        "PROCESSING_TEST_MEDIA_LAYER",
+        "PROCESSING_LECTURE_MACHINE_ARN",
+        "PROCESSING_RESOURCE_MACHINE_ARN"
     ],
     "tasks": {
         "build": {

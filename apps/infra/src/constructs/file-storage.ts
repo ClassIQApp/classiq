@@ -15,7 +15,10 @@ export class FileStorage extends Construct {
             objectOwnership: ObjectOwnership.BUCKET_OWNER_ENFORCED,
             enforceSSL: true,
             versioned: true,
-            lifecycleRules: [{ prefix: "courses/", abortIncompleteMultipartUploadAfter: Duration.days(1) }],
+            lifecycleRules: [
+                { prefix: "courses/", abortIncompleteMultipartUploadAfter: Duration.days(1) },
+                { prefix: "processing/recordings/", expiration: Duration.days(30), noncurrentVersionExpiration: Duration.days(30) },
+            ],
             cors: [
                 {
                     allowedOrigins,

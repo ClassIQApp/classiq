@@ -3,8 +3,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build && pnpm run zip:lambda",
-        "zip:lambda": "cd dist && zip -q -X -FS lambda.zip package.json index.mjs index.mjs.map",
+        "build": "vite build && vite build --config vite.stages.config.ts && pnpm run pipeline:generate && pnpm run zip:lambda",
+        "zip:lambda": "cd dist && zip -q -X -FS lambda.zip package.json index.mjs index.mjs.map stages.mjs stages.mjs.map",
         "dev": "pnpm run db:prepare && dotenv --override --no-expand -e .env.development -- vite --host 127.0.0.1",
         "test": "vitest run",
         "lint": "pnpm exec eslint --cache --cache-location .cache/eslint . --fix",
@@ -16,11 +16,14 @@
         "db:clean": "docker compose down --volumes",
         "db:migrate": "dotenv --override --no-expand -e .env.development -- tsx scripts/migrate.ts",
         "db:new": "tsx scripts/new-migration.ts",
-        "check-types": "pnpm exec tsc --noEmit",
+        "check-types": "pnpm exec tsc --noEmit && pnpm exec tsc --noEmit -p tsconfig.processing.json",
         "clean": "rm -rf dist .turbo .cache",
         "fullclean": "pnpm run clean && rm -rf node_modules",
         "db:migrate:prod": "dotenv --override --no-expand -e .env.production -- tsx scripts/migrate.ts",
-        "pipeline:dev": "dotenv --override --no-expand -e .env.development -- tsx src/pipeline-dev.ts"
+        "pipeline:dev": "dotenv --override --no-expand -e .env.development -- tsx src/pipeline-dev.ts",
+        "pipeline:generate": "tsx scripts/generate-pipelines.ts",
+        "pipeline:verify": "tsx scripts/verify-processing-artifacts.ts",
+        "pipeline:validate": "tsx scripts/validate-pipelines.ts"
     },
     "prettier": "@classiq/prettier",
     "dependencies": {
