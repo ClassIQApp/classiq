@@ -5,6 +5,7 @@ import { useCourses, useCreateCourse, useUpdateCourse } from "../../api/courses/
 import CourseCard from "../../components/courses/course-card";
 import CourseForm from "../../components/courses/course-form";
 import "./TeacherCourses.css";
+import { PlusIcon } from "@phosphor-icons/react";
 import { Fragment, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -149,10 +150,11 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
                                 setIsJoinModalOpen(true);
                             }}
                         >
-                            + Join Course
+                            Join Course
                         </button>
                         <button className="teacher-course-primary-btn" type="button" onClick={openCreateForm}>
-                            + Create Course
+                            <PlusIcon className="button-icon" weight="bold" aria-hidden />
+                            Create Course
                         </button>
                     </div>
                 )}
@@ -267,7 +269,8 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
 
                         {!showCreateForm && (
                             <button className="teacher-course-primary-btn" type="button" onClick={openCreateForm}>
-                                + Create Course
+                                <PlusIcon className="button-icon" weight="bold" aria-hidden />
+                                Create Course
                             </button>
                         )}
                     </div>

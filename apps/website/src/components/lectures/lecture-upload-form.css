@@ -1,25 +1,10 @@
 .lecture-upload-open {
-    min-height: var(--size-control);
-    padding: var(--space-2) var(--space-4);
-    border: var(--border-width) solid var(--color-primary);
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    font-weight: var(--weight-semibold);
-    cursor: pointer;
-}
-
-.lecture-upload-open:hover {
-    filter: brightness(0.95);
+    margin-bottom: var(--space-5);
 }
 
 .lecture-upload-panel {
     margin-bottom: var(--space-5);
     padding: var(--space-5);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
 }
 
 .lecture-upload-heading {
@@ -31,7 +16,7 @@
 }
 
 .lecture-upload-heading h3 {
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-1);
     font-size: var(--text-lg);
 }
 
@@ -44,26 +29,8 @@
     gap: var(--space-4);
 }
 
-.lecture-upload-form label {
-    display: grid;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
-}
-
-.lecture-upload-form input,
-.lecture-upload-form textarea {
-    width: 100%;
-    padding: var(--space-3);
-    border: var(--border-width) solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font: inherit;
-}
-
-.lecture-upload-form textarea {
-    resize: vertical;
+.lecture-upload-form > button[type="submit"] {
+    justify-self: start;
 }
 
 .lecture-upload-file {
@@ -85,38 +52,42 @@
     font-size: var(--text-sm);
 }
 
-.lecture-upload-error {
-    padding: var(--space-3);
-    border-radius: var(--radius-md);
-    background: var(--color-danger-subtle);
-    color: var(--color-danger);
-}
-
-.lecture-upload-success {
-    padding: var(--space-3);
-    border-radius: var(--radius-md);
-    background: var(--color-success-subtle);
-    color: var(--color-success);
-}
-
-@media (max-width: 48rem) {
-    .lecture-upload-heading {
-        flex-direction: column;
-    }
-}
-
-.lecture-upload-open {
-    margin-bottom: var(--space-5);
-}
-
 .lecture-recording {
     display: grid;
     gap: var(--space-3);
     margin-block: var(--space-5);
 }
 
+.lecture-recording h2 {
+    font-size: var(--text-lg);
+}
+
 .lecture-recording video,
 .lecture-recording audio {
     width: 100%;
-    max-height: 32rem;
+    max-height: var(--layout-media);
+    border-radius: var(--radius-lg);
+    background: var(--color-stage);
+}
+
+.lecture-recording audio {
+    background: transparent;
+}
+
+.lecture-recording button {
+    justify-self: start;
+}
+
+.lecture-recording p {
+    color: var(--color-text-secondary);
+}
+
+@media (max-width: 48rem) {
+    .lecture-upload-heading {
+        flex-direction: column;
+    }
+
+    .lecture-upload-form > button[type="submit"] {
+        justify-self: stretch;
+    }
 }

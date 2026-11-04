@@ -1,5 +1,6 @@
 import type { Course } from "../../api/courses/types";
 import CourseRoleBadge from "./course-role-badge";
+import { GearSixIcon } from "@phosphor-icons/react";
 
 interface CourseCardProps {
     course: Course;
@@ -27,6 +28,7 @@ export default function CourseCard({ course, onOpen, onEditSettings }: CourseCar
                 <span className="teacher-course-card-actions">
                     {course.role === "teacher" && (
                         <button className="teacher-course-settings-btn" type="button" onClick={onEditSettings}>
+                            <GearSixIcon className="button-icon" aria-hidden />
                             Course Settings
                         </button>
                     )}

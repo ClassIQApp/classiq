@@ -58,8 +58,8 @@ test("switching from a taught course to a joined course keeps navigation and rem
     assert.match(teacherMarkup, /<h1[^>]*>Operating Systems<\/h1>/);
     assert.match(teacherMarkup, />Teacher</);
     assert.match(teacherMarkup, /Scheduling/);
-    assert.match(teacherMarkup, /aria-current="page"[^>]*>Lectures</);
-    assert.match(teacherMarkup, /class="course-section-button">Search</);
+    assert.match(teacherMarkup, /aria-current="page"[^>]*>(?:<svg[^>]*>.*?<\/svg>)?Lectures</);
+    assert.match(teacherMarkup, /class="course-section-button">(?:<svg[^>]*>.*?<\/svg>)?Search</);
 
     assert.match(memberMarkup, /<h1[^>]*>Calculus<\/h1>/);
     assert.match(memberMarkup, />Member</);
