@@ -19,7 +19,8 @@
         "check-types": "pnpm exec tsc --noEmit",
         "clean": "rm -rf dist .turbo .cache",
         "fullclean": "pnpm run clean && rm -rf node_modules",
-        "db:migrate:prod": "dotenv --override --no-expand -e .env.production -- tsx scripts/migrate.ts"
+        "db:migrate:prod": "dotenv --override --no-expand -e .env.production -- tsx scripts/migrate.ts",
+        "pipeline:dev": "dotenv --override --no-expand -e .env.development -- tsx src/pipeline-dev.ts"
     },
     "prettier": "@classiq/prettier",
     "dependencies": {

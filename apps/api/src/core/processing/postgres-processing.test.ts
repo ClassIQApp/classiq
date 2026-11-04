@@ -44,11 +44,20 @@ describe.skipIf(!url)("processing persistence", () => {
                 contentLength: 10,
             });
             await uploads.complete(asset);
-            expect(await runMigrations(db)).toEqual([
+            const engineMigrations = [
                 "012_processing_runs.sql",
                 "016_processing_invocations.sql",
                 "017_processing_deliveries.sql",
                 "018_processing_dispatch.sql",
+            ];
+            for (const file of engineMigrations) {
+                await cp(path.join(migrationsDirectory, file), path.join(directory, file));
+            }
+            expect(await runMigrations(db, directory)).toEqual(engineMigrations);
+            expect(await runMigrations(db)).toEqual([
+                "013_recording_transcripts.sql",
+                "014_lecture_generated_content.sql",
+                "015_recording_audio.sql",
             ]);
             expect(await runMigrations(db)).toEqual([]);
             expect(await uploads.find(courseId, "recording", lectureId)).toMatchObject({ id: asset.id, uploadStatus: "uploaded" });

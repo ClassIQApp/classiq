@@ -10,6 +10,10 @@ describe("createLlmService", () => {
         expect(createLlmService(environment)).toBeDefined();
     });
 
+    it("rejects fixture selection through production configuration", () => {
+        expect(() => createLlmService({ LLM_PROVIDER: "fixture" })).toThrow(LlmError);
+    });
+
     it("rejects missing credentials", () => {
         expect(() => createLlmService({ LLM_PROVIDER: "openai" })).toThrow(LlmError);
     });
