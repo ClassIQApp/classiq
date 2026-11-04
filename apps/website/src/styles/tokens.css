@@ -121,7 +121,6 @@
     --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
     --font-serif: var(--font-display);
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
     --text-2xs: 0.75rem;
     --text-xs: 0.75rem;

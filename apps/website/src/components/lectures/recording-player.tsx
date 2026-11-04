@@ -1,15 +1,24 @@
 import { useAuth } from "../../api/auth/provider";
 import { recordingAccess } from "../../api/lectures/recording-access";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+export interface SeekRequest {
+    seconds: number;
+    id: number;
+    play: boolean;
+}
 
 interface RecordingPlayerProps {
     courseId: string;
     lectureId: string;
-    startSeconds?: number;
+    seek?: SeekRequest;
+    onTimeChange?: (seconds: number) => void;
 }
 
-export default function RecordingPlayer({ courseId, lectureId, startSeconds }: RecordingPlayerProps) {
+const HAVE_METADATA = 1;
+
+export default function RecordingPlayer({ courseId, lectureId, seek, onTimeChange }: RecordingPlayerProps) {
     const { state, apiFetch } = useAuth();
     const userId = state.status === "authenticated" ? state.user.id : undefined;
     const [mediaFailed, setMediaFailed] = useState(false);
@@ -22,23 +31,46 @@ export default function RecordingPlayer({ courseId, lectureId, startSeconds }: R
     });
     const { data, refetch } = recording;
 
-    const resumeAt = useRef(startSeconds ?? 0);
+    const media = useRef<HTMLMediaElement | null>(null);
+    const resumeAt = useRef(seek?.seconds ?? 0);
     const resumePlaying = useRef(false);
 
-    function refreshMedia(media?: HTMLMediaElement) {
-        if (media) {
-            resumeAt.current = media.currentTime;
-            resumePlaying.current = !media.paused;
+    useEffect(() => {
+        if (!seek) {
+            return;
+        }
+
+        const element = media.current;
+
+        if (!element || element.readyState < HAVE_METADATA) {
+            resumeAt.current = seek.seconds;
+            resumePlaying.current = seek.play;
+
+            return;
+        }
+
+        element.currentTime = seek.seconds;
+
+        if (seek.play) {
+            void element.play().catch(() => undefined);
+        }
+    }, [seek]);
+
+    function refreshMedia(element?: HTMLMediaElement) {
+        // Before metadata loads the element still reports 0, which would overwrite a pending seek (e.g. from search).
+        if (element && element.readyState >= HAVE_METADATA) {
+            resumeAt.current = element.currentTime;
+            resumePlaying.current = !element.paused;
         }
 
         void refetch();
     }
 
-    function restorePosition(media: HTMLMediaElement) {
-        media.currentTime = resumeAt.current;
+    function restorePosition(element: HTMLMediaElement) {
+        element.currentTime = resumeAt.current;
 
         if (resumePlaying.current) {
-            void media.play().catch(() => setMediaFailed(true));
+            void element.play().catch(() => setMediaFailed(true));
         }
     }
 
@@ -63,60 +95,66 @@ export default function RecordingPlayer({ courseId, lectureId, startSeconds }: R
         }
     }
 
-    function mediaError(media: HTMLMediaElement) {
+    function mediaError(element: HTMLMediaElement) {
         if (!mediaFailed) {
             setMediaFailed(true);
-            refreshMedia(media);
+            refreshMedia(element);
         }
     }
 
+    const mediaProps = {
+        controls: true,
+        preload: "metadata",
+        src: data?.url,
+        onTimeUpdate: (event: { currentTarget: HTMLMediaElement }) => {
+            if (event.currentTarget.readyState < HAVE_METADATA) {
+                return;
+            }
+
+            resumeAt.current = event.currentTarget.currentTime;
+            onTimeChange?.(event.currentTarget.currentTime);
+        },
+        onError: (event: { currentTarget: HTMLMediaElement }) => mediaError(event.currentTarget),
+        onLoadedMetadata: (event: { currentTarget: HTMLMediaElement }) => restorePosition(event.currentTarget),
+        "aria-label": "Lecture recording",
+    } as const;
+
     return (
         <section className="lecture-recording" aria-label="Recording">
-            <h2>Recording</h2>
             {data && !recording.isError ? (
                 <>
                     {data.contentType.startsWith("video/") ? (
-                        <video
-                            controls
-                            preload="metadata"
-                            src={data.url}
-                            onTimeUpdate={(event) => {
-                                resumeAt.current = event.currentTarget.currentTime;
-                            }}
-                            onError={(event) => mediaError(event.currentTarget)}
-                            onLoadedMetadata={(event) => restorePosition(event.currentTarget)}
-                            aria-label="Lecture recording"
-                        />
+                        <video ref={(element) => void (media.current = element)} {...mediaProps} />
                     ) : (
-                        <audio
-                            controls
-                            preload="metadata"
-                            src={data.url}
-                            onTimeUpdate={(event) => {
-                                resumeAt.current = event.currentTarget.currentTime;
-                            }}
-                            onError={(event) => mediaError(event.currentTarget)}
-                            onLoadedMetadata={(event) => restorePosition(event.currentTarget)}
-                            aria-label="Lecture recording"
-                        />
+                        <audio ref={(element) => void (media.current = element)} {...mediaProps} />
                     )}
-                    <button type="button" onClick={() => void downloadRecording()}>
-                        Download recording
-                    </button>
+                    <div className="lecture-recording-actions">
+                        <button type="button" className="lecture-text-button" onClick={() => void downloadRecording()}>
+                            Download recording
+                        </button>
+                        {mediaFailed && (
+                            <button
+                                type="button"
+                                className="lecture-text-button"
+                                onClick={() => {
+                                    setMediaFailed(false);
+                                    void refetch();
+                                }}
+                            >
+                                Refresh recording access
+                            </button>
+                        )}
+                    </div>
                 </>
             ) : (
-                <p>{recording.isError ? "Recording access could not be loaded." : "Loading recording…"}</p>
-            )}
-            {(recording.isError || mediaFailed) && (
-                <button
-                    type="button"
-                    onClick={() => {
-                        setMediaFailed(false);
-                        void refetch();
-                    }}
-                >
-                    Refresh recording access
-                </button>
+                <div className="lecture-recording-placeholder">
+                    <p>{recording.isError ? "The recording couldn't be loaded." : "Loading recording…"}</p>
+                    {recording.isError && (
+                        <button type="button" className="lecture-text-button" onClick={() => void refetch()}>
+                            Try again
+                        </button>
+                    )}
+                </div>
             )}
         </section>
     );

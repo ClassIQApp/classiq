@@ -1,29 +1,48 @@
-import type { LectureStatus as Status } from "../../api/lectures/types";
-import { CheckCircleIcon, ClockIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import type { Lecture, LectureStatus as Status } from "../../api/lectures/types";
+import { CheckCircleIcon, CircleNotchIcon, ClockIcon, FileAudioIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
 
-const statusLabelByStatus: Record<Status, string> = {
-    pending: "Awaiting upload",
-    uploaded: "Uploaded",
-    ready: "Ready",
+export const statusLabelByStatus: Record<Status, string> = {
+    pending: "Awaiting recording",
+    uploaded: "Recording only",
     processing: "Processing",
-    failed: "Failed",
+    ready: "Ready",
+    failed: "Processing stopped",
 };
 
-const statusIconByStatus: Record<Status, typeof CheckCircleIcon> = {
+const statusIconByStatus: Record<Status, Icon> = {
     pending: ClockIcon,
-    uploaded: CheckCircleIcon,
+    uploaded: FileAudioIcon,
+    processing: CircleNotchIcon,
     ready: CheckCircleIcon,
-    processing: ClockIcon,
     failed: WarningCircleIcon,
 };
 
-export default function LectureStatus({ status }: { status: Status }) {
-    const Icon = statusIconByStatus[status];
+interface LectureStatusProps {
+    status: Status;
+}
+
+export function availabilitySummary(lecture: Lecture) {
+    const kinds = new Set(lecture.generatedContent.map((item) => item.id));
+    const parts = [
+        lecture.transcript ? "Transcript" : undefined,
+        kinds.has("summary") ? "Summary" : undefined,
+        kinds.has("key_terms") ? "Key terms" : undefined,
+    ].filter(Boolean);
+
+    if (lecture.status === "pending") {
+        return "No recording yet";
+    }
+
+    return parts.length > 0 ? `Recording · ${parts.join(" · ")}` : "Recording";
+}
+
+export default function LectureStatus({ status }: LectureStatusProps) {
+    const StatusIcon = statusIconByStatus[status];
 
     return (
         <span className={`lecture-status lecture-status-${status}`}>
-            <Icon size={16} aria-hidden />
-
+            <StatusIcon size={16} aria-hidden />
             {statusLabelByStatus[status]}
         </span>
     );

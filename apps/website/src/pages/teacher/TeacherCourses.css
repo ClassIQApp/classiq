@@ -229,7 +229,6 @@
     border-radius: var(--radius-md);
     background: var(--color-surface-sunken);
     color: var(--color-text);
-    font-family: var(--font-mono);
     font-size: var(--text-base);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-code);
@@ -269,7 +268,6 @@
 }
 
 .teacher-join-code-input {
-    font-family: var(--font-mono);
     letter-spacing: var(--tracking-code);
     text-transform: uppercase;
 }

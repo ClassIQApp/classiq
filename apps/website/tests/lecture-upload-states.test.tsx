@@ -21,19 +21,23 @@ const lecture: Lecture = {
 
 function ignore() {}
 
-test("uploaded recordings do not claim processing or generated content is ready", () => {
-    const markup = renderAuthenticated(<LectureDetail courseId="1" lecture={lecture} onBack={ignore} />);
+test("uploaded recordings say processing has not started and only teachers can start it", () => {
+    const teacher = renderAuthenticated(<LectureDetail courseId="1" lecture={lecture} role="teacher" onBack={ignore} />);
+    const member = renderAuthenticated(<LectureDetail courseId="1" lecture={lecture} role="member" onBack={ignore} />);
 
-    assert.match(markup, /Recording uploaded/);
-    assert.match(markup, /No content has been added yet/);
-    assert.doesNotMatch(markup, /Preparing your lecture|Ready to review/);
+    assert.match(teacher, /Recording saved/);
+    assert.match(teacher, /Start processing/);
+    assert.doesNotMatch(teacher, /Preparing study materials|Study materials are ready/);
+    assert.doesNotMatch(member, /Start processing/);
 });
 
 test("pending recordings explain that the file has not been uploaded", () => {
-    const markup = renderAuthenticated(<LectureDetail courseId="1" lecture={{ ...lecture, status: "pending" }} onBack={ignore} />);
+    const markup = renderAuthenticated(
+        <LectureDetail courseId="1" lecture={{ ...lecture, status: "pending" }} role="member" onBack={ignore} />,
+    );
 
-    assert.match(markup, /Awaiting recording upload/);
-    assert.doesNotMatch(markup, /Preparing your lecture|Ready to review/);
+    assert.match(markup, /No recording yet/);
+    assert.doesNotMatch(markup, /Preparing study materials|aria-label="Recording"/);
 });
 
 test("the uploaded filter excludes pending recordings", () => {

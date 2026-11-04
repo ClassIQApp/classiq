@@ -1,5 +1,6 @@
 import type { ApiFetch } from "../auth/client";
 import { uploadFile } from "../files/upload-file";
+import type { ProcessingRunResult } from "./processing";
 
 export interface RecordingUploadTicket {
     uploadId: string;
@@ -17,6 +18,8 @@ export interface RecordingAsset {
     name?: string;
     contentType?: string;
     contentLength?: number;
+    /** Present when the API starts processing on completion. The HTTP call can succeed while this run failed to start. */
+    processing?: ProcessingRunResult;
 }
 
 export async function createRecordingUpload(
