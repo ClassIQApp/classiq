@@ -107,3 +107,99 @@
     opacity: 0.6;
     cursor: default;
 }
+
+.search-container {
+    padding: 2rem;
+    color: var(--color-text);
+    max-width: 760px;
+}
+
+.search-desc,
+.search-hint {
+    color: var(--color-text-secondary);
+    margin-top: 0.5rem;
+}
+
+.search-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-4);
+    margin: 1.5rem 0 1rem;
+    padding: var(--space-5);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+}
+
+.search-filters label {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+}
+
+.search-filters input,
+.search-filters select {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--size-control);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: var(--weight-regular);
+}
+
+.search-results {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.search-result {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+    padding: 0.75rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow-wrap: anywhere;
+}
+
+.search-result-heading {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.search-result-title {
+    font-weight: var(--weight-medium);
+}
+
+.search-result-meta {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.search-result-snippet {
+    margin: 0;
+    color: var(--color-text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.search-result button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+@media (max-width: 48rem) {
+    .search-filters {
+        grid-template-columns: 1fr;
+    }
+}
