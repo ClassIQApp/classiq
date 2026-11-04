@@ -33,7 +33,7 @@
 
 .lecture-filters {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.65fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) repeat(2, minmax(0, 0.75fr));
     gap: var(--space-4);
 }
 

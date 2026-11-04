@@ -3,6 +3,7 @@ import type { Course } from "../src/api/courses/types";
 import type { Lecture } from "../src/api/lectures/types";
 import LectureDetail from "../src/components/lectures/lecture-detail";
 import LectureList from "../src/components/lectures/lecture-list";
+import type { LectureSort } from "../src/components/lectures/lecture-list";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -52,9 +53,11 @@ test("the uploaded filter excludes pending recordings", () => {
             course={course}
             query=""
             status="uploaded"
+            sort="newest"
             onCourseChange={ignore}
             onQueryChange={ignore}
             onStatusChange={ignore}
+            onSortChange={ignore}
             onOpenLecture={ignore}
         />,
     );
@@ -70,3 +73,53 @@ function renderAuthenticated(children: ReactNode) {
         </QueryClientProvider>,
     );
 }
+
+test("only teachers are offered lecture editing", () => {
+    const teacher = renderAuthenticated(<LectureDetail courseId="1" lecture={lecture} canManage onBack={ignore} />);
+    const member = renderAuthenticated(<LectureDetail courseId="1" lecture={lecture} onBack={ignore} />);
+
+    assert.match(teacher, /Edit lecture/);
+    assert.doesNotMatch(member, /Edit lecture/);
+});
+
+test("lecture sorting preserves the source list and works with search and status filters", () => {
+    const course: Course = {
+        id: "1",
+        code: "CSI 4500",
+        name: "Operating Systems",
+        description: "Course recordings.",
+        role: "member",
+        lectures: [
+            { ...lecture, id: "2", title: "Lecture 10" },
+            { ...lecture, id: "10", title: "lecture 2" },
+            { ...lecture, id: "11", title: "Pending lecture", status: "pending" },
+        ],
+    };
+    const sourceIds = course.lectures.map((item) => item.id);
+    const render = (sort: LectureSort, query = "", status: Lecture["status"] | "all" = "all") =>
+        renderAuthenticated(
+            <LectureList
+                courses={[course]}
+                course={course}
+                query={query}
+                status={status}
+                sort={sort}
+                onCourseChange={ignore}
+                onQueryChange={ignore}
+                onStatusChange={ignore}
+                onSortChange={ignore}
+                onOpenLecture={ignore}
+            />,
+        );
+    const titles = (markup: string) => [...markup.matchAll(/class="lecture-card-title">([^<]+)</g)].map((match) => match[1]);
+
+    assert.deepEqual(titles(render("newest")), ["Pending lecture", "lecture 2", "Lecture 10"]);
+    assert.deepEqual(titles(render("oldest")), ["Lecture 10", "lecture 2", "Pending lecture"]);
+    assert.deepEqual(titles(render("title")), ["lecture 2", "Lecture 10", "Pending lecture"]);
+    assert.deepEqual(titles(render("title", "lecture", "uploaded")), ["lecture 2", "Lecture 10"]);
+    assert.deepEqual(titles(render("title", "missing")), []);
+    assert.deepEqual(
+        course.lectures.map((item) => item.id),
+        sourceIds,
+    );
+});

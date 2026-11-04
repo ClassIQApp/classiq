@@ -3,6 +3,7 @@ import type { LectureStatus } from "../../api/lectures/types";
 import ChatWindow from "../chat/chat-window";
 import LectureDetail from "../lectures/lecture-detail";
 import LectureList from "../lectures/lecture-list";
+import type { LectureSort } from "../lectures/lecture-list";
 import CourseResources from "./course-resources";
 import CourseRoleBadge from "./course-role-badge";
 import CourseSearch from "./course-search";
@@ -41,6 +42,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
     const [view, setView] = useState<CourseView>({ name: "lectures" });
     const [query, setQuery] = useState("");
     const [status, setStatus] = useState<LectureStatus | "all">("all");
+    const [sort, setSort] = useState<LectureSort>("newest");
 
     const workspace = useRef<HTMLDivElement>(null);
     const heading = useRef<HTMLHeadingElement>(null);
@@ -79,6 +81,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
                 <LectureDetail
                     courseId={course.id}
                     lecture={lecture}
+                    canManage={course.role === "teacher"}
                     startSeconds={startSeconds}
                     onBack={() => setView({ name: "lectures" })}
                 />
@@ -91,9 +94,11 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
                 course={course}
                 query={query}
                 status={status}
+                sort={sort}
                 onCourseChange={onCourseChange}
                 onQueryChange={setQuery}
                 onStatusChange={setStatus}
+                onSortChange={setSort}
                 onOpenLecture={(lectureId) => setView({ name: "lecture", lectureId })}
             />
         );
