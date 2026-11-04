@@ -11,7 +11,6 @@ TODO:
 - Add nice animation of loading icon or   > . > .. > ... animation when waiting for an API response (or wait to add the message until after a response is recieved) (if there's an option consistent with other pages let me know)
 - Add persistency using database and API to store chat messages, with times to create session dividers for chat based on day/session
 */
-import "./chat-window.css";
 
 // interface ChatWindowProps {
 //     courseCode: string;
@@ -38,10 +37,14 @@ export default function ChatWindow(/* props: ChatWindowProps */) {
                     <textarea
                         placeholder={TEXT_BOX_PLACEHOLDER}
                         onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
+                            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                                 e.preventDefault();
 
                                 const textarea = e.target as HTMLTextAreaElement;
+                                if (textarea.readOnly || textarea.value.trim() === "") {
+                                    return;
+                                }
+
                                 const select = document.querySelector(".chat-window-fields select") as HTMLSelectElement;
 
                                 textarea.form?.requestSubmit();
@@ -63,15 +66,17 @@ export default function ChatWindow(/* props: ChatWindowProps */) {
 
                                 const userMessage = document.createElement("div");
                                 userMessage.className = "chat-message-box-user";
-                                userMessage.innerHTML = `<p>${textarea.value}</p>`; // add markdown rendering later using library plugin? at least for ai return?
-                                messages.appendChild(userMessage);
+                                const userText = document.createElement("p");
+                                userText.textContent = textarea.value;
+                                userMessage.append(userText);
+                                messages.append(userMessage);
 
                                 textarea.value = "";
 
                                 const aiMessage = document.createElement("div");
                                 aiMessage.className = "chat-message-box-ai";
                                 aiMessage.innerHTML = `<p>${AI_MESSAGE_WAITING}</p>`;
-                                messages.appendChild(aiMessage);
+                                messages.append(aiMessage);
 
                                 setTimeout(() => {
                                     aiMessage.innerHTML = `Once AI APIs are implemented, the response will go here.<br>Response recieved: 
