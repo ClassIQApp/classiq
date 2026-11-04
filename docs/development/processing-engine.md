@@ -7,13 +7,12 @@ concurrent states. Neither runtime puts media or transcript bodies into workflow
 
 PostgreSQL owns run identity, stage status and deadlines. Starts serialize on the subject row; failed retries get a new run number.
 Active and successful runs are reused. Output mutations call `guard` **inside their transaction** and retain the subject lock until
-commit. Stale/expired runs cannot commit output or overwrite newer status. Generic success refuses lecture publication; transcript
-and generated-content checks belong to the following domain-processing PR.
+commit. Stale/expired runs cannot commit output or overwrite newer status. Generic success refuses lecture publication; domain `publishLecture` checks persisted transcript and generated-content hashes.
 
 The starter records a committed dispatch marker and can recover runs abandoned before dispatch. Worker integrations must call
 `recoverStarts` and `expireRuns` on each receive cycle. Neither is a deployed scheduler in this PR. SQS starters receive workflow
 definitions explicitly; they do not import lecture or resource handlers. The Step Functions starter uses the persisted run ID as
-its execution name. No endpoint, worker, provider or cloud deployment is activated here.
+its execution name. The domain integration adds persisted endpoints and a local worker; see [local processing](#local-processing). Cloud activation remains separate.
 
 Continuation receipts use database leases, committed after successor sends. Deterministic successor IDs cover the send-before-
 receipt crash window. Output handlers must still be idempotent and fenced: delivery deduplication is not exactly-once external
@@ -48,3 +47,21 @@ received batches, duplicates every successor, then verifies three output rows an
 calls. It does not recursively execute every duplicate graph message, kill an OS process, or contact providers. Other retained tests
 exercise nested graph result parity with Lambda envelopes, retry exhaustion, queue errors, timeout/cancellation and payload bounds.
 The PR screenshot is a captured verification report; there is no product UI change.
+
+## Local processing
+
+After `pnpm --filter @classiq/api db:prepare`, run API and worker separately:
+
+```sh
+pnpm --filter @classiq/api dev
+PROCESSING_MODE=fixture pnpm --filter @classiq/api pipeline:dev
+```
+
+Fixture mode is explicit and synthetic. For real media, install ffmpeg/ffprobe and use `PROCESSING_MODE=live` with
+`SONIOX_API_KEY` and `DEEPSEEK_API_KEY` (or private `SONIOX_KEY_FILE`/`DEEPSEEK_KEY_FILE`). Live calls incur charges.
+The worker requires the default local emulators/database and recovers expired runs and undispatched starts.
+
+Members can read lecture `/processing`, `/transcript`, `/transcript/translations/es`, and `/generated-content/{summary,key_terms}`.
+Teachers can POST `/processing/retry`. Failures retain uploaded media and saved outputs. Publication requires matching transcript,
+summary and key-term hashes; translation and resources do not gate readiness. Lost provider responses can repeat calls/billing.
+Use a new lecture when switching from synthetic checkpoints to live media.

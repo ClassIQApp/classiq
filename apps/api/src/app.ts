@@ -4,13 +4,17 @@ import { readAuthConfig, type AuthConfig } from "./core/auth/config.ts";
 import { requireSession } from "./core/auth/middleware.ts";
 import { ContentIndexService } from "./core/content-index/content-index-service.ts";
 import { PostgresContentIndexRepository } from "./core/content-index/postgres-content-index-repository.ts";
-import { ResourceContentIndexer } from "./core/content-index/resource-content-indexer.ts";
 import { requireCourseRole } from "./core/course-access/middleware.ts";
 import type { CourseRole } from "./core/course-access/model.ts";
 import { PostgresCourseMembershipFacade } from "./core/course-access/postgres-course-membership-facade.ts";
 import { CourseInvitationService } from "./core/course-invitation/course-invitation-service.ts";
 import { PostgresCourseInvitationFacade } from "./core/course-invitation/postgres-course-invitation-facade.ts";
 import { readCourseResourceFileConfig } from "./core/course-resource/file/config.ts";
+import { lecturePipeline, lectureStages } from "./core/processing/lecture-pipeline.ts";
+import { PostgresProcessingRepository } from "./core/processing/postgres-processing-repository.ts";
+import { ProcessingService, type PipelineStarter } from "./core/processing/processing-service.ts";
+import { resourcePipeline } from "./core/processing/resource-pipeline.ts";
+import { sqsPipelineStarter } from "./core/processing/sqs-pipeline-starter.ts";
 import { PostgresQuizRepository } from "./core/quiz/postgres-quiz-repository.ts";
 import { QuizGenerator } from "./core/quiz/quiz-generator.ts";
 import { QuizService } from "./core/quiz/quiz-service.ts";
@@ -21,9 +25,11 @@ import authRoutes from "./routes/auth/index.ts";
 import { createContentRoutes } from "./routes/content/index.ts";
 import courseRoutes from "./routes/courses/index.ts";
 import { createCourseInvitationRoutes, createInvitationRoutes } from "./routes/invitations/index.ts";
+import { createLectureRoutes } from "./routes/lectures/index.ts";
 import { createQuizRoutes } from "./routes/quizzes/index.ts";
 import { createUploadRoutes } from "./routes/uploads/index.ts";
 import { S3Client } from "@aws-sdk/client-s3";
+import { SQSClient } from "@aws-sdk/client-sqs";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Pool } from "pg";
@@ -42,6 +48,7 @@ export interface AppOptions {
     getAuth?: () => AuthService;
     getAuthConfig?: () => AuthConfig;
     getUploadStorage?: () => UploadStorage;
+    pipelineStarter?: PipelineStarter;
 }
 
 function createUploadStorage(): UploadStorage {
@@ -64,7 +71,7 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     let config: AuthConfig | undefined;
     let uploadStorage: UploadStorage | undefined;
     let contentIndexService: ContentIndexService | undefined;
-    let resourceIndexer: ResourceContentIndexer | undefined;
+    let processing: ProcessingService | undefined;
     let invitationService: CourseInvitationService | undefined;
     let quizService: QuizService | undefined;
     const getConfig = () => (config ??= (options.getAuthConfig ?? readAuthConfig)());
@@ -82,12 +89,45 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             getContentIndexService(),
             new QuizGenerator(createLlmService()),
         ));
-    const getResourceIndexer = () => (resourceIndexer ??= new ResourceContentIndexer(getContentIndexService()));
+    const processingRepository = () => new PostgresProcessingRepository(getDb());
+    const getProcessing = () => {
+        if (!processing) {
+            const starter: PipelineStarter =
+                options.pipelineStarter ??
+                (async (request) => {
+                    if (
+                        process.env.NODE_ENV === "production" ||
+                        process.env.SQS_ENDPOINT !== "http://localhost:9324" ||
+                        process.env.SQS_QUEUE_URL !== "http://localhost:9324/000000000000/classiq-local" ||
+                        !["localhost", "127.0.0.1"].includes(new URL(process.env.DATABASE_URL ?? "").hostname)
+                    ) {
+                        throw new Error("No processing starter configured.");
+                    }
+                    const client = new SQSClient({
+                        region: "us-east-1",
+                        endpoint: process.env.SQS_ENDPOINT,
+                        credentials: { accessKeyId: "classiq", secretAccessKey: "classiq-local" },
+                    });
+                    try {
+                        await sqsPipelineStarter(client, process.env.SQS_QUEUE_URL, {
+                            lecture: lecturePipeline,
+                            resource: resourcePipeline,
+                        })(request);
+                    } finally {
+                        client.destroy();
+                    }
+                });
+            processing = new ProcessingService(processingRepository(), starter);
+        }
 
-    function indexResource(asset: UploadAsset) {
-        const resource = { courseId: asset.courseId, resourceId: asset.resourceId! };
-
-        return getResourceIndexer().index(resource, () => getUploadStorage().read(asset));
+        return processing;
+    };
+    function startResource(asset: UploadAsset) {
+        return getProcessing().start(
+            { kind: "resource", courseId: asset.courseId, resourceId: asset.resourceId! },
+            ["extraction"],
+            resourcePipeline.timeoutSeconds,
+        );
     }
 
     app.use(async (c, next) => {
@@ -121,10 +161,19 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             requireCourseRole,
             getRepository: () => new PostgresUploadRepository(getDb()),
             getStorage: getUploadStorage,
-            indexResource,
+            startResource,
+            startRecording: (asset) =>
+                getProcessing().start(
+                    { kind: "lecture", courseId: asset.courseId, lectureId: asset.lectureId! },
+                    lectureStages,
+                    lecturePipeline.timeoutSeconds,
+                ),
+            resourceProcessing: (asset) =>
+                processingRepository().stages({ kind: "resource", courseId: asset.courseId, resourceId: asset.resourceId! }),
         }),
     );
     app.route("/courses", createContentRoutes<AppEnv>({ requireCourseRole, getService: getContentIndexService }));
+    app.route("/courses", createLectureRoutes<AppEnv>({ getDb, getProcessing, requireCourseRole }));
     app.route("/courses", createQuizRoutes<AppEnv>({ requireCourseRole, getUserId: (c) => c.get("user").id, getService: getQuizService }));
     app.route("/courses/:courseId/invitations", createCourseInvitationRoutes<AppEnv>({ requireCourseRole, getInvitationService }));
     app.route("/invitations", createInvitationRoutes<AppEnv>({ requireSession, getInvitationService }));

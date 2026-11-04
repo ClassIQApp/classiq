@@ -42,7 +42,12 @@ export abstract class AiSdkLlmFacade implements LlmRepository {
         try {
             const result = await generateText({
                 model: this.model,
-                messages: [...request.messages],
+                instructions:
+                    request.messages
+                        .filter((message) => message.role === "system")
+                        .map((message) => message.content)
+                        .join("\n\n") || undefined,
+                messages: request.messages.filter((message) => message.role !== "system"),
                 maxOutputTokens: request.maxOutputTokens,
                 abortSignal: signal,
                 maxRetries: 0,

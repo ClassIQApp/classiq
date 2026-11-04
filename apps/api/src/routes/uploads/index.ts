@@ -51,8 +51,9 @@ export interface UploadRouteDependencies<E extends Env> {
     requireCourseRole: (role: CourseRole) => MiddlewareHandler<E>;
     getRepository: () => UploadRepository;
     getStorage: () => UploadStorage;
-    /** Indexes a completed resource for retrieval. Failures are recorded by the indexer and never fail the upload. */
-    indexResource?: (asset: UploadAsset) => Promise<unknown>;
+    startRecording?: (asset: UploadAsset) => Promise<unknown>;
+    startResource?: (asset: UploadAsset) => Promise<unknown>;
+    resourceProcessing?: (asset: UploadAsset) => Promise<unknown>;
 }
 
 const validateParents: MiddlewareHandler = async (c, next) => {
@@ -70,7 +71,7 @@ const validateParents: MiddlewareHandler = async (c, next) => {
 };
 
 export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDependencies<E>) {
-    const { requireCourseRole, getRepository, getStorage, indexResource } = dependencies;
+    const { requireCourseRole, getRepository, getStorage, startResource, startRecording, resourceProcessing } = dependencies;
 
     if (typeof requireCourseRole !== "function") {
         throw new TypeError("Course authorization middleware is required");
@@ -210,12 +211,16 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
 
             const completed = await getRepository().complete(asset);
 
-            if (kind === "resource" && indexResource) {
-                try {
-                    await indexResource(completed);
-                } catch {
-                    // the upload itself succeeded; indexing can be retried by completing again
-                }
+            if (kind === "resource" && startResource) {
+                const processing = await startResource(completed);
+
+                return c.json({ ...publicAsset(completed), processing });
+            }
+
+            if (kind === "recording" && startRecording) {
+                const processing = await startRecording(completed);
+
+                return c.json({ ...publicAsset(completed), processing });
             }
 
             return c.json(publicAsset(completed));
@@ -244,7 +249,14 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
 
             const assets = await getRepository().listResources(c.req.param("courseId")!);
 
-            return c.json({ items: assets.map((asset) => publicAsset(asset)) });
+            return c.json({
+                items: await Promise.all(
+                    assets.map(async (asset) => ({
+                        ...publicAsset(asset),
+                        ...(resourceProcessing ? { processing: await resourceProcessing(asset) } : {}),
+                    })),
+                ),
+            });
         });
     }
 

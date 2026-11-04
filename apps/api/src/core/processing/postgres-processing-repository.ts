@@ -1,4 +1,4 @@
-import { RetryableStageError } from "./pipeline.ts";
+import { PermanentStageError, RetryableStageError } from "./pipeline.ts";
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 
@@ -201,6 +201,19 @@ export class PostgresProcessingRepository {
         });
     }
 
+    async translation(subject: ProcessingSubject, runId: string, status: "succeeded" | "failed", attempt: number) {
+        return this.transaction(async (client) => {
+            await this.guard(client, subject, runId);
+            await client.query(
+                `UPDATE processing_stages SET status=$2, attempts=GREATEST(attempts,$3),
+                error_code=CASE WHEN $2='failed' THEN 'SPANISH_ALIGNMENT_FAILED' END,
+                status_message=CASE WHEN $2='failed' THEN 'Spanish translation could not be aligned.' ELSE '' END,
+                finished_at=now(), updated_at=now() WHERE run_id=$1 AND stage='translation' AND status <> 'succeeded'`,
+                [runId, status, attempt],
+            );
+        });
+    }
+
     async stageFailed(subject: ProcessingSubject, runId: string, stage: string, code: string, message: string) {
         return this.transaction(async (client) => {
             await this.guard(client, subject, runId);
@@ -209,6 +222,35 @@ export class PostgresProcessingRepository {
                  finished_at=now(), updated_at=now() WHERE run_id=$1 AND stage=$2 AND status <> 'succeeded'`,
                 [runId, stage, code, message],
             );
+        });
+    }
+
+    async publishLecture(subject: ProcessingSubject, runId: string, sourceHash: string) {
+        if (subject.kind !== "lecture") throw new Error("Only lectures can be published.");
+
+        return this.transaction(async (client) => {
+            await this.guard(client, subject, runId);
+            const stages = await client.query<ProcessingStage>("SELECT * FROM processing_stages WHERE run_id=$1 ORDER BY stage", [runId]);
+            const failed = stages.rows.find((stage) => stage.stage !== "translation" && stage.status === "failed");
+            if (failed) {
+                await this.finishFailure(client, subject, runId, failed.error_code ?? "GENERATION_FAILED", failed.status_message);
+
+                return false;
+            }
+            const required = ["transcription", "summary", "key_terms"];
+            if (!required.every((name) => stages.rows.some((stage) => stage.stage === name && stage.status === "succeeded")))
+                throw new PermanentStageError("CONTENT_PENDING", "Lecture content is not ready. Retry processing.");
+            const snapshot = await client.query(
+                `SELECT 1 FROM lecture_transcripts t WHERE t.course_id=$1 AND t.lecture_id=$2 AND t.content_hash=$3
+                 AND (SELECT count(*) FROM lecture_generated_content g WHERE g.course_id=$1 AND g.lecture_id=$2
+                      AND g.source_hash=t.content_hash AND g.kind IN ('summary','key_terms'))=2`,
+                [subject.courseId, subject.lectureId, sourceHash],
+            );
+            if (!snapshot.rowCount) throw new PermanentStageError("TRANSCRIPT_CHANGED", "The transcript changed. Retry processing.");
+            await client.query("UPDATE processing_runs SET status='succeeded', finished_at=now() WHERE id=$1", [runId]);
+            await client.query("UPDATE lectures SET status='ready', status_message='' WHERE id=$1", [subject.lectureId]);
+
+            return true;
         });
     }
 

@@ -1,3 +1,4 @@
+import type { ContentKind } from "../lecture-content/model.ts";
 import type { CreateLectureInput, LectureRepository, UpdateLectureInput } from "./lecture-repository.ts";
 import type { Lecture } from "./model.ts";
 import { DatabaseError, type Pool } from "pg";
@@ -9,6 +10,8 @@ interface LectureRow {
     description: string;
     status: Lecture["status"];
     status_message: string;
+    has_transcript?: boolean;
+    content_kinds?: ContentKind[];
 }
 
 // https://www.postgresql.org/docs/current/errcodes-appendix.html
@@ -24,9 +27,21 @@ function toLecture(row: LectureRow): Lecture {
         description: row.description,
         status: row.status,
         statusMessage: row.status_message,
-        transcript: undefined,
+        transcript: row.has_transcript
+            ? {
+                  id: "transcript",
+                  title: "Transcript",
+                  description: "Source transcript",
+                  href: `/courses/${row.fk_course_id}/lectures/${row.id}/transcript`,
+              }
+            : undefined,
         resources: [],
-        generatedContent: [],
+        generatedContent: (row.content_kinds ?? []).map((kind) => ({
+            id: kind,
+            title: kind === "summary" ? "Summary" : "Key terms",
+            description: "Saved lecture content",
+            href: `/courses/${row.fk_course_id}/lectures/${row.id}/generated-content/${kind}`,
+        })),
     };
 }
 
@@ -46,7 +61,9 @@ export class PostgresLectureRepository implements LectureRepository {
                 title,
                 description,
                 status,
-                status_message
+                status_message,
+                EXISTS (SELECT 1 FROM lecture_transcripts WHERE lecture_id=lectures.id) AS has_transcript,
+                ARRAY(SELECT kind FROM lecture_generated_content WHERE lecture_id=lectures.id ORDER BY kind) AS content_kinds
             FROM lectures
             WHERE fk_course_id = $1
             ORDER BY id
@@ -66,7 +83,9 @@ export class PostgresLectureRepository implements LectureRepository {
                 title,
                 description,
                 status,
-                status_message
+                status_message,
+                EXISTS (SELECT 1 FROM lecture_transcripts WHERE lecture_id=lectures.id) AS has_transcript,
+                ARRAY(SELECT kind FROM lecture_generated_content WHERE lecture_id=lectures.id ORDER BY kind) AS content_kinds
             FROM lectures
             WHERE fk_course_id = $1
                 AND id = $2

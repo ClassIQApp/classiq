@@ -11,6 +11,7 @@ export class DeepSeekLlmFacade extends AiSdkLlmFacade {
                 baseURL: "https://api.deepseek.com",
                 fetch: options.fetch,
             })(config.model),
+            { deepseek: { thinking: { type: "disabled" } } },
         );
     }
 }
