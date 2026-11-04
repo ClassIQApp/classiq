@@ -33,7 +33,14 @@ jobs:
                   role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
                   aws-region: ${{ vars.AWS_REGION }}
 
+            - uses: docker/setup-qemu-action@v3
+              with:
+                  platforms: arm64
+
             - run: pnpm exec turbo run deploy --filter=@classiq/infra -- --require-approval never
               env:
                   DATABASE_URL: ${{ secrets.DATABASE_URL }}
                   BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+                  PROCESSING_ENABLED: ${{ vars.PROCESSING_ENABLED }}
+                  SONIOX_API_KEY: ${{ secrets.SONIOX_API_KEY }}
+                  DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}

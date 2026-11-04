@@ -5,6 +5,7 @@ import type { Construct } from "constructs";
 
 export interface NodeLambdaProps extends Omit<FunctionOptions, "runtime" | "architecture" | "environment"> {
     readonly functionName: string;
+    readonly handler?: string;
     readonly codePath: string;
     readonly environment?: Readonly<Record<string, string | undefined>>;
 }
