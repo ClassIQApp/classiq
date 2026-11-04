@@ -7,6 +7,7 @@ export interface DeploymentConfig {
     };
     readonly domainName: string;
     readonly apiDomainName: string;
+    readonly processingEnvironment?: { readonly databaseUrl: string; readonly sonioxApiKey: string; readonly deepseekApiKey: string };
     readonly apiEnvironment: Readonly<Record<string, string>>;
 }
 
@@ -23,6 +24,14 @@ export function readDeploymentConfig(): DeploymentConfig {
         },
         domainName: DOMAIN_NAME,
         apiDomainName: `api.${DOMAIN_NAME}`,
+        processingEnvironment:
+            process.env.PROCESSING_ENABLED === "1"
+                ? {
+                      databaseUrl: requireEnv("DATABASE_URL"),
+                      sonioxApiKey: requireEnv("SONIOX_API_KEY"),
+                      deepseekApiKey: requireEnv("DEEPSEEK_API_KEY"),
+                  }
+                : undefined,
         apiEnvironment: {
             NODE_ENV: "production",
             DATABASE_URL: requireEnv("DATABASE_URL"),

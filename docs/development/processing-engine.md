@@ -65,3 +65,21 @@ Members can read lecture `/processing`, `/transcript`, `/transcript/translations
 Teachers can POST `/processing/retry`. Failures retain uploaded media and saved outputs. Publication requires matching transcript,
 summary and key-term hashes; translation and resources do not gate readiness. Lost provider responses can repeat calls/billing.
 Use a new lecture when switching from synthetic checkpoints to live media.
+
+## AWS activation
+
+Apply migrations before enabling `PROCESSING_ENABLED=1` in GitHub variables. Supply `SONIOX_API_KEY` and `DEEPSEEK_API_KEY`
+through GitHub secrets alongside the existing database/auth secrets. Activated synthesis uses Docker to package the arm64
+ffmpeg/ffprobe layer; only normalization attaches it. API starters target the two state machines explicitly. A one-minute
+EventBridge rule recovers expired and undispatched runs. Deployed handlers have no fixture mode.
+
+```sh
+pnpm --filter @classiq/api build
+pnpm --filter @classiq/api pipeline:verify
+PROCESSING_TEST_MEDIA_LAYER=1 pnpm --filter @classiq/infra test
+```
+
+`pipeline:validate` optionally checks generated ASL through AWS without creating resources. Deployment uses the existing GitHub
+workflow. Cloud assemblies contain environment secrets; keep them private. Offline synthesis/container tests do not establish
+production performance: measure representative recordings, concurrency, database pressure, timeouts and recovery after rollout.
+Native build details and required license notices are in `apps/api/media-layer/README.md`.
