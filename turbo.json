@@ -3,6 +3,13 @@
     "ui": "tui",
     "globalEnv": [
         "DATABASE_URL",
+        "AWS_REGION",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "S3_ENDPOINT",
+        "SQS_ENDPOINT",
+        "SQS_QUEUE_URL",
+        "COURSE_RESOURCE_FILES_BUCKET_NAME",
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
         "AUTH_TRUSTED_ORIGINS",

@@ -10,6 +10,7 @@ export const courseRegistrationSchema = z.strictObject({
     name: nonemptyText,
     slug: nonemptyText,
     description: z.string(),
+    joinCode: z.optional(z.string()),
 });
 export type CourseRegistration = z.infer<typeof courseRegistrationSchema>;
 
@@ -24,6 +25,7 @@ export const courseSchema = z.strictObject({
     name: z.string(),
     slug: z.string(),
     description: z.nullable(z.string()),
+    joinCode: z.nullable(z.string()),
 });
 export type Course = z.infer<typeof courseSchema>;
 

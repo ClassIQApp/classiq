@@ -3,6 +3,7 @@ import type { Course, CourseMetadataUpdate, CourseRegistration, MemberCourse } f
 
 export interface CourseRepository {
     register(registration: CourseRegistration, creator: Omit<CourseMembership, "courseId">): Promise<MemberCourse>;
+    joinByCode(joinCode: string, userId: string): Promise<MemberCourse>;
     fetch(courseId: string): Promise<Course | undefined>;
     listMemberCourses(userId: string): Promise<MemberCourse[]>;
     updateMetadata(courseId: string, update: CourseMetadataUpdate): Promise<Course | undefined>;

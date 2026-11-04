@@ -1,4 +1,5 @@
 import { ApiError } from "../../api/auth/client";
+import { useAuth } from "../../api/auth/provider";
 import type { CourseSettingsUpdate } from "../../api/courses/types";
 import { useCourses, useCreateCourse, useUpdateCourse } from "../../api/courses/use-courses";
 import CourseCard from "../../components/courses/course-card";
@@ -36,12 +37,18 @@ interface CoursesProps {
 }
 
 export default function Courses({ onOpenCourse, pendingInvitations, renderInviteForm }: CoursesProps) {
+    const { apiFetch } = useAuth();
     const { data: courses = [], isPending, isError, error, refetch } = useCourses();
     const createCourse = useCreateCourse();
     const updateCourse = useUpdateCourse();
 
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+
+    const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+    const [joinCode, setJoinCode] = useState("");
+    const [isJoining, setIsJoining] = useState(false);
+    const [joinError, setJoinError] = useState<string | null>(null);
 
     const editingCourse = courses.find((course) => course.id === editingCourseId && course.role === "teacher");
 
@@ -77,6 +84,34 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
         updateCourse.mutate({ courseId: editingCourse.id, update }, { onSuccess: () => setEditingCourseId(null) });
     }
 
+    async function handleJoinSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setJoinError(null);
+        setIsJoining(true);
+
+        try {
+            const response = await apiFetch("/courses/join", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ joinCode: joinCode.trim().toUpperCase() }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.message || "Invalid join code or failed to join course.");
+            }
+
+            setIsJoinModalOpen(false);
+            setJoinCode("");
+            await refetch();
+        } catch (error_) {
+            const message = error_ instanceof Error ? error_.message : "";
+            setJoinError(message || "An unexpected error occurred.");
+        } finally {
+            setIsJoining(false);
+        }
+    }
+
     if (isPending) {
         return <p role="status">Loading courses…</p>;
     }
@@ -104,13 +139,63 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
                 </div>
 
                 {!showCreateForm && !editingCourse && (
-                    <button className="teacher-course-primary-btn" type="button" onClick={openCreateForm}>
-                        + Create Course
-                    </button>
+                    <div className="teacher-courses-actions">
+                        <button
+                            className="teacher-course-secondary-btn"
+                            type="button"
+                            onClick={() => {
+                                setJoinError(null);
+                                setJoinCode("");
+                                setIsJoinModalOpen(true);
+                            }}
+                        >
+                            + Join Course
+                        </button>
+                        <button className="teacher-course-primary-btn" type="button" onClick={openCreateForm}>
+                            + Create Course
+                        </button>
+                    </div>
                 )}
             </header>
 
             {pendingInvitations}
+
+            {isJoinModalOpen && (
+                <div className="teacher-join-dialog-backdrop">
+                    <div className="teacher-join-dialog">
+                        <h2>Join a Class</h2>
+                        <p>Enter the course join code provided by your teacher.</p>
+
+                        {joinError && <div className="teacher-course-form-error">{joinError}</div>}
+
+                        <form className="teacher-course-form" onSubmit={handleJoinSubmit}>
+                            <input
+                                type="text"
+                                placeholder="Enter join code..."
+                                value={joinCode}
+                                onChange={(e) => setJoinCode(e.target.value)}
+                                className="teacher-join-code-input"
+                                maxLength={6}
+                                required
+                            />
+
+                            <div className="teacher-course-form-actions teacher-join-dialog-actions">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsJoinModalOpen(false)}
+                                    className="teacher-course-secondary-btn"
+                                    disabled={isJoining}
+                                >
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={isJoining} className="teacher-course-primary-btn">
+                                    {isJoining ? "Joining..." : "Join"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {showCreateForm && (
                 <CourseForm
@@ -129,18 +214,39 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
 
             {editingCourse && (
                 <Fragment key={editingCourse.id}>
-                    <CourseForm
-                        eyebrow="Course Settings"
-                        title={editingCourse.name}
-                        description="Update the course information Members will see."
-                        initialValues={editingCourse}
-                        submitLabel="Save Changes"
-                        pendingLabel="Saving…"
-                        pending={updateCourse.isPending}
-                        error={describeCourseError(updateCourse.error)}
-                        onSubmit={handleUpdate}
-                        onCancel={cancelForm}
-                    />
+                    <div className="teacher-course-form-card">
+                        <CourseForm
+                            eyebrow="Course Settings"
+                            title={editingCourse.name}
+                            description="Update the course information Members will see."
+                            initialValues={editingCourse}
+                            submitLabel="Save Changes"
+                            pendingLabel="Saving…"
+                            pending={updateCourse.isPending}
+                            error={describeCourseError(updateCourse.error)}
+                            onSubmit={handleUpdate}
+                            onCancel={cancelForm}
+                        />
+
+                        <div className="teacher-join-code-section">
+                            <h3 className="teacher-join-code-title">Student Join Code</h3>
+                            <p className="teacher-join-code-desc">Share this code with students so they can join this course.</p>
+                            <div className="teacher-join-code-content">
+                                <span className="teacher-join-code-value">{editingCourse.joinCode || "N/A"}</span>
+                                <button
+                                    type="button"
+                                    className="teacher-course-secondary-btn teacher-join-code-copy-btn"
+                                    onClick={() => {
+                                        if (editingCourse.joinCode) {
+                                            navigator.clipboard.writeText(editingCourse.joinCode);
+                                        }
+                                    }}
+                                >
+                                    Copy Code
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
                     {renderInviteForm?.(editingCourse.id)}
                 </Fragment>

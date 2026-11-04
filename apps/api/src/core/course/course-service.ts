@@ -26,6 +26,15 @@ export class CourseService {
         return this.courseRepository.register(parsedRegistration.data, { userId: creatorId, role: "teacher" });
     }
 
+    async joinCourseByCode(joinCode: string, userId: string): Promise<MemberCourse> {
+        const trimmedCode = joinCode.trim().toUpperCase();
+        if (!trimmedCode) {
+            throw new CourseError("invalid_course");
+        }
+
+        return this.courseRepository.joinByCode(trimmedCode, userId);
+    }
+
     async fetchCourse(courseId: string): Promise<Course> {
         const course = await this.courseRepository.fetch(this.parseCourseId(courseId));
         if (!course) {

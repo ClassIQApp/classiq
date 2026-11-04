@@ -288,3 +288,101 @@
         font-size: var(--text-xl);
     }
 }
+
+.teacher-join-code-section {
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: var(--border-width) solid var(--color-border);
+}
+
+.teacher-join-code-title {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+}
+
+.teacher-join-code-desc {
+    margin-bottom: var(--space-4);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.teacher-join-code-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.teacher-join-code-value {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--size-control);
+    padding: var(--space-2) var(--space-4);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-caps);
+}
+
+.teacher-join-code-copy-btn {
+    white-space: nowrap;
+}
+
+.teacher-courses-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.teacher-course-form-card .teacher-course-form-card {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+.teacher-join-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+    background: color-mix(in srgb, var(--black) 50%, transparent);
+}
+
+.teacher-join-dialog {
+    display: grid;
+    gap: var(--space-4);
+    width: 100%;
+    max-width: var(--layout-auth-card);
+    padding: var(--space-6);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: var(--shadow-lg);
+}
+
+.teacher-join-dialog h2 {
+    font-size: var(--text-lg);
+}
+
+.teacher-join-dialog > p {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.teacher-join-code-input {
+    font-family: var(--font-mono);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+}
+
+.teacher-join-dialog-actions {
+    justify-content: flex-end;
+}
