@@ -4,6 +4,7 @@ import CourseWorkspace from "../../components/courses/course-workspace";
 import "../teacher/TeacherCourses.css";
 import "./course-resources.css";
 import "./courses.css";
+import "./lecture-study.css";
 import { useEffect } from "react";
 
 interface CoursePageProps {

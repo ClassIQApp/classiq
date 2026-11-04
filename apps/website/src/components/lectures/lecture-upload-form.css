@@ -58,10 +58,6 @@
     margin-block: var(--space-5);
 }
 
-.lecture-recording h2 {
-    font-size: var(--text-lg);
-}
-
 .lecture-recording video,
 .lecture-recording audio {
     width: 100%;
@@ -72,10 +68,6 @@
 
 .lecture-recording audio {
     background: transparent;
-}
-
-.lecture-recording button {
-    justify-self: start;
 }
 
 .lecture-recording p {

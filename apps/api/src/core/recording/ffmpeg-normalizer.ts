@@ -114,6 +114,9 @@ export class FfmpegRecordingNormalizer implements RecordingNormalizer {
                         "1",
                         "-ar",
                         "16000",
+                        // Fixed-size frames: after a mid-frame seek, ffmpeg 8+ rejects the short first FLAC block.
+                        "-af",
+                        "asetnsamples=n=4096:p=0",
                         "-c:a",
                         "flac",
                         file,
