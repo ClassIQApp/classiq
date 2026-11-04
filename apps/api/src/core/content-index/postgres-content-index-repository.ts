@@ -119,7 +119,10 @@ function sourceKey(reference: ContentSourceReference) {
 export class PostgresContentIndexRepository implements ContentIndexRepository {
     private readonly db: Pool;
 
-    constructor(db: Pool) {
+    constructor(
+        db: Pool,
+        private readonly beforeWrite?: (client: PoolClient) => Promise<void>,
+    ) {
         this.db = db;
     }
 
@@ -168,6 +171,16 @@ export class PostgresContentIndexRepository implements ContentIndexRepository {
 
     async markFailed(reference: ContentSourceReference, message: string): Promise<ContentSource> {
         return this.transaction(async (client) => {
+            // Resource files are immutable. A concurrent failed reader must not erase committed extraction.
+            if (reference.kind === "resource" && this.beforeWrite) {
+                const { lectureId, resourceId } = sourceKey(reference);
+                const existing = await client.query<SourceRow>(
+                    `SELECT ${SOURCE_COLUMNS} FROM content_sources
+                    WHERE course_id = $1 AND kind = $2 AND (lecture_id = $3 OR resource_id = $4) AND status = 'indexed'`,
+                    [reference.courseId, reference.kind, lectureId, resourceId],
+                );
+                if (existing.rows[0]) return toSource(existing.rows[0]);
+            }
             const sourceId = await this.upsertSource(client, reference, "failed", message, null);
 
             await client.query("DELETE FROM content_chunks WHERE source_id = $1", [sourceId]);
@@ -268,6 +281,7 @@ export class PostgresContentIndexRepository implements ContentIndexRepository {
 
         try {
             await client.query("BEGIN");
+            await this.beforeWrite?.(client);
 
             const result = await operation(client);
 

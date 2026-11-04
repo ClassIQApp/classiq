@@ -26,6 +26,8 @@
         "@ai-sdk/deepseek": "catalog:",
         "@ai-sdk/openai": "catalog:",
         "@aws-sdk/client-s3": "catalog:",
+        "@aws-sdk/client-sfn": "catalog:",
+        "@aws-sdk/client-sqs": "catalog:",
         "ai": "catalog:",
         "better-auth": "catalog:",
         "hono": "catalog:",
