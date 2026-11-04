@@ -1,4 +1,5 @@
 import type { Lecture, LectureContentLink } from "../../api/lectures/types";
+import LectureEditForm from "./lecture-edit-form";
 import LectureStatus from "./lecture-status";
 import RecordingPlayer from "./recording-player";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
@@ -26,6 +27,7 @@ interface ContentSectionProps {
 interface LectureDetailProps {
     courseId: string;
     lecture: Lecture;
+    canManage?: boolean;
     startSeconds?: number;
     onBack: () => void;
 }
@@ -57,7 +59,7 @@ function ContentSection({ title, description, links, emptyMessage }: ContentSect
     );
 }
 
-export default function LectureDetail({ courseId, lecture, startSeconds, onBack }: LectureDetailProps) {
+export default function LectureDetail({ courseId, lecture, canManage = false, startSeconds, onBack }: LectureDetailProps) {
     const pendingMessage = unavailableMessageByStatus[lecture.status] ?? "No content has been added yet.";
 
     return (
@@ -67,6 +69,7 @@ export default function LectureDetail({ courseId, lecture, startSeconds, onBack 
             </button>
             <LectureStatus status={lecture.status} />
             <p>{lecture.description}</p>
+            {canManage && <LectureEditForm key={`${courseId}:${lecture.id}`} courseId={courseId} lecture={lecture} />}
             <div className={`lecture-state-message lecture-state-${lecture.status}`}>
                 <strong>{headingByStatus[lecture.status]}</strong>
                 <p>{lecture.statusMessage}</p>
