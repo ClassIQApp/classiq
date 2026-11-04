@@ -18,6 +18,7 @@ import type { UploadAsset, UploadStorage } from "./core/uploads/model.ts";
 import { PostgresUploadRepository } from "./core/uploads/postgres-upload-repository.ts";
 import { S3UploadStorage } from "./core/uploads/s3-upload-storage.ts";
 import authRoutes from "./routes/auth/index.ts";
+import { createContentRoutes } from "./routes/content/index.ts";
 import courseRoutes from "./routes/courses/index.ts";
 import { createCourseInvitationRoutes, createInvitationRoutes } from "./routes/invitations/index.ts";
 import { createQuizRoutes } from "./routes/quizzes/index.ts";
@@ -62,6 +63,7 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     let auth: AuthService | undefined;
     let config: AuthConfig | undefined;
     let uploadStorage: UploadStorage | undefined;
+    let contentIndexService: ContentIndexService | undefined;
     let resourceIndexer: ResourceContentIndexer | undefined;
     let invitationService: CourseInvitationService | undefined;
     let quizService: QuizService | undefined;
@@ -73,14 +75,14 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             new PostgresCourseInvitationFacade(getDb()),
             new PostgresCourseMembershipFacade(getDb()),
         ));
+    const getContentIndexService = () => (contentIndexService ??= new ContentIndexService(new PostgresContentIndexRepository(getDb())));
     const getQuizService = () =>
         (quizService ??= new QuizService(
             new PostgresQuizRepository(getDb()),
-            new ContentIndexService(new PostgresContentIndexRepository(getDb())),
+            getContentIndexService(),
             new QuizGenerator(createLlmService()),
         ));
-    const getResourceIndexer = () =>
-        (resourceIndexer ??= new ResourceContentIndexer(new ContentIndexService(new PostgresContentIndexRepository(getDb()))));
+    const getResourceIndexer = () => (resourceIndexer ??= new ResourceContentIndexer(getContentIndexService()));
 
     function indexResource(asset: UploadAsset) {
         const resource = { courseId: asset.courseId, resourceId: asset.resourceId! };
@@ -122,6 +124,7 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             indexResource,
         }),
     );
+    app.route("/courses", createContentRoutes<AppEnv>({ requireCourseRole, getService: getContentIndexService }));
     app.route("/courses", createQuizRoutes<AppEnv>({ requireCourseRole, getUserId: (c) => c.get("user").id, getService: getQuizService }));
     app.route("/courses/:courseId/invitations", createCourseInvitationRoutes<AppEnv>({ requireCourseRole, getInvitationService }));
     app.route("/invitations", createInvitationRoutes<AppEnv>({ requireSession, getInvitationService }));

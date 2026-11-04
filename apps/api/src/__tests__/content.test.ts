@@ -1,4 +1,3 @@
-import { createApp } from "../app.ts";
 import type { ContentIndexRepository } from "../core/content-index/content-index-repository.ts";
 import { ContentIndexService } from "../core/content-index/content-index-service.ts";
 import type { ContentPassage } from "../core/content-index/model.ts";
@@ -43,7 +42,7 @@ function fixture(search: ContentIndexRepository["search"] = async () => [passage
     const app = new Hono().route(
         "/courses",
         createContentRoutes({
-            service: new ContentIndexService(repository),
+            getService: () => new ContentIndexService(repository),
             requireCourseRole: () => requireTestRole,
         }),
     );
@@ -56,19 +55,9 @@ function fixture(search: ContentIndexRepository["search"] = async () => [passage
 }
 
 describe("content search router", () => {
-    it("leaves search unmounted in the application until authorization is integrated", async () => {
-        const app = createApp(() => {
-            throw new Error("Database must not be accessed");
-        });
-
-        const response = await app.request("/courses/1/search?q=enzymes");
-
-        expect(response.status).not.toBe(200);
-    });
-
     it("requires injected authorization at construction", () => {
         expect(() =>
-            createContentRoutes({ service: new ContentIndexService(fixture().repository), requireCourseRole: undefined! }),
+            createContentRoutes({ getService: () => new ContentIndexService(fixture().repository), requireCourseRole: undefined! }),
         ).toThrow("authorization");
     });
 

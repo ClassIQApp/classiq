@@ -4,18 +4,20 @@ import LectureDetail from "../lectures/lecture-detail";
 import LectureList from "../lectures/lecture-list";
 import CourseResources from "./course-resources";
 import CourseRoleBadge from "./course-role-badge";
+import CourseSearch from "./course-search";
 import { useEffect, useRef, useState } from "react";
 
-type CourseSection = "lectures" | "resources";
+type CourseSection = "lectures" | "resources" | "search";
 
-type CourseView = { name: CourseSection } | { name: "lecture"; lectureId: string };
+type CourseView = { name: CourseSection } | { name: "lecture"; lectureId: string; startSeconds?: number };
 
 const sectionLabelBySection: Record<CourseSection, string> = {
     lectures: "Lectures",
     resources: "Resources",
+    search: "Search",
 };
 
-const courseSections: CourseSection[] = ["lectures", "resources"];
+const courseSections: CourseSection[] = ["lectures", "resources", "search"];
 
 interface CourseWorkspaceProps {
     course: Course;
@@ -32,6 +34,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
     const heading = useRef<HTMLHeadingElement>(null);
 
     const lecture = view.name === "lecture" ? course.lectures.find((item) => item.id === view.lectureId) : undefined;
+    const startSeconds = view.name === "lecture" ? view.startSeconds : undefined;
     const activeSection = view.name === "lecture" ? "lectures" : view.name;
 
     useEffect(() => {
@@ -43,8 +46,25 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
             return <CourseResources courseId={course.id} lectures={course.lectures} canManage={course.role === "teacher"} />;
         }
 
+        if (view.name === "search") {
+            return (
+                <CourseSearch
+                    courseId={course.id}
+                    lectures={course.lectures}
+                    onOpenLecture={(lectureId, seconds) => setView({ name: "lecture", lectureId, startSeconds: seconds })}
+                />
+            );
+        }
+
         if (lecture) {
-            return <LectureDetail courseId={course.id} lecture={lecture} onBack={() => setView({ name: "lectures" })} />;
+            return (
+                <LectureDetail
+                    courseId={course.id}
+                    lecture={lecture}
+                    startSeconds={startSeconds}
+                    onBack={() => setView({ name: "lectures" })}
+                />
+            );
         }
 
         return (

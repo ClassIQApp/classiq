@@ -2,6 +2,7 @@ import { useAuth } from "../../api/auth/provider";
 import type { Lecture } from "../../api/lectures/types";
 import { createResourcesApi, resourceQueryKey } from "../../api/resources/client";
 import type { ResourceOperation } from "../../api/resources/client";
+import { openInNewTab } from "./open-in-new-tab";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -118,32 +119,16 @@ export function ResourceLibrary({
             return;
         }
 
-        const tab = window.open("about:blank", "_blank");
-
-        if (tab) {
-            tab.opener = null;
-        }
-
         setOpening(resourceId);
         setError("");
 
         try {
-            const url = await api.download(courseId, resourceId, signal);
+            const outcome = await openInNewTab(() => api.download(courseId, resourceId, signal), signal);
 
-            if (signal.aborted) {
-                tab?.close();
-
-                return;
-            }
-
-            if (tab) {
-                tab.location.href = url;
-            } else {
+            if (outcome === "blocked") {
                 setError("Allow popups and try opening the PDF again.");
             }
         } catch (error_) {
-            tab?.close();
-
             if (!signal.aborted) {
                 setError(error_ instanceof Error ? error_.message : "Could not open this PDF. Try again for a fresh link.");
             }
