@@ -1,3 +1,4 @@
+import { SupersededRunError } from "../processing/postgres-processing-repository.ts";
 import type { ContentIndexService } from "./content-index-service.ts";
 import { ContentIndexError } from "./errors.ts";
 import type { ContentSource, ResourcePage } from "./model.ts";
@@ -26,7 +27,7 @@ export class ResourceContentIndexer {
         try {
             return await this.service.indexSource(reference, await this.extractPages(await read()));
         } catch (error) {
-            if (error instanceof ContentIndexError && error.code === "invalid_reference") {
+            if (error instanceof SupersededRunError || (error instanceof ContentIndexError && error.code === "invalid_reference")) {
                 throw error;
             }
 

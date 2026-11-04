@@ -51,6 +51,8 @@ catalog:
     dotenv-cli: ^11.0.0
     better-auth: 1.7.14
     unpdf: 1.8.1
+    "@aws-sdk/client-sqs": 3.1147.0
+    "@aws-sdk/client-sfn": 3.1147.0
 
 catalogMode: strict
 
