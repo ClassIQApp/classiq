@@ -26,6 +26,42 @@ function storageFixture() {
 }
 
 describe("S3 upload boundary", () => {
+    it("presigns local path-style URLs and verifies objects without AWS encryption", async () => {
+        const { asset } = storageFixture();
+        const client = new S3Client({
+            region: "us-east-1",
+            endpoint: "http://localhost:9100",
+            forcePathStyle: true,
+            credentials: { accessKeyId: "classiq", secretAccessKey: "classiq-local" },
+        });
+        const storage = new S3UploadStorage(
+            {
+                bucketName: "classiq-local-files",
+                region: "us-east-1",
+                serverSideEncryption: false,
+            },
+            client,
+        );
+        const ticket = await storage.ticket(asset);
+        const url = new URL(ticket.url);
+
+        expect(url.origin).toBe("http://localhost:9100");
+        expect(url.pathname).toBe(`/classiq-local-files/courses/1/lectures/2/recordings/${asset.id}`);
+        expect(ticket.headers).not.toHaveProperty("x-amz-server-side-encryption");
+
+        client.send = vi.fn().mockResolvedValue({
+            ContentLength: asset.contentLength,
+            ContentType: asset.contentType,
+            Metadata: { "upload-id": uploadId },
+        }) as typeof client.send;
+
+        await expect(storage.verify(asset)).resolves.toBeUndefined();
+        const download = await storage.download(asset);
+
+        expect(new URL(download.url).origin).toBe(url.origin);
+        client.destroy();
+    });
+
     it("signs immutable PUT headers, length, metadata, key and short expiration", async () => {
         const { asset, client, storage } = storageFixture();
 

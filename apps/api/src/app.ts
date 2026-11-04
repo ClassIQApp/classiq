@@ -46,7 +46,15 @@ export interface AppOptions {
 function createUploadStorage(): UploadStorage {
     const config = readCourseResourceFileConfig(process.env);
 
-    return new S3UploadStorage(config, new S3Client({ region: config.region }));
+    return new S3UploadStorage(
+        config,
+        new S3Client({
+            region: config.region,
+            endpoint: config.endpoint,
+            forcePathStyle: Boolean(config.endpoint),
+            ...(config.endpoint ? { credentials: { accessKeyId: "classiq", secretAccessKey: "classiq-local" } } : {}),
+        }),
+    );
 }
 
 export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<AppEnv> {

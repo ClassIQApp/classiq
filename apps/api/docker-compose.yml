@@ -16,5 +16,33 @@ services:
         volumes:
             - classiq-postgres-data:/var/lib/postgresql
 
+    minio:
+        image: quay.io/minio/minio:latest
+        restart: unless-stopped
+        command: server /data --console-address ":9001"
+        environment:
+            MINIO_ROOT_USER: classiq
+            MINIO_ROOT_PASSWORD: classiq-local
+            MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:5173,http://127.0.0.1:5173
+        ports:
+            - "127.0.0.1:9100:9000"
+            - "127.0.0.1:9101:9001"
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            interval: 2s
+            timeout: 3s
+            retries: 30
+        volumes:
+            - classiq-minio-data:/data
+
+    elasticmq:
+        image: softwaremill/elasticmq-native:latest
+        restart: unless-stopped
+        ports:
+            - "127.0.0.1:9324:9324"
+        volumes:
+            - ./elasticmq.conf:/opt/elasticmq.conf:ro
+
 volumes:
     classiq-postgres-data:
+    classiq-minio-data:

@@ -31,7 +31,7 @@ export class S3UploadStorage implements UploadStorage {
             "content-type": asset.contentType,
             "if-none-match": "*",
             "x-amz-meta-upload-id": asset.uploadId,
-            "x-amz-server-side-encryption": "AES256",
+            ...(this.config.serverSideEncryption === false ? {} : { "x-amz-server-side-encryption": "AES256" }),
         };
         const request = new PutObjectCommand({
             ...this.location(asset),
@@ -39,7 +39,7 @@ export class S3UploadStorage implements UploadStorage {
             ContentLength: asset.contentLength,
             IfNoneMatch: "*",
             Metadata: { "upload-id": asset.uploadId },
-            ServerSideEncryption: "AES256",
+            ServerSideEncryption: this.config.serverSideEncryption === false ? undefined : "AES256",
         });
 
         const url = await getSignedUrl(this.signingClient, request, {
@@ -77,7 +77,7 @@ export class S3UploadStorage implements UploadStorage {
             object.ContentLength !== asset.contentLength ||
             object.ContentType !== asset.contentType ||
             object.Metadata?.["upload-id"] !== asset.uploadId ||
-            object.ServerSideEncryption !== "AES256"
+            (this.config.serverSideEncryption !== false && object.ServerSideEncryption !== "AES256")
         ) {
             throw new UploadError(409, "OBJECT_MISMATCH", "Uploaded object does not match the upload ticket.");
         }
