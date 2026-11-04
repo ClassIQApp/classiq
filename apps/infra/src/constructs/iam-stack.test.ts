@@ -46,6 +46,11 @@ test("dev team has bounded project writes without account listing or privilege e
             Statement: Match.arrayWith([
                 Match.objectLike({
                     Effect: "Allow",
+                    Action: "s3:ListBucket",
+                    Resource: project.resolve(project.fileStorage.bucket.bucketArn),
+                }),
+                Match.objectLike({
+                    Effect: "Allow",
                     Action: "kms:Decrypt",
                     Condition: { StringEquals: { "kms:EncryptionContext:aws:lambda:FunctionArn": Match.anyValue() } },
                 }),
@@ -53,6 +58,16 @@ test("dev team has bounded project writes without account listing or privilege e
                     Effect: "Deny",
                     Action: "kms:Decrypt",
                     Condition: { StringNotEquals: { "kms:EncryptionContext:aws:lambda:FunctionArn": Match.anyValue() } },
+                }),
+                Match.objectLike({
+                    Effect: "Deny",
+                    Action: "*",
+                    NotResource: Match.arrayWith([project.resolve(project.fileStorage.bucket.bucketArn)]),
+                }),
+                Match.objectLike({
+                    Effect: "Deny",
+                    Resource: "*",
+                    NotAction: Match.arrayWith(["s3:ListBucket"]),
                 }),
             ]),
         },

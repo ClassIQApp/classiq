@@ -86,6 +86,14 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
     const routes = new Hono<E>();
 
     routes.onError((error, c) => {
+        if (!(error instanceof z.ZodError) && !(error instanceof SyntaxError)) {
+            console.warn({
+                event: "upload_request_failed",
+                path: c.req.path,
+                code: error instanceof UploadError ? error.code : "UPLOAD_UNAVAILABLE",
+                errorName: error.cause instanceof Error ? error.cause.name : error.name,
+            });
+        }
         if (error instanceof UploadError) {
             return c.json({ code: error.code, message: error.message }, error.status);
         }
@@ -113,6 +121,54 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
         }
 
         return asset;
+    }
+
+    const multipartRoot = "/:courseId/lectures/:lectureId/recording/multipart";
+    for (const action of ["start", "part", "complete"] as const) {
+        routes.post(`${multipartRoot}/${action}`, validateParents, teacher, async (c) => {
+            const body = z
+                .object({
+                    uploadId: z.uuid(),
+                    id: z.string().min(1).max(2048).optional(),
+                    number: z.number().int().positive().max(10_000).optional(),
+                    parts: z
+                        .array(z.object({ number: z.number().int().positive(), etag: z.string().min(1).max(256) }).strict())
+                        .max(64)
+                        .optional(),
+                })
+                .strict()
+                .parse(await c.req.json());
+            const asset = await find(c.req.param("courseId")!, "recording", c.req.param("lectureId")!);
+            if (asset.uploadId !== body.uploadId || asset.uploadStatus === "failed") {
+                throw new UploadError(409, "UPLOAD_CONFLICT", "Upload ticket does not match this recording.");
+            }
+            const storage = getStorage();
+            if (!storage.multipart) throw new UploadError(503, "STORAGE_UNAVAILABLE", "Resumable uploads are unavailable.");
+            if (action !== "complete" && asset.uploadStatus === "uploaded") {
+                throw new UploadError(409, "UPLOAD_CONFLICT", "Recording is already uploaded.");
+            }
+            if (action === "start") {
+                return c.json(await storage.multipart.start(asset));
+            }
+            const sessionId = z.string().min(1).parse(body.id);
+            if (action === "part") {
+                return c.json(await storage.multipart.part(asset, sessionId, z.number().int().positive().parse(body.number)));
+            }
+            // A lost completion response must not make the browser upload the recording again.
+            try {
+                await storage.verify(asset);
+            } catch (error) {
+                if (!(error instanceof UploadError) || error.code !== "OBJECT_MISSING") throw error;
+                await storage.multipart.complete(
+                    asset,
+                    sessionId,
+                    z.array(z.object({ number: z.number(), etag: z.string() })).parse(body.parts),
+                );
+                await storage.verify(asset);
+            }
+
+            return c.json({ uploaded: true });
+        });
     }
 
     for (const kind of ["recording", "resource"] as const) {

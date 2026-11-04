@@ -52,6 +52,7 @@ function RecordingForm({ courseId }: LectureUploadFormProps) {
     }
 
     function chooseFile(selected: File | null) {
+        session.current = new RecordingSession();
         setError("");
         setMessage("");
         setProgress(0);
@@ -217,7 +218,7 @@ function RecordingForm({ courseId }: LectureUploadFormProps) {
                 {uploading && (
                     <div className="lecture-upload-progress">
                         <progress value={progress} max={100} />
-                        <span>{progress}% uploaded</span>
+                        <span>{uploading && progress === 100 ? "Verifying recording…" : `${progress}% transferred`}</span>
                     </div>
                 )}
 

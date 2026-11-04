@@ -111,21 +111,26 @@ describe("authorized upload router", () => {
         ).toThrow("authorization");
     });
 
-    it.each([`${recording}/upload`, `${recording}/complete`, "1/resources/upload", "1/resources/3/complete"])(
-        "denies unauthenticated and Member mutation: %s",
-        async (path) => {
-            const { request, repository, storage } = fixture();
+    it.each([
+        `${recording}/upload`,
+        `${recording}/complete`,
+        `${recording}/multipart/start`,
+        `${recording}/multipart/part`,
+        `${recording}/multipart/complete`,
+        "1/resources/upload",
+        "1/resources/3/complete",
+    ])("denies unauthenticated and Member mutation: %s", async (path) => {
+        const { request, repository, storage } = fixture();
 
-            const anonymousResponse = await request(path, input, "");
-            const memberResponse = await request(path, input, "member");
+        const anonymousResponse = await request(path, input, "");
+        const memberResponse = await request(path, input, "member");
 
-            expect(anonymousResponse.status).toBe(401);
-            expect(memberResponse.status).toBe(403);
-            expect(repository.checkParent).not.toHaveBeenCalled();
-            expect(storage.ticket).not.toHaveBeenCalled();
-            expect(storage.verify).not.toHaveBeenCalled();
-        },
-    );
+        expect(anonymousResponse.status).toBe(401);
+        expect(memberResponse.status).toBe(403);
+        expect(repository.checkParent).not.toHaveBeenCalled();
+        expect(storage.ticket).not.toHaveBeenCalled();
+        expect(storage.verify).not.toHaveBeenCalled();
+    });
     it.each([recording, `${recording}/download`, "1/resources", "1/resources/3/download"])(
         "protects metadata and downloads: %s",
         async (path) => {
