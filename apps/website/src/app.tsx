@@ -1,5 +1,6 @@
 import type { AuthUser } from "./api/auth/client";
 import { AuthProvider, useAuth } from "./api/auth/provider";
+import "./components/chat/chat-window.css";
 import InviteForm from "./components/invitations/InviteForm";
 import PendingInvitations from "./components/invitations/PendingInvitations";
 import AppShell from "./components/layout/AppShell";

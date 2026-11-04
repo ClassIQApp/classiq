@@ -48,7 +48,7 @@ Some classes are slightly-modified versions of classes from courses.css.
     overflow: auto;
 }
 
-select:invalid {
+.chat-window-box select:invalid {
     /* for graying out the LLM Model in the selector instead of leaving it the default */
     color: gray;
     option {
