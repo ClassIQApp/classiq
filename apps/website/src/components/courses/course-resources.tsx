@@ -1,6 +1,6 @@
 import { useAuth } from "../../api/auth/provider";
 import type { Lecture } from "../../api/lectures/types";
-import { createResourcesApi, resourceQueryKey } from "../../api/resources/client";
+import { createResourcesApi, resourceIndexingNote, resourceQueryKey } from "../../api/resources/client";
 import type { ResourceOperation } from "../../api/resources/client";
 import { openInNewTab } from "./open-in-new-tab";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -232,6 +232,7 @@ export function ResourceLibrary({
                             {resource.uploadStatus === "failed" && (
                                 <p>Upload failed. A teacher can select the file to start a new upload.</p>
                             )}
+                            {resourceIndexingNote(resource) && <p>{resourceIndexingNote(resource)}</p>}
                         </div>
                         {resource.uploadStatus === "uploaded" && (
                             <button

@@ -4,6 +4,7 @@ import type { Lecture } from "../../api/lectures/types";
 import { createResourcesApi } from "../../api/resources/client";
 import { createSearchApi, searchQueryKey } from "../../api/search/client";
 import type { ContentKind, SearchApi, SearchFilters, SearchPassage } from "../../api/search/client";
+import { formatTimestamp } from "../lectures/timestamp";
 import { openInNewTab } from "./open-in-new-tab";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -48,19 +49,6 @@ interface SearchResultProps {
     opening: string | null;
     onOpenResource: (passage: SearchPassage) => void;
     onOpenLecture: (passage: SearchPassage) => void;
-}
-
-export function formatTimestamp(totalSeconds: number) {
-    const seconds = Math.floor(totalSeconds);
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainder = String(seconds % 60).padStart(2, "0");
-
-    if (hours > 0) {
-        return `${hours}:${String(minutes).padStart(2, "0")}:${remainder}`;
-    }
-
-    return `${minutes}:${remainder}`;
 }
 
 export function passageLocation(passage: SearchPassage) {

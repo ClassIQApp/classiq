@@ -79,9 +79,10 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
         if (lecture) {
             return (
                 <LectureDetail
+                    key={lecture.id}
                     courseId={course.id}
                     lecture={lecture}
-                    canManage={course.role === "teacher"}
+                    role={course.role}
                     startSeconds={startSeconds}
                     onBack={() => setView({ name: "lectures" })}
                 />
@@ -116,7 +117,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
                 <h1 ref={heading} tabIndex={-1}>
                     {lecture ? lecture.title : course.name}
                 </h1>
-                <p>{lecture ? "Review your lecture and the content available so far." : course.description}</p>
+                <p>{lecture ? lecture.description : course.description}</p>
                 <nav className="course-sections" aria-label="Course sections">
                     {courseSections.map((section) => {
                         const SectionIcon = iconBySection[section];

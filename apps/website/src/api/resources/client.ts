@@ -10,6 +10,31 @@ export interface CourseResource {
     contentType: string;
     contentLength: number;
     uploadStatus: "pending" | "uploaded" | "failed";
+    processing?: ResourceProcessingStage[];
+}
+
+export interface ResourceProcessingStage {
+    stage: string;
+    status: "pending" | "running" | "succeeded" | "failed";
+    status_message?: string;
+}
+
+export function resourceIndexingNote(resource: CourseResource) {
+    const stages = resource.processing ?? [];
+
+    if (resource.uploadStatus !== "uploaded" || stages.length === 0) {
+        return undefined;
+    }
+
+    if (stages.some((stage) => stage.status === "failed")) {
+        return "Not searchable yet: indexing didn't finish. The PDF is still available.";
+    }
+
+    if (stages.some((stage) => stage.status === "pending" || stage.status === "running")) {
+        return "Being indexed for search.";
+    }
+
+    return undefined;
 }
 
 export interface ResourceTicket {
