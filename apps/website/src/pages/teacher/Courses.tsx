@@ -104,8 +104,9 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
             setIsJoinModalOpen(false);
             setJoinCode("");
             await refetch();
-        } catch (err: any) {
-            setJoinError(err.message || "An unexpected error occurred.");
+        } catch (error_) {
+            const message = error_ instanceof Error ? error_.message : "";
+            setJoinError(message || "An unexpected error occurred.");
         } finally {
             setIsJoining(false);
         }
@@ -138,7 +139,7 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
                 </div>
 
                 {!showCreateForm && !editingCourse && (
-                    <div style={{ display: "flex", gap: "var(--space-3)" }}>
+                    <div className="teacher-courses-actions">
                         <button
                             className="teacher-course-secondary-btn"
                             type="button"
@@ -160,38 +161,34 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
             {pendingInvitations}
 
             {isJoinModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full text-gray-900">
-                        <h2 className="text-lg font-bold mb-2">Join a Class</h2>
-                        <p className="text-sm text-gray-500 mb-4">Enter the course join code provided by your teacher.</p>
+                <div className="teacher-join-dialog-backdrop">
+                    <div className="teacher-join-dialog">
+                        <h2>Join a Class</h2>
+                        <p>Enter the course join code provided by your teacher.</p>
 
-                        {joinError && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">{joinError}</div>}
+                        {joinError && <div className="teacher-course-form-error">{joinError}</div>}
 
-                        <form onSubmit={handleJoinSubmit}>
+                        <form className="teacher-course-form" onSubmit={handleJoinSubmit}>
                             <input
                                 type="text"
                                 placeholder="Enter join code..."
                                 value={joinCode}
                                 onChange={(e) => setJoinCode(e.target.value)}
-                                className="w-full border border-gray-300 px-3 py-2 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase tracking-widest text-black"
+                                className="teacher-join-code-input"
                                 maxLength={6}
                                 required
                             />
 
-                            <div className="flex justify-end space-x-2">
+                            <div className="teacher-course-form-actions teacher-join-dialog-actions">
                                 <button
                                     type="button"
                                     onClick={() => setIsJoinModalOpen(false)}
-                                    className="px-4 py-2 border rounded-lg hover:bg-gray-100 text-gray-700"
+                                    className="teacher-course-secondary-btn"
                                     disabled={isJoining}
                                 >
                                     Cancel
                                 </button>
-                                <button
-                                    type="submit"
-                                    disabled={isJoining}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                                >
+                                <button type="submit" disabled={isJoining} className="teacher-course-primary-btn">
                                     {isJoining ? "Joining..." : "Join"}
                                 </button>
                             </div>
