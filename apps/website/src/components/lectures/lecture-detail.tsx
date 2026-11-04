@@ -16,17 +16,21 @@ const unavailableMessageByStatus: Partial<Record<Lecture["status"], string>> = {
     failed: "This content is unavailable because lecture processing failed.",
 };
 
-function ContentSection({
-    title,
-    description,
-    links,
-    emptyMessage,
-}: {
+interface ContentSectionProps {
     title: string;
     description: string;
     links: LectureContentLink[];
     emptyMessage: string;
-}) {
+}
+
+interface LectureDetailProps {
+    courseId: string;
+    lecture: Lecture;
+    startSeconds?: number;
+    onBack: () => void;
+}
+
+function ContentSection({ title, description, links, emptyMessage }: ContentSectionProps) {
     return (
         <section className="lecture-content-section" aria-label={title}>
             <h2>{title}</h2>
@@ -53,7 +57,7 @@ function ContentSection({
     );
 }
 
-export default function LectureDetail({ courseId, lecture, onBack }: { courseId: string; lecture: Lecture; onBack: () => void }) {
+export default function LectureDetail({ courseId, lecture, startSeconds, onBack }: LectureDetailProps) {
     const pendingMessage = unavailableMessageByStatus[lecture.status] ?? "No content has been added yet.";
 
     return (
@@ -68,7 +72,12 @@ export default function LectureDetail({ courseId, lecture, onBack }: { courseId:
                 <p>{lecture.statusMessage}</p>
             </div>
             {lecture.status !== "pending" && (
-                <RecordingPlayer key={`${courseId}:${lecture.id}`} courseId={courseId} lectureId={lecture.id} />
+                <RecordingPlayer
+                    key={`${courseId}:${lecture.id}:${startSeconds ?? 0}`}
+                    courseId={courseId}
+                    lectureId={lecture.id}
+                    startSeconds={startSeconds}
+                />
             )}
             <div className="lecture-content-grid">
                 <ContentSection
