@@ -1,9 +1,11 @@
 import { ApiError } from "../auth/client";
 import type { ApiFetch } from "../auth/client";
+import { RecordingMultipartUpload } from "./recording-multipart";
 import { completeRecordingUpload, createRecordingUpload, uploadRecordingFile } from "./recording-upload";
 import type { RecordingUploadTicket } from "./recording-upload";
 
 export class RecordingSession {
+    private readonly multipart = new RecordingMultipartUpload();
     lectureId?: string;
     ticket?: RecordingUploadTicket;
     attemptedPut = false;
@@ -19,7 +21,7 @@ export class RecordingSession {
         signal: AbortSignal,
         onProgress: (progress: number) => void,
         invalidate: () => Promise<unknown>,
-        put = uploadRecordingFile,
+        put?: typeof uploadRecordingFile,
     ) {
         try {
             signal.throwIfAborted();
@@ -42,9 +44,7 @@ export class RecordingSession {
 
             if (this.attemptedPut) {
                 try {
-                    await completeRecordingUpload(apiFetch, courseId, this.lectureId, this.ticket.uploadId, signal);
-
-                    return;
+                    return await completeRecordingUpload(apiFetch, courseId, this.lectureId, this.ticket.uploadId, signal);
                 } catch (error) {
                     if (this.uploaded || !(error instanceof ApiError) || error.code !== "OBJECT_MISSING") {
                         throw error;
@@ -56,10 +56,20 @@ export class RecordingSession {
 
             signal.throwIfAborted();
             this.attemptedPut = true;
-            await put(this.ticket, file, onProgress, signal);
+            await (!put && file.size >= 16 * 1024 ** 2
+                ? this.multipart.upload(
+                      apiFetch,
+                      `/courses/${courseId}/lectures/${this.lectureId}/recording`,
+                      this.ticket,
+                      file,
+                      onProgress,
+                      signal,
+                  )
+                : (put ?? uploadRecordingFile)(this.ticket, file, onProgress, signal));
             this.uploaded = true;
             signal.throwIfAborted();
-            await completeRecordingUpload(apiFetch, courseId, this.lectureId, this.ticket.uploadId, signal);
+
+            return await completeRecordingUpload(apiFetch, courseId, this.lectureId, this.ticket.uploadId, signal);
         } finally {
             if (!signal.aborted) {
                 await invalidate();

@@ -45,6 +45,7 @@ export class AppStack extends Stack {
             this.apiLambda.handler.functionLogGroup.logGroupArn,
             `${this.apiLambda.handler.functionLogGroup.logGroupArn}:*`,
             this.fileStorage.bucket.arnForObjects("courses/*"),
+            this.fileStorage.bucket.bucketArn,
         ];
         const runtimeKeyResources = [this.formatArn({ service: "kms", resource: "key", resourceName: "*" })];
         PermissionsBoundary.of(this.apiLambda.handler.role!).apply(
@@ -54,7 +55,11 @@ export class AppStack extends Stack {
                         actions: ["logs:CreateLogStream", "logs:PutLogEvents"],
                         resources: runtimeResources.slice(0, 2),
                     }),
-                    new PolicyStatement({ actions: ["s3:GetObject", "s3:PutObject"], resources: runtimeResources.slice(2) }),
+                    new PolicyStatement({
+                        actions: ["s3:GetObject", "s3:PutObject"],
+                        resources: [this.fileStorage.bucket.arnForObjects("courses/*")],
+                    }),
+                    new PolicyStatement({ actions: ["s3:ListBucket"], resources: [this.fileStorage.bucket.bucketArn] }),
                     new PolicyStatement({
                         actions: ["kms:Decrypt"],
                         resources: runtimeKeyResources,
@@ -92,7 +97,14 @@ export class AppStack extends Stack {
                     new PolicyStatement({
                         effect: Effect.DENY,
                         resources: ["*"],
-                        notActions: ["logs:CreateLogStream", "logs:PutLogEvents", "s3:GetObject", "s3:PutObject", "kms:Decrypt"],
+                        notActions: [
+                            "logs:CreateLogStream",
+                            "logs:PutLogEvents",
+                            "s3:GetObject",
+                            "s3:PutObject",
+                            "s3:ListBucket",
+                            "kms:Decrypt",
+                        ],
                     }),
                 ],
             }),

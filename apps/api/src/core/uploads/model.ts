@@ -36,8 +36,8 @@ export class UploadError extends Error {
     public readonly status: 400 | 404 | 409 | 503;
     public readonly code: string;
 
-    constructor(status: 400 | 404 | 409 | 503, code: string, message: string) {
-        super(message);
+    constructor(status: 400 | 404 | 409 | 503, code: string, message: string, cause?: unknown) {
+        super(message, { cause });
 
         this.status = status;
         this.code = code;
@@ -56,7 +56,20 @@ export interface UploadRepository {
     listResources(courseId: string): Promise<UploadAsset[]>;
 }
 
+export interface UploadPart {
+    number: number;
+    etag: string;
+}
+
+export interface MultipartStorage {
+    start(asset: UploadAsset): Promise<{ id: string; partBytes: number }>;
+    part(asset: UploadAsset, id: string, number: number): Promise<{ url: string; method: "PUT"; headers: Record<string, string> }>;
+    complete(asset: UploadAsset, id: string, parts: UploadPart[]): Promise<void>;
+}
+
 export interface UploadStorage {
+    readonly multipart?: MultipartStorage;
+
     ticket(asset: UploadAsset): Promise<UploadTicket>;
 
     verify(asset: UploadAsset): Promise<void>;
