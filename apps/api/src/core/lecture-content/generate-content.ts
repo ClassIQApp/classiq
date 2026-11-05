@@ -40,7 +40,8 @@ export async function generateContent(
                 }),
             },
         ],
-        maxOutputTokens: 4096,
+        // A 90-minute lecture's summary ran past 4096 tokens and came back incomplete.
+        maxOutputTokens: 16_384,
     };
     const options = { timeoutMs: Math.min(120_000, remainingMs) };
     let output: StoredContent;
