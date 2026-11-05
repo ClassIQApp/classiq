@@ -1,6 +1,7 @@
 import { ApiError } from "../../api/auth/client";
 import { useCourse, useCourses, useForgetUnavailableCourse } from "../../api/courses/use-courses";
 import CourseWorkspace from "../../components/courses/course-workspace";
+import type { CourseRoute } from "../../components/courses/course-workspace";
 import "../teacher/TeacherCourses.css";
 import "./course-resources.css";
 import "./courses.css";
@@ -9,11 +10,13 @@ import { useEffect } from "react";
 
 interface CoursePageProps {
     courseId: string;
+    route: CourseRoute;
+    onNavigate: (route: CourseRoute) => void;
     onCourseChange: (courseId: string) => void;
     onClose: () => void;
 }
 
-export default function CoursePage({ courseId, onCourseChange, onClose }: CoursePageProps) {
+export default function CoursePage({ courseId, route, onNavigate, onCourseChange, onClose }: CoursePageProps) {
     const course = useCourse(courseId);
     const courses = useCourses();
     const forgetUnavailableCourse = useForgetUnavailableCourse();
@@ -68,6 +71,8 @@ export default function CoursePage({ courseId, onCourseChange, onClose }: Course
             key={course.data.id}
             course={course.data}
             courses={[course.data, ...otherCourses]}
+            route={route}
+            onNavigate={onNavigate}
             onCourseChange={onCourseChange}
             onClose={onClose}
         />

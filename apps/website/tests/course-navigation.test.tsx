@@ -51,7 +51,16 @@ test("course cards show each role and offer settings only to the Teacher", () =>
 
 test("switching from a taught course to a joined course keeps navigation and removes upload controls", () => {
     const render = (course: Course) =>
-        renderAuthenticated(<CourseWorkspace course={course} courses={[taught, joined]} onCourseChange={ignore} onClose={ignore} />);
+        renderAuthenticated(
+            <CourseWorkspace
+                course={course}
+                courses={[taught, joined]}
+                route={{ name: "course", courseId: course.id, section: "lectures" }}
+                onNavigate={ignore}
+                onCourseChange={ignore}
+                onClose={ignore}
+            />,
+        );
     const teacherMarkup = render(taught);
     const memberMarkup = render(joined);
 

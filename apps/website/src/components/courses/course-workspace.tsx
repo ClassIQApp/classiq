@@ -1,5 +1,6 @@
 import type { Course } from "../../api/courses/types";
 import type { LectureStatus } from "../../api/lectures/types";
+import type { AppRoute, CourseSection } from "../../navigation/route";
 import ChatWindow from "../chat/chat-window";
 import LectureDetail from "../lectures/lecture-detail";
 import LectureList from "../lectures/lecture-list";
@@ -7,13 +8,11 @@ import type { LectureSort } from "../lectures/lecture-list";
 import CourseResources from "./course-resources";
 import CourseRoleBadge from "./course-role-badge";
 import CourseSearch from "./course-search";
-import { FilesIcon, MagnifyingGlassIcon, PresentationIcon } from "@phosphor-icons/react";
+import { ChatCircleDotsIcon, FilesIcon, MagnifyingGlassIcon, PresentationIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 
-type CourseSection = "lectures" | "resources" | "search" | "chat";
-
-type CourseView = { name: CourseSection } | { name: "lecture"; lectureId: string; startSeconds?: number };
+export type CourseRoute = Extract<AppRoute, { name: "course" | "lecture" }>;
 
 const sectionLabelBySection: Record<CourseSection, string> = {
     lectures: "Lectures",
@@ -26,7 +25,7 @@ const iconBySection: Record<CourseSection, Icon> = {
     lectures: PresentationIcon,
     resources: FilesIcon,
     search: MagnifyingGlassIcon,
-    chat: FilesIcon, // someone add a new icon for this
+    chat: ChatCircleDotsIcon,
 };
 
 const courseSections: CourseSection[] = ["lectures", "resources", "search", "chat"];
@@ -34,12 +33,13 @@ const courseSections: CourseSection[] = ["lectures", "resources", "search", "cha
 interface CourseWorkspaceProps {
     course: Course;
     courses: Course[];
+    route: CourseRoute;
+    onNavigate: (route: CourseRoute) => void;
     onCourseChange: (courseId: string) => void;
     onClose: () => void;
 }
 
-export default function CourseWorkspace({ course, courses, onCourseChange, onClose }: CourseWorkspaceProps) {
-    const [view, setView] = useState<CourseView>({ name: "lectures" });
+export default function CourseWorkspace({ course, courses, route, onNavigate, onCourseChange, onClose }: CourseWorkspaceProps) {
     const [query, setQuery] = useState("");
     const [status, setStatus] = useState<LectureStatus | "all">("all");
     const [sort, setSort] = useState<LectureSort>("newest");
@@ -47,31 +47,29 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
     const workspace = useRef<HTMLDivElement>(null);
     const heading = useRef<HTMLHeadingElement>(null);
 
-    const lecture = view.name === "lecture" ? course.lectures.find((item) => item.id === view.lectureId) : undefined;
-    const startSeconds = view.name === "lecture" ? view.startSeconds : undefined;
-    const activeSection = view.name === "lecture" ? "lectures" : view.name;
+    const lecture = route.name === "lecture" ? course.lectures.find((item) => item.id === route.lectureId) : undefined;
+    const startSeconds = route.name === "lecture" ? route.startSeconds : undefined;
+    const section: CourseSection = route.name === "lecture" ? "lectures" : route.section;
+    const view = lecture ? "lecture" : section;
+    const showSection = (name: CourseSection) => onNavigate({ name: "course", courseId: course.id, section: name });
+    const openLecture = (lectureId: string, seconds?: number) =>
+        onNavigate({ name: "lecture", courseId: course.id, lectureId, startSeconds: seconds });
 
     useEffect(() => {
         workspace.current?.scrollIntoView({ block: "start" });
         heading.current?.focus({ preventScroll: true });
-    }, [view.name]);
+    }, [view]);
 
     function showContent() {
-        if (view.name === "resources") {
+        if (view === "resources") {
             return <CourseResources courseId={course.id} lectures={course.lectures} canManage={course.role === "teacher"} />;
         }
 
-        if (view.name === "search") {
-            return (
-                <CourseSearch
-                    courseId={course.id}
-                    lectures={course.lectures}
-                    onOpenLecture={(lectureId, seconds) => setView({ name: "lecture", lectureId, startSeconds: seconds })}
-                />
-            );
+        if (view === "search") {
+            return <CourseSearch courseId={course.id} lectures={course.lectures} onOpenLecture={openLecture} />;
         }
 
-        if (view.name === "chat") {
+        if (view === "chat") {
             return <ChatWindow /* courseCode={course.code} courseName={course.name} */ />;
             // pass other params in if needed by the ai
         }
@@ -84,7 +82,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
                     lecture={lecture}
                     role={course.role}
                     startSeconds={startSeconds}
-                    onBack={() => setView({ name: "lectures" })}
+                    onBack={() => showSection("lectures")}
                 />
             );
         }
@@ -100,7 +98,7 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
                 onQueryChange={setQuery}
                 onStatusChange={setStatus}
                 onSortChange={setSort}
-                onOpenLecture={(lectureId) => setView({ name: "lecture", lectureId })}
+                onOpenLecture={(lectureId) => openLecture(lectureId)}
             />
         );
     }
@@ -119,20 +117,20 @@ export default function CourseWorkspace({ course, courses, onCourseChange, onClo
                 </h1>
                 <p>{lecture ? lecture.description : course.description}</p>
                 <nav className="course-sections" aria-label="Course sections">
-                    {courseSections.map((section) => {
-                        const SectionIcon = iconBySection[section];
-                        const active = activeSection === section;
+                    {courseSections.map((item) => {
+                        const SectionIcon = iconBySection[item];
+                        const active = section === item;
 
                         return (
                             <button
-                                key={section}
+                                key={item}
                                 type="button"
                                 className="course-section-button"
                                 aria-current={active ? "page" : undefined}
-                                onClick={() => setView({ name: section })}
+                                onClick={() => showSection(item)}
                             >
                                 <SectionIcon className="course-section-icon" weight={active ? "fill" : "regular"} aria-hidden />
-                                {sectionLabelBySection[section]}
+                                {sectionLabelBySection[item]}
                             </button>
                         );
                     })}
