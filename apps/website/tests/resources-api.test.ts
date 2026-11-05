@@ -48,7 +48,38 @@ test("ticket failures preserve the operation key and refresh initiation on retry
     assert.equal(current.ticket?.assetId, "12");
 });
 
-test("ambiguous PUT failure retries completion without overwriting the object", async () => {
+test("dropped transfers retry with a fresh ticket under the same key", async () => {
+    const current = operation();
+    const keys: (string | null)[] = [];
+    let puts = 0;
+    const api = createResourcesApi(
+        async (path, init) => {
+            if (path.endsWith("/complete")) {
+                return Response.json(resource);
+            }
+
+            keys.push(new Headers(init?.headers).get("Idempotency-Key"));
+
+            return Response.json({ ...ticket, url: `https://files.test/${keys.length}` });
+        },
+        async (fresh) => {
+            puts += 1;
+
+            if (puts < 3) {
+                throw new Error("File upload was interrupted.");
+            }
+
+            assert.equal(fresh.url, "https://files.test/3");
+        },
+        [0, 0, 0],
+    );
+
+    assert.deepEqual(await api.upload("2", current, new AbortController().signal, () => {}), resource);
+    assert.equal(puts, 3);
+    assert.deepEqual(keys, [current.key, current.key, current.key]);
+});
+
+test("exhausted transfer retries keep the ticket so a later retry completes without overwriting", async () => {
     const current = operation();
     let puts = 0;
     let tickets = 0;
@@ -66,14 +97,15 @@ test("ambiguous PUT failure retries completion without overwriting the object", 
             puts += 1;
             throw new Error("response lost");
         },
+        [0, 0, 0],
     );
     const signal = new AbortController().signal;
 
     await assert.rejects(api.upload("2", current, signal, () => {}));
     assert.equal(current.ticket?.uploadId, ticket.uploadId);
     assert.deepEqual(await api.upload("2", current, signal, () => {}), resource);
-    assert.equal(puts, 1);
-    assert.equal(tickets, 1);
+    assert.equal(puts, 4);
+    assert.equal(tickets, 4);
 });
 
 test("missing objects refresh signed tickets; completion outages retain identity", async () => {

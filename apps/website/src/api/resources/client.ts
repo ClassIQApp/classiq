@@ -61,7 +61,25 @@ export function uploadResourceFile(ticket: ResourceTicket, file: File, signal: A
 
 const root = (courseId: string) => `/courses/${encodeURIComponent(courseId)}/resources`;
 
-export function createResourcesApi(request: ApiFetch, transfer = uploadResourceFile) {
+// Matches the recording part retries: four attempts, each with a freshly signed ticket.
+const TRANSFER_RETRY_DELAYS_MS = [500, 1000, 2000];
+
+function wait(milliseconds: number, signal: AbortSignal) {
+    return new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(resolve, milliseconds);
+
+        signal.addEventListener(
+            "abort",
+            () => {
+                clearTimeout(timer);
+                reject(signal.reason);
+            },
+            { once: true },
+        );
+    });
+}
+
+export function createResourcesApi(request: ApiFetch, transfer = uploadResourceFile, retryDelaysMs = TRANSFER_RETRY_DELAYS_MS) {
     async function list(courseId: string, signal?: AbortSignal): Promise<CourseResource[]> {
         const response = await request(root(courseId), { signal });
         const data: { items: CourseResource[] } = await response.json();
@@ -91,6 +109,28 @@ export function createResourcesApi(request: ApiFetch, transfer = uploadResourceF
             }
         }
 
+        for (const delay of [...retryDelaysMs, undefined]) {
+            const ticket = await initiate(courseId, operation, signal);
+
+            try {
+                await transfer(ticket, operation.file, signal, progress);
+                signal.throwIfAborted();
+
+                return await complete(courseId, ticket, signal);
+            } catch (error) {
+                if (signal.aborted || error instanceof ApiError || delay === undefined) {
+                    throw error;
+                }
+
+                progress(0);
+                await wait(delay, signal);
+            }
+        }
+
+        throw new Error("Upload failed. Please retry.");
+    }
+
+    async function initiate(courseId: string, operation: ResourceOperation, signal: AbortSignal): Promise<ResourceTicket> {
         const response = await request(`${root(courseId)}/upload`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Idempotency-Key": operation.key },
@@ -106,10 +146,7 @@ export function createResourcesApi(request: ApiFetch, transfer = uploadResourceF
         operation.ticket = ticket;
         signal.throwIfAborted();
 
-        await transfer(ticket, operation.file, signal, progress);
-        signal.throwIfAborted();
-
-        return complete(courseId, ticket, signal);
+        return ticket;
     }
 
     async function download(courseId: string, resourceId: string, signal: AbortSignal): Promise<string> {

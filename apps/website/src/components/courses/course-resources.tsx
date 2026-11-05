@@ -23,6 +23,21 @@ export default function CourseResources(props: CourseResourcesProps) {
     return <ResourceLibrary key={`${state.user.id}:${props.courseId}:${props.canManage}`} {...props} accountId={state.user.id} api={api} />;
 }
 
+interface QueuedFile {
+    id: string;
+    file: File;
+    operation?: ResourceOperation;
+    status: "waiting" | "uploading" | "failed";
+    progress: number;
+    error?: string;
+}
+
+const MAX_RESOURCE_BYTES = 25 * 1024 ** 2;
+
+function isUploadablePdf(file: File) {
+    return file.size > 0 && file.size <= MAX_RESOURCE_BYTES && file.name.toLowerCase().endsWith(".pdf");
+}
+
 export function ResourceLibrary({
     courseId,
     lectures,
@@ -33,11 +48,9 @@ export function ResourceLibrary({
     const queryClient = useQueryClient();
     const queryKey = resourceQueryKey(accountId, courseId);
     const resources = useQuery({ queryKey, queryFn: ({ signal }) => api.list(courseId, signal) });
-    const [file, setFile] = useState<File | null>(null);
+    const [queue, setQueue] = useState<QueuedFile[]>([]);
     const [lectureId, setLectureId] = useState("");
-    const [operation, setOperation] = useState<ResourceOperation | null>(null);
     const [busy, setBusy] = useState(false);
-    const [progress, setProgress] = useState(0);
     const [error, setError] = useState("");
     const [opening, setOpening] = useState<string | null>(null);
     const lifetime = useRef<AbortController | null>(null);
@@ -54,61 +67,70 @@ export function ResourceLibrary({
         };
     }, []);
 
-    async function upload() {
-        if (!file || busy || !canManage) {
+    function updateQueued(id: string, patch: Partial<QueuedFile>) {
+        setQueue((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+    }
+
+    function select(files: FileList | null) {
+        const chosen = [...(files ?? [])];
+        const skipped = chosen.filter((file) => !isUploadablePdf(file)).map((file) => file.name);
+        const accepted: QueuedFile[] = chosen
+            .filter((file) => isUploadablePdf(file))
+            .map((file) => ({ id: crypto.randomUUID(), file, status: "waiting", progress: 0 }));
+
+        setQueue((current) => [...current, ...accepted]);
+        setError(skipped.length > 0 ? `Skipped ${skipped.join(", ")}. Each file must be a nonempty PDF up to 25 MB.` : "");
+
+        if (fileInput.current) {
+            fileInput.current.value = "";
+        }
+    }
+
+    async function uploadQueued() {
+        if (busy || !canManage || queue.length === 0) {
             return;
         }
 
-        if (file.size === 0 || file.size > 25 * 1024 ** 2 || !file.name.toLowerCase().endsWith(".pdf")) {
-            setError("Select a nonempty PDF up to 25 MB.");
-
-            return;
-        }
-
-        const current = operation ?? { file, lectureId: lectureId || undefined, key: crypto.randomUUID() };
         const controller = new AbortController();
         uploadController.current = controller;
-        setOperation(current);
         setBusy(true);
         setError("");
-        setProgress(0);
 
-        try {
-            await api.upload(courseId, current, controller.signal, (value) => {
-                if (!controller.signal.aborted) {
-                    setProgress(value);
-                }
-            });
-
-            if (lifetime.current?.signal.aborted) {
-                return;
+        for (const item of queue) {
+            if (controller.signal.aborted || lifetime.current?.signal.aborted) {
+                break;
             }
 
-            setOperation(null);
-            setFile(null);
+            const operation = item.operation ?? { file: item.file, lectureId: lectureId || undefined, key: crypto.randomUUID() };
+            updateQueued(item.id, { operation, status: "uploading", progress: 0, error: undefined });
 
-            if (fileInput.current) {
-                fileInput.current.value = "";
-            }
-        } catch (error_) {
-            if (!lifetime.current?.signal.aborted) {
-                let message = "Upload failed. Please retry.";
+            try {
+                await api.upload(courseId, operation, controller.signal, (value) => {
+                    if (!controller.signal.aborted) {
+                        updateQueued(item.id, { progress: value });
+                    }
+                });
 
-                if (error_ instanceof Error) {
-                    message = error_.message;
+                setQueue((current) => current.filter((queued) => queued.id !== item.id));
+            } catch (error_) {
+                if (lifetime.current?.signal.aborted) {
+                    return;
                 }
+
+                let message = error_ instanceof Error ? error_.message : "Upload failed. Please retry.";
 
                 if (controller.signal.aborted) {
                     message = "Upload cancelled. Retry to resume this file.";
                 }
 
-                setError(message);
+                updateQueued(item.id, { status: "failed", error: message });
             }
-        } finally {
-            if (!lifetime.current?.signal.aborted) {
-                setBusy(false);
-                void queryClient.invalidateQueries({ queryKey });
-            }
+
+            void queryClient.invalidateQueries({ queryKey });
+        }
+
+        if (!lifetime.current?.signal.aborted) {
+            setBusy(false);
         }
     }
 
@@ -146,22 +168,23 @@ export function ResourceLibrary({
             {canManage && (
                 <div className="resources-card">
                     <label htmlFor="resource-file" className="resources-label">
-                        PDF file (up to 25 MB)
+                        PDF files (up to 25 MB each)
                     </label>
                     <input
                         ref={fileInput}
                         id="resource-file"
                         type="file"
+                        multiple
                         accept=".pdf,application/pdf"
-                        disabled={busy || operation !== null}
-                        onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                        disabled={busy}
+                        onChange={(event) => select(event.target.files)}
                         className="resources-input"
                     />
                     <label htmlFor="resource-lecture">Associated lecture</label>
                     <select
                         id="resource-lecture"
                         value={lectureId}
-                        disabled={busy || operation !== null}
+                        disabled={busy || queue.some((item) => item.operation)}
                         onChange={(event) => setLectureId(event.target.value)}
                         className="resources-input"
                     >
@@ -172,34 +195,46 @@ export function ResourceLibrary({
                             </option>
                         ))}
                     </select>
-                    <button type="button" className="resources-btn" disabled={!file || busy} onClick={() => void upload()}>
-                        {operation ? "Retry upload" : "Upload PDF"}
-                    </button>
-                    {operation && !busy && (
-                        <button
-                            type="button"
-                            className="resources-view-btn"
-                            onClick={() => {
-                                setOperation(null);
-                                setFile(null);
-                                setError("");
-
-                                if (fileInput.current) {
-                                    fileInput.current.value = "";
-                                }
-                            }}
-                        >
-                            Select another PDF
-                        </button>
+                    {queue.length > 0 && (
+                        <ul className="resources-queue" aria-label="Files to upload">
+                            {queue.map((item) => (
+                                <li key={item.id} className="resources-queue-item">
+                                    <span className="resources-file-name">{item.file.name}</span>
+                                    {item.status === "waiting" && <p>{item.operation ? "Waiting to retry" : "Ready to upload"}</p>}
+                                    {item.status === "uploading" && (
+                                        <>
+                                            <progress max={100} value={item.progress} aria-label={`${item.file.name} transfer progress`} />
+                                            <p role="status">
+                                                {item.progress === 100 ? "Verifying upload…" : `Transferring file: ${item.progress}%`}
+                                            </p>
+                                        </>
+                                    )}
+                                    {item.status === "failed" && <p role="alert">{item.error}</p>}
+                                    {!busy && (
+                                        <button
+                                            type="button"
+                                            className="resources-view-btn"
+                                            onClick={() => setQueue((current) => current.filter((queued) => queued.id !== item.id))}
+                                        >
+                                            Remove
+                                        </button>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
                     )}
+                    <button
+                        type="button"
+                        className="resources-btn"
+                        disabled={queue.length === 0 || busy}
+                        onClick={() => void uploadQueued()}
+                    >
+                        {queue.length > 1 ? `Upload ${queue.length} PDFs` : "Upload PDF"}
+                    </button>
                     {busy && (
-                        <>
-                            <progress max={100} value={progress} aria-label="File transfer progress" />
-                            <p role="status">{progress === 100 ? "Verifying upload…" : `Transferring file: ${progress}%`}</p>
-                            <button type="button" className="resources-view-btn" onClick={() => uploadController.current?.abort()}>
-                                Cancel upload
-                            </button>
-                        </>
+                        <button type="button" className="resources-view-btn" onClick={() => uploadController.current?.abort()}>
+                            Cancel upload
+                        </button>
                     )}
                 </div>
             )}
