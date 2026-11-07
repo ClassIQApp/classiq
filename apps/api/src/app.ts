@@ -18,6 +18,9 @@ import { sqsPipelineStarter } from "./core/processing/sqs-pipeline-starter.ts";
 import { PostgresQuizRepository } from "./core/quiz/postgres-quiz-repository.ts";
 import { QuizGenerator } from "./core/quiz/quiz-generator.ts";
 import { QuizService } from "./core/quiz/quiz-service.ts";
+import { PostgresStudyGuideRepository } from "./core/study-guide/postgres-study-guide-repository.ts";
+import { StudyGuideGenerator } from "./core/study-guide/study-guide-generator.ts";
+import { StudyGuideService } from "./core/study-guide/study-guide-service.ts";
 import type { UploadAsset, UploadStorage } from "./core/uploads/model.ts";
 import { PostgresUploadRepository } from "./core/uploads/postgres-upload-repository.ts";
 import { S3UploadStorage } from "./core/uploads/s3-upload-storage.ts";
@@ -27,6 +30,7 @@ import courseRoutes from "./routes/courses/index.ts";
 import { createCourseInvitationRoutes, createInvitationRoutes } from "./routes/invitations/index.ts";
 import { createLectureRoutes } from "./routes/lectures/index.ts";
 import { createQuizRoutes } from "./routes/quizzes/index.ts";
+import { createStudyGuideRoutes } from "./routes/study-guides/index.ts";
 import { createUploadRoutes } from "./routes/uploads/index.ts";
 import { S3Client } from "@aws-sdk/client-s3";
 import { SQSClient } from "@aws-sdk/client-sqs";
@@ -60,13 +64,21 @@ function createUploadStorage(): UploadStorage {
             region: config.region,
             endpoint: config.endpoint,
             forcePathStyle: Boolean(config.endpoint),
-            ...(config.endpoint ? { credentials: { accessKeyId: "classiq", secretAccessKey: "classiq-local" } } : {}),
+            ...(config.endpoint
+                ? {
+                      credentials: {
+                          accessKeyId: "classiq",
+                          secretAccessKey: "classiq-local",
+                      },
+                  }
+                : {}),
         }),
     );
 }
 
 export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<AppEnv> {
     const app = new Hono<AppEnv>();
+
     let auth: AuthService | undefined;
     let config: AuthConfig | undefined;
     let uploadStorage: UploadStorage | undefined;
@@ -74,22 +86,38 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     let processing: ProcessingService | undefined;
     let invitationService: CourseInvitationService | undefined;
     let quizService: QuizService | undefined;
+    let studyGuideService: StudyGuideService | undefined;
+
     const getConfig = () => (config ??= (options.getAuthConfig ?? readAuthConfig)());
+
     const getAuth = options.getAuth ?? (() => (auth ??= createAuth(getDb(), getConfig())));
+
     const getUploadStorage = options.getUploadStorage ?? (() => (uploadStorage ??= createUploadStorage()));
+
     const getInvitationService = () =>
         (invitationService ??= new CourseInvitationService(
             new PostgresCourseInvitationFacade(getDb()),
             new PostgresCourseMembershipFacade(getDb()),
         ));
+
     const getContentIndexService = () => (contentIndexService ??= new ContentIndexService(new PostgresContentIndexRepository(getDb())));
+
     const getQuizService = () =>
         (quizService ??= new QuizService(
             new PostgresQuizRepository(getDb()),
             getContentIndexService(),
             new QuizGenerator(createLlmService()),
         ));
+
+    const getStudyGuideService = () =>
+        (studyGuideService ??= new StudyGuideService(
+            new PostgresStudyGuideRepository(getDb()),
+            getContentIndexService(),
+            new StudyGuideGenerator(createLlmService()),
+        ));
+
     const processingRepository = () => new PostgresProcessingRepository(getDb());
+
     const getProcessing = () => {
         if (!processing) {
             const starter: PipelineStarter =
@@ -103,11 +131,16 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
                     ) {
                         throw new Error("No processing starter configured.");
                     }
+
                     const client = new SQSClient({
                         region: "us-east-1",
                         endpoint: process.env.SQS_ENDPOINT,
-                        credentials: { accessKeyId: "classiq", secretAccessKey: "classiq-local" },
+                        credentials: {
+                            accessKeyId: "classiq",
+                            secretAccessKey: "classiq-local",
+                        },
                     });
+
                     try {
                         await sqsPipelineStarter(client, process.env.SQS_QUEUE_URL, {
                             lecture: lecturePipeline,
@@ -117,14 +150,20 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
                         client.destroy();
                     }
                 });
+
             processing = new ProcessingService(processingRepository(), starter);
         }
 
         return processing;
     };
+
     function startResource(asset: UploadAsset) {
         return getProcessing().start(
-            { kind: "resource", courseId: asset.courseId, resourceId: asset.resourceId! },
+            {
+                kind: "resource",
+                courseId: asset.courseId,
+                resourceId: asset.resourceId!,
+            },
             ["extraction"],
             resourcePipeline.timeoutSeconds,
         );
@@ -154,7 +193,9 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     app.use("/courses/*", requireSession);
 
     app.route("/api/auth", authRoutes);
+
     app.route("/courses", courseRoutes);
+
     app.route(
         "/courses",
         createUploadRoutes<AppEnv>({
@@ -164,20 +205,79 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             startResource,
             startRecording: (asset) =>
                 getProcessing().start(
-                    { kind: "lecture", courseId: asset.courseId, lectureId: asset.lectureId! },
+                    {
+                        kind: "lecture",
+                        courseId: asset.courseId,
+                        lectureId: asset.lectureId!,
+                    },
                     lectureStages,
                     lecturePipeline.timeoutSeconds,
                 ),
             resourceProcessing: (asset) =>
-                processingRepository().stages({ kind: "resource", courseId: asset.courseId, resourceId: asset.resourceId! }),
+                processingRepository().stages({
+                    kind: "resource",
+                    courseId: asset.courseId,
+                    resourceId: asset.resourceId!,
+                }),
         }),
     );
-    app.route("/courses", createContentRoutes<AppEnv>({ requireCourseRole, getService: getContentIndexService }));
-    app.route("/courses", createLectureRoutes<AppEnv>({ getDb, getProcessing, requireCourseRole }));
-    app.route("/courses", createQuizRoutes<AppEnv>({ requireCourseRole, getUserId: (c) => c.get("user").id, getService: getQuizService }));
-    app.route("/courses/:courseId/invitations", createCourseInvitationRoutes<AppEnv>({ requireCourseRole, getInvitationService }));
-    app.route("/invitations", createInvitationRoutes<AppEnv>({ requireSession, getInvitationService }));
-    app.get("/", (c) => c.json({ message: "hello from node" }));
+
+    app.route(
+        "/courses",
+        createContentRoutes<AppEnv>({
+            requireCourseRole,
+            getService: getContentIndexService,
+        }),
+    );
+
+    app.route(
+        "/courses",
+        createLectureRoutes<AppEnv>({
+            getDb,
+            getProcessing,
+            requireCourseRole,
+        }),
+    );
+
+    app.route(
+        "/courses",
+        createQuizRoutes<AppEnv>({
+            requireCourseRole,
+            getUserId: (c) => c.get("user").id,
+            getService: getQuizService,
+        }),
+    );
+
+    app.route(
+        "/courses",
+        createStudyGuideRoutes<AppEnv>({
+            requireCourseRole,
+            getUserId: (c) => c.get("user").id,
+            getService: getStudyGuideService,
+        }),
+    );
+
+    app.route(
+        "/courses/:courseId/invitations",
+        createCourseInvitationRoutes<AppEnv>({
+            requireCourseRole,
+            getInvitationService,
+        }),
+    );
+
+    app.route(
+        "/invitations",
+        createInvitationRoutes<AppEnv>({
+            requireSession,
+            getInvitationService,
+        }),
+    );
+
+    app.get("/", (c) =>
+        c.json({
+            message: "hello from node",
+        }),
+    );
 
     return app;
 }
