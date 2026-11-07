@@ -15,6 +15,15 @@ interface CourseStudyGuidesProps {
     onOpenLecture: (lectureId: string, startSeconds?: number) => void;
 }
 
+type StudyGuidesApi = ReturnType<typeof createStudyGuidesApi>;
+type ResourcesApi = ReturnType<typeof createResourcesApi>;
+
+interface StudyGuidePanelProps extends CourseStudyGuidesProps {
+    accountId: string;
+    api: StudyGuidesApi;
+    resources: ResourcesApi;
+}
+
 export default function CourseStudyGuides(props: CourseStudyGuidesProps) {
     const { state, apiFetch } = useAuth();
 
@@ -29,12 +38,6 @@ export default function CourseStudyGuides(props: CourseStudyGuidesProps) {
     return (
         <StudyGuidePanel key={`${state.user.id}:${props.courseId}`} {...props} accountId={state.user.id} api={api} resources={resources} />
     );
-}
-
-interface StudyGuidePanelProps extends CourseStudyGuidesProps {
-    accountId: string;
-    api: ReturnType<typeof createStudyGuidesApi>;
-    resources: ReturnType<typeof createResourcesApi>;
 }
 
 function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, accountId, api, resources }: StudyGuidePanelProps) {
@@ -64,22 +67,38 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
     });
 
     const selectedGuide = useQuery({
-        queryKey: [...listQueryKey, "detail", selectedGuideId ?? "none"],
+        queryKey: [...listQueryKey, "guide", selectedGuideId ?? "none"],
         queryFn: ({ signal }) => api.get(courseId, selectedGuideId!, signal),
         enabled: selectedGuideId !== undefined,
         retry: false,
     });
+
+    useEffect(() => {
+        if (selectedGuideId === undefined && guides.data && guides.data.length > 0) {
+            setSelectedGuideId(guides.data[0].id);
+        }
+    }, [guides.data, selectedGuideId]);
+
+    function guideScope(guideLectureId?: string) {
+        if (!guideLectureId) {
+            return "Entire course";
+        }
+
+        return lectures.find((lecture) => lecture.id === guideLectureId)?.title ?? "Lecture";
+    }
 
     async function generateGuide() {
         if (!canManage || generating) {
             return;
         }
 
+        const signal = lifetime.current?.signal;
+
         setGenerating(true);
         setError("");
 
         try {
-            const guide = await api.generate(courseId, lectureId || undefined, lifetime.current?.signal);
+            const guide = await api.generate(courseId, lectureId || undefined, signal);
 
             await queryClient.invalidateQueries({
                 queryKey: listQueryKey,
@@ -87,7 +106,7 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
 
             setSelectedGuideId(guide.id);
         } catch (error_) {
-            if (!lifetime.current?.signal.aborted) {
+            if (!signal?.aborted) {
                 setError(
                     error_ instanceof ApiError
                         ? error_.message
@@ -97,7 +116,7 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                 );
             }
         } finally {
-            if (!lifetime.current?.signal.aborted) {
+            if (!signal?.aborted) {
                 setGenerating(false);
             }
         }
@@ -117,7 +136,11 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
             const outcome = await openInNewTab(async () => {
                 const url = await resources.download(courseId, source.resourceId!, signal);
 
-                return source.pageNumber === undefined ? url : `${url}#page=${source.pageNumber}`;
+                if (source.pageNumber === undefined) {
+                    return url;
+                }
+
+                return `${url}#page=${source.pageNumber}`;
             }, signal);
 
             if (outcome === "blocked") {
@@ -134,75 +157,90 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
         }
     }
 
-    function guideScope(guideLectureId?: string) {
-        if (!guideLectureId) {
-            return "Entire course";
-        }
-
-        return lectures.find((lecture) => lecture.id === guideLectureId)?.title ?? "Lecture";
-    }
-
     return (
         <section className="study-guides-container" aria-label="Study guides">
-            <div className="study-guides-heading">
-                <div>
-                    <h2>Study Guides</h2>
-                    <p className="study-guides-desc">Review AI-generated study guides based on lecture transcripts and course resources.</p>
-                </div>
-            </div>
+            <header className="study-guides-header">
+                <h2>Study Guides</h2>
+
+                <p>Create and review study guides from lecture transcripts and course resources.</p>
+            </header>
 
             {canManage && (
-                <div className="study-guides-generate-card">
-                    <div>
+                <section className="study-guides-generate">
+                    <div className="study-guides-generate-info">
                         <h3>Generate a study guide</h3>
-                        <p>
-                            Choose the entire course or one lecture. The guide will use indexed transcripts and PDF resources as source
-                            material.
-                        </p>
+
+                        <p>Create a guide for the entire course or choose one lecture to focus on.</p>
                     </div>
 
-                    <label htmlFor="study-guide-scope">Content</label>
+                    <div className="study-guides-generate-actions">
+                        <label htmlFor="study-guide-scope">
+                            <span>Study guide scope</span>
 
-                    <select
-                        id="study-guide-scope"
-                        value={lectureId}
-                        disabled={generating}
-                        onChange={(event) => setLectureId(event.target.value)}
-                    >
-                        <option value="">Entire course</option>
+                            <select
+                                id="study-guide-scope"
+                                value={lectureId}
+                                disabled={generating}
+                                onChange={(event) => setLectureId(event.target.value)}
+                            >
+                                <option value="">Entire course</option>
 
-                        {lectures.map((lecture) => (
-                            <option key={lecture.id} value={lecture.id}>
-                                {lecture.title}
-                            </option>
-                        ))}
-                    </select>
+                                {lectures.map((lecture) => (
+                                    <option key={lecture.id} value={lecture.id}>
+                                        {lecture.title}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
 
-                    <button type="button" className="resources-btn" disabled={generating} onClick={() => void generateGuide()}>
-                        {generating ? "Generating�" : "Generate study guide"}
-                    </button>
-                </div>
+                        <button
+                            type="button"
+                            className="study-guides-generate-button"
+                            disabled={generating}
+                            onClick={() => void generateGuide()}
+                        >
+                            {generating ? "Generating…" : "Generate guide"}
+                        </button>
+                    </div>
+                </section>
             )}
 
-            {error && <p role="alert">{error}</p>}
+            {error && (
+                <p className="study-guides-error" role="alert">
+                    {error}
+                </p>
+            )}
 
-            <div className="study-guides-layout">
-                <div className="study-guides-library">
-                    <h3>Available guides</h3>
+            <div className="study-guides-workspace">
+                <aside className="study-guides-sidebar">
+                    <div className="study-guides-sidebar-heading">
+                        <h3>Available guides</h3>
 
-                    {guides.isPending && <p role="status">Loading study guides�</p>}
+                        {guides.data && <span>{guides.data.length === 1 ? "1 guide" : `${guides.data.length} guides`}</span>}
+                    </div>
 
-                    {guides.isError && (
-                        <p role="alert">
-                            {guides.error instanceof ApiError ? guides.error.message : "Study guides are unavailable."}{" "}
-                            <button type="button" onClick={() => void guides.refetch()}>
-                                Retry
-                            </button>
+                    {guides.isPending && (
+                        <p className="study-guides-status" role="status">
+                            Loading study guides…
                         </p>
                     )}
 
+                    {guides.isError && (
+                        <div className="study-guides-load-error" role="alert">
+                            <p>{guides.error instanceof ApiError ? guides.error.message : "Study guides are unavailable right now."}</p>
+
+                            <button type="button" className="lecture-text-button" onClick={() => void guides.refetch()}>
+                                Retry
+                            </button>
+                        </div>
+                    )}
+
                     {guides.isSuccess && guides.data.length === 0 && (
-                        <p className="study-guides-empty">No study guides have been generated yet.</p>
+                        <div className="study-guides-empty">
+                            <h4>No study guides yet</h4>
+
+                            <p>Generated guides will appear here.</p>
+                        </div>
                     )}
 
                     {guides.isSuccess && guides.data.length > 0 && (
@@ -214,59 +252,68 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                                     <li key={guide.id}>
                                         <button
                                             type="button"
-                                            className={
-                                                active
-                                                    ? "study-guide-list-button study-guide-list-button-active"
-                                                    : "study-guide-list-button"
-                                            }
+                                            className={active ? "study-guide-card study-guide-card-active" : "study-guide-card"}
                                             onClick={() => setSelectedGuideId(guide.id)}
                                         >
-                                            <span className="study-guide-list-title">{guide.title}</span>
+                                            <span className="study-guide-card-title">{guide.title}</span>
 
-                                            <span className="study-guide-list-meta">
-                                                {guideScope(guide.lectureId)}
-                                                {" � "}
-                                                {guide.sectionCount === 1 ? "1 section" : `${guide.sectionCount} sections`}
+                                            <span className="study-guide-card-scope">{guideScope(guide.lectureId)}</span>
+
+                                            <span className="study-guide-card-meta">
+                                                <span>{guide.sectionCount === 1 ? "1 section" : `${guide.sectionCount} sections`}</span>
+
+                                                <span>{new Date(guide.createdAt).toLocaleDateString()}</span>
                                             </span>
-
-                                            <span className="study-guide-list-date">{new Date(guide.createdAt).toLocaleDateString()}</span>
                                         </button>
                                     </li>
                                 );
                             })}
                         </ul>
                     )}
-                </div>
+                </aside>
 
                 <div className="study-guide-viewer">
                     {!selectedGuideId && (
                         <div className="study-guide-placeholder">
                             <h3>Select a study guide</h3>
-                            <p>Choose a guide from the list to read its overview, key points, and sources.</p>
+
+                            <p>Choose a guide from the list to read the overview, key points, and source material.</p>
                         </div>
                     )}
 
-                    {selectedGuide.isPending && selectedGuideId && <p role="status">Loading study guide�</p>}
-
-                    {selectedGuide.isError && (
-                        <p role="alert">
-                            {selectedGuide.error instanceof ApiError ? selectedGuide.error.message : "Could not load this study guide."}{" "}
-                            <button type="button" onClick={() => void selectedGuide.refetch()}>
-                                Retry
-                            </button>
+                    {selectedGuideId && selectedGuide.isPending && (
+                        <p className="study-guides-status" role="status">
+                            Loading study guide…
                         </p>
                     )}
 
+                    {selectedGuide.isError && (
+                        <div className="study-guides-load-error" role="alert">
+                            <p>
+                                {selectedGuide.error instanceof ApiError ? selectedGuide.error.message : "Could not load this study guide."}
+                            </p>
+
+                            <button type="button" className="lecture-text-button" onClick={() => void selectedGuide.refetch()}>
+                                Retry
+                            </button>
+                        </div>
+                    )}
+
                     {selectedGuide.data && (
-                        <article className="study-guide-content">
-                            <header className="study-guide-content-heading">
-                                <p className="study-guide-scope">{guideScope(selectedGuide.data.lectureId)}</p>
+                        <article className="study-guide-document">
+                            <header className="study-guide-document-header">
+                                <span className="study-guide-document-scope">{guideScope(selectedGuide.data.lectureId)}</span>
 
                                 <h3>{selectedGuide.data.title}</h3>
+
+                                <span className="study-guide-document-meta">
+                                    {selectedGuide.data.sectionCount === 1 ? "1 section" : `${selectedGuide.data.sectionCount} sections`}
+                                </span>
                             </header>
 
                             <section className="study-guide-overview">
                                 <h4>Overview</h4>
+
                                 <p>{selectedGuide.data.overview}</p>
 
                                 <SourceList
@@ -278,26 +325,32 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                             </section>
 
                             <div className="study-guide-sections">
-                                {selectedGuide.data.sections.map((section) => (
+                                {selectedGuide.data.sections.map((section, index) => (
                                     <section key={section.id} className="study-guide-section">
-                                        <h4>{section.heading}</h4>
+                                        <div className="study-guide-section-number">{index + 1}</div>
 
-                                        <p>{section.content}</p>
+                                        <div className="study-guide-section-body">
+                                            <h4>{section.heading}</h4>
 
-                                        <h5>Key points</h5>
+                                            <p className="study-guide-section-content">{section.content}</p>
 
-                                        <ul>
-                                            {section.keyPoints.map((point, index) => (
-                                                <li key={`${section.id}-${index}`}>{point}</li>
-                                            ))}
-                                        </ul>
+                                            <div className="study-guide-key-points">
+                                                <h5>Key points</h5>
 
-                                        <SourceList
-                                            sources={section.sources}
-                                            openingResource={openingResource}
-                                            onOpenLecture={onOpenLecture}
-                                            onOpenResource={(source) => void openResource(source)}
-                                        />
+                                                <ul>
+                                                    {section.keyPoints.map((point, pointIndex) => (
+                                                        <li key={`${section.id}-${pointIndex}`}>{point}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+
+                                            <SourceList
+                                                sources={section.sources}
+                                                openingResource={openingResource}
+                                                onOpenLecture={onOpenLecture}
+                                                onOpenResource={(source) => void openResource(source)}
+                                            />
+                                        </div>
                                     </section>
                                 ))}
                             </div>
@@ -334,6 +387,8 @@ function SourceList({ sources, openingResource, onOpenLecture, onOpenResource }:
                                 : formatTimestamp(source.startSeconds)
                             : `Page ${source.pageNumber}`;
 
+                    const label = location ? `${source.title} · ${location}` : source.title;
+
                     if (source.kind === "transcript" && source.lectureId) {
                         return (
                             <button
@@ -342,8 +397,7 @@ function SourceList({ sources, openingResource, onOpenLecture, onOpenResource }:
                                 className="study-guide-source"
                                 onClick={() => onOpenLecture(source.lectureId!, source.startSeconds)}
                             >
-                                {source.title}
-                                {location && ` � ${location}`}
+                                {label}
                             </button>
                         );
                     }
@@ -357,15 +411,14 @@ function SourceList({ sources, openingResource, onOpenLecture, onOpenResource }:
                                 disabled={openingResource !== null}
                                 onClick={() => onOpenResource(source)}
                             >
-                                {openingResource === source.resourceId ? "Opening�" : `${source.title}${location ? ` � ${location}` : ""}`}
+                                {openingResource === source.resourceId ? "Opening…" : label}
                             </button>
                         );
                     }
 
                     return (
                         <span key={`${source.kind}-${index}`} className="study-guide-source">
-                            {source.title}
-                            {location && ` � ${location}`}
+                            {label}
                         </span>
                     );
                 })}
