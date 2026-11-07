@@ -59,6 +59,7 @@ test("switching from a taught course to a joined course keeps navigation and rem
     assert.match(teacherMarkup, />Teacher</);
     assert.match(teacherMarkup, /Scheduling/);
     assert.match(teacherMarkup, /aria-current="page"[^>]*>Lectures</);
+    assert.match(teacherMarkup, /class="course-section-button">Search</);
 
     assert.match(memberMarkup, /<h1[^>]*>Calculus<\/h1>/);
     assert.match(memberMarkup, />Member</);

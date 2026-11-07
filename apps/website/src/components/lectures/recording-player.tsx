@@ -3,7 +3,13 @@ import { recordingAccess } from "../../api/lectures/recording-access";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
-export default function RecordingPlayer({ courseId, lectureId }: { courseId: string; lectureId: string }) {
+interface RecordingPlayerProps {
+    courseId: string;
+    lectureId: string;
+    startSeconds?: number;
+}
+
+export default function RecordingPlayer({ courseId, lectureId, startSeconds }: RecordingPlayerProps) {
     const { state, apiFetch } = useAuth();
     const userId = state.status === "authenticated" ? state.user.id : undefined;
     const [mediaFailed, setMediaFailed] = useState(false);
@@ -16,7 +22,7 @@ export default function RecordingPlayer({ courseId, lectureId }: { courseId: str
     });
     const { data, refetch } = recording;
 
-    const resumeAt = useRef(0);
+    const resumeAt = useRef(startSeconds ?? 0);
     const resumePlaying = useRef(false);
 
     function refreshMedia(media?: HTMLMediaElement) {

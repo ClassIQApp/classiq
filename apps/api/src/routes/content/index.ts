@@ -1,17 +1,16 @@
-import { ContentIndexService } from "../../core/content-index/content-index-service.ts";
+import type { ContentIndexService } from "../../core/content-index/content-index-service.ts";
 import { ContentIndexError } from "../../core/content-index/errors.ts";
 import type { ContentSourceKind } from "../../core/content-index/model.ts";
-import { PostgresContentIndexRepository } from "../../core/content-index/postgres-content-index-repository.ts";
+import type { CourseRole } from "../../core/course-access/model.ts";
 import { Hono, type Env, type MiddlewareHandler } from "hono";
-import type { Pool } from "pg";
 
 export interface ContentRouteDependencies<E extends Env> {
-    requireCourseRole: (role: "member" | "teacher") => MiddlewareHandler<E>;
-    service: ContentIndexService;
+    requireCourseRole: (role: CourseRole) => MiddlewareHandler<E>;
+    getService: () => ContentIndexService;
 }
 
 export function createContentRoutes<E extends Env>(dependencies: ContentRouteDependencies<E>) {
-    const { requireCourseRole, service } = dependencies;
+    const { requireCourseRole, getService } = dependencies;
 
     if (typeof requireCourseRole !== "function") {
         throw new TypeError("Course authorization middleware is required");
@@ -41,7 +40,7 @@ export function createContentRoutes<E extends Env>(dependencies: ContentRouteDep
     routes.get("/:courseId/search", member, async (c) => {
         const limit = c.req.query("limit");
 
-        const items = await service.search({
+        const items = await getService().search({
             courseId: c.req.param("courseId")!,
             text: c.req.query("q") ?? "",
             lectureId: c.req.query("lectureId"),
@@ -55,14 +54,4 @@ export function createContentRoutes<E extends Env>(dependencies: ContentRouteDep
     });
 
     return routes;
-}
-
-export function createPersistentContentRoutes<E extends Env>(options: {
-    requireCourseRole: ContentRouteDependencies<E>["requireCourseRole"];
-    database: Pool;
-}) {
-    return createContentRoutes<E>({
-        requireCourseRole: options.requireCourseRole,
-        service: new ContentIndexService(new PostgresContentIndexRepository(options.database)),
-    });
 }
