@@ -9,6 +9,8 @@ catalog:
     "@ai-sdk/deepseek": 3.0.64
     "@ai-sdk/openai": 4.0.92
     "@eslint/js": ^9.39.1
+    "@fontsource-variable/fraunces": ^5.3.0
+    "@fontsource-variable/inter": ^5.3.0
     "@hono/vite-dev-server": ^0.26.1
     "@phosphor-icons/react": ^2.1.10
     "@trivago/prettier-plugin-sort-imports": ^6.0.2
@@ -49,6 +51,8 @@ catalog:
     dotenv-cli: ^11.0.0
     better-auth: 1.7.14
     unpdf: 1.8.1
+    "@aws-sdk/client-sqs": 3.1147.0
+    "@aws-sdk/client-sfn": 3.1147.0
 
 catalogMode: strict
 

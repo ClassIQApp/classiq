@@ -51,15 +51,24 @@ test("course cards show each role and offer settings only to the Teacher", () =>
 
 test("switching from a taught course to a joined course keeps navigation and removes upload controls", () => {
     const render = (course: Course) =>
-        renderAuthenticated(<CourseWorkspace course={course} courses={[taught, joined]} onCourseChange={ignore} onClose={ignore} />);
+        renderAuthenticated(
+            <CourseWorkspace
+                course={course}
+                courses={[taught, joined]}
+                route={{ name: "course", courseId: course.id, section: "lectures" }}
+                onNavigate={ignore}
+                onCourseChange={ignore}
+                onClose={ignore}
+            />,
+        );
     const teacherMarkup = render(taught);
     const memberMarkup = render(joined);
 
     assert.match(teacherMarkup, /<h1[^>]*>Operating Systems<\/h1>/);
     assert.match(teacherMarkup, />Teacher</);
     assert.match(teacherMarkup, /Scheduling/);
-    assert.match(teacherMarkup, /aria-current="page"[^>]*>Lectures</);
-    assert.match(teacherMarkup, /class="course-section-button">Search</);
+    assert.match(teacherMarkup, /aria-current="page"[^>]*>(?:<svg[^>]*>.*?<\/svg>)?Lectures</);
+    assert.match(teacherMarkup, /class="course-section-button">(?:<svg[^>]*>.*?<\/svg>)?Search</);
 
     assert.match(memberMarkup, /<h1[^>]*>Calculus<\/h1>/);
     assert.match(memberMarkup, />Member</);

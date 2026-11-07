@@ -1,6 +1,6 @@
 import { LlmError } from "./errors.ts";
 import { DEFAULT_LLM_TIMEOUT_MS, llmTimeoutSchema } from "./llm-service.ts";
-import { llmProviderSchema, type LlmProviderName } from "./model.ts";
+import { llmProviderSchema } from "./model.ts";
 import * as z from "zod/mini";
 
 export const LlmProviderConfigSchema = z.strictObject({
@@ -50,7 +50,7 @@ interface ProviderCredentials {
     model?: string;
 }
 
-function readProviderCredentials(provider: LlmProviderName, environment: Readonly<LlmEnvironment>): ProviderCredentials {
+function readProviderCredentials(provider: LlmConfig["provider"], environment: Readonly<LlmEnvironment>): ProviderCredentials {
     switch (provider) {
         case "openai":
             return {

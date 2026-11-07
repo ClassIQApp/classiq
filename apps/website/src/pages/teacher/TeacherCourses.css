@@ -17,17 +17,7 @@
 }
 
 .teacher-courses-header h1 {
-    margin: var(--space-3) 0;
-    font-family: var(--font-serif);
-    font-size: var(--text-2xl);
-}
-
-.teacher-courses-eyebrow {
-    color: var(--color-primary);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
+    margin: var(--space-2) 0 var(--space-3);
 }
 
 .teacher-courses-subtitle,
@@ -36,56 +26,9 @@
     color: var(--color-text-secondary);
 }
 
-.teacher-course-primary-btn,
-.teacher-course-secondary-btn,
-.teacher-course-settings-btn {
-    min-height: var(--size-control);
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-md);
-    font-weight: var(--weight-semibold);
-    cursor: pointer;
-}
-
-.teacher-course-primary-btn {
-    border: var(--border-width) solid var(--color-primary);
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-}
-
-.teacher-course-primary-btn:hover {
-    filter: brightness(0.95);
-}
-
-.teacher-course-primary-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.teacher-course-secondary-btn {
-    border: var(--border-width) solid var(--color-border-strong);
-    background: var(--color-surface);
-    color: var(--color-text);
-}
-
-.teacher-course-settings-btn {
-    border: var(--border-width) solid var(--color-border);
-    background: transparent;
-    color: var(--color-primary);
-}
-
-.teacher-course-secondary-btn:hover,
-.teacher-course-settings-btn:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-subtle);
-}
-
 .teacher-course-form-card {
     margin-bottom: var(--space-8);
     padding: var(--space-6);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
 }
 
 .teacher-course-form-heading {
@@ -93,7 +36,7 @@
 }
 
 .teacher-course-form-heading h2 {
-    margin: var(--space-2) 0;
+    margin: var(--space-1) 0 var(--space-2);
     font-size: var(--text-lg);
 }
 
@@ -108,46 +51,10 @@
     gap: var(--space-4);
 }
 
-.teacher-course-form label {
-    display: grid;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
-}
-
-.teacher-course-form input,
-.teacher-course-form textarea {
-    width: 100%;
-    padding: var(--space-3);
-    border: var(--border-width) solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font: inherit;
-}
-
-.teacher-course-form textarea {
-    resize: vertical;
-}
-
-.teacher-course-form input:focus,
-.teacher-course-form textarea:focus {
-    border-color: var(--color-primary);
-    outline: var(--border-width-thick) solid var(--color-primary);
-    outline-offset: var(--space-1);
-}
-
 .teacher-course-form-actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3);
-}
-
-.teacher-course-form-error {
-    padding: var(--space-3);
-    border-radius: var(--radius-md);
-    background: var(--color-danger-subtle);
-    color: var(--color-danger);
 }
 
 .teacher-course-list-section {
@@ -157,7 +64,7 @@
 
 .teacher-course-list-heading {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
     gap: var(--space-3);
 }
@@ -184,34 +91,25 @@
     gap: var(--space-5);
     min-width: 0;
     padding: var(--space-5);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-}
-
-.teacher-course-card:hover {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-sm);
 }
 
 .teacher-course-code {
     display: inline-flex;
-    margin-bottom: var(--space-3);
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-full);
-    background: var(--color-primary-subtle);
-    color: var(--color-primary);
-    font-size: var(--text-xs);
+    margin-bottom: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
 }
 
 .teacher-course-card h3 {
     margin-bottom: var(--space-2);
     font-size: var(--text-lg);
+    line-height: var(--leading-snug);
 }
 
 .teacher-course-description {
-    line-height: 1.5;
+    line-height: var(--leading-normal);
 }
 
 .teacher-course-card-footer {
@@ -243,30 +141,31 @@
     text-align: center;
 }
 
-.teacher-courses-page :is(button, input, textarea):focus-visible {
-    outline: var(--border-width-thick) solid var(--color-primary);
-    outline-offset: var(--space-1);
+.teacher-course-settings-btn {
+    padding: 0 var(--space-3);
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+
+.teacher-course-settings-btn:hover:not(:disabled) {
+    border-color: transparent;
+    background: var(--color-surface-hover);
+    color: var(--color-text);
 }
 
 .course-role-badge {
-    display: inline-flex;
     margin-left: var(--space-2);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-full);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: normal;
-    text-transform: none;
 }
 
 .course-role-teacher {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
+    background: var(--color-neutral-subtle);
+    color: var(--color-neutral);
 }
 
 .course-role-member {
-    background: var(--color-primary-subtle);
-    color: var(--color-primary);
+    background: var(--color-neutral-subtle);
+    color: var(--color-neutral);
 }
 
 @media (max-width: 48rem) {
@@ -283,53 +182,6 @@
         align-items: flex-start;
         flex-direction: column;
     }
-
-    .teacher-courses-header h1 {
-        font-size: var(--text-xl);
-    }
-}
-
-.teacher-join-code-section {
-    margin-top: var(--space-6);
-    padding-top: var(--space-6);
-    border-top: var(--border-width) solid var(--color-border);
-}
-
-.teacher-join-code-title {
-    margin-bottom: var(--space-2);
-    font-size: var(--text-base);
-    font-weight: var(--weight-semibold);
-}
-
-.teacher-join-code-desc {
-    margin-bottom: var(--space-4);
-    color: var(--color-text-secondary);
-    font-size: var(--text-sm);
-}
-
-.teacher-join-code-content {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.teacher-join-code-value {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--size-control);
-    padding: var(--space-2) var(--space-4);
-    border: var(--border-width) solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-sunken);
-    color: var(--color-text);
-    font-family: var(--font-mono);
-    font-size: var(--text-base);
-    font-weight: var(--weight-semibold);
-    letter-spacing: var(--tracking-caps);
-}
-
-.teacher-join-code-copy-btn {
-    white-space: nowrap;
 }
 
 .teacher-courses-actions {
@@ -342,7 +194,44 @@
     margin: 0;
     padding: 0;
     border: 0;
-    box-shadow: none;
+}
+
+.teacher-join-code-section {
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: var(--border-width) solid var(--color-border);
+}
+
+.teacher-join-code-title {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-base);
+}
+
+.teacher-join-code-desc {
+    margin-bottom: var(--space-4);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.teacher-join-code-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.teacher-join-code-value {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--size-control);
+    padding: 0 var(--space-4);
+    border: var(--border-width) solid var(--color-border-card);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text);
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-code);
 }
 
 .teacher-join-dialog-backdrop {
@@ -352,7 +241,7 @@
     display: grid;
     place-items: center;
     padding: var(--space-4);
-    background: color-mix(in srgb, var(--black) 50%, transparent);
+    background: var(--color-backdrop);
 }
 
 .teacher-join-dialog {
@@ -361,14 +250,15 @@
     width: 100%;
     max-width: var(--layout-auth-card);
     padding: var(--space-6);
-    border: var(--border-width) solid var(--color-border);
+    border: var(--border-width) solid var(--color-border-card);
     border-radius: var(--radius-xl);
-    background: var(--color-surface);
+    background: var(--color-surface-overlay);
     color: var(--color-text);
     box-shadow: var(--shadow-lg);
 }
 
 .teacher-join-dialog h2 {
+    margin-bottom: calc(var(--space-3) * -1);
     font-size: var(--text-lg);
 }
 
@@ -378,8 +268,7 @@
 }
 
 .teacher-join-code-input {
-    font-family: var(--font-mono);
-    letter-spacing: var(--tracking-caps);
+    letter-spacing: var(--tracking-code);
     text-transform: uppercase;
 }
 

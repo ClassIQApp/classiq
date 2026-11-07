@@ -1,17 +1,23 @@
 import type { Course } from "../../api/courses/types";
 import type { LectureStatus as Status } from "../../api/lectures/types";
-import LectureStatus from "./lecture-status";
+import LectureStatus, { availabilitySummary, statusLabelByStatus } from "./lecture-status";
 import LectureUploadForm from "./lecture-upload-form";
 import { ArrowRightIcon, BookOpenIcon } from "@phosphor-icons/react";
+
+export type LectureSort = "newest" | "oldest" | "title";
+
+const statuses: Status[] = ["ready", "processing", "uploaded", "failed", "pending"];
 
 interface LectureListProps {
     courses: Course[];
     course?: Course;
     query: string;
     status: Status | "all";
+    sort: LectureSort;
     onCourseChange: (id: string) => void;
     onQueryChange: (value: string) => void;
     onStatusChange: (value: Status | "all") => void;
+    onSortChange: (value: LectureSort) => void;
     onOpenLecture: (id: string) => void;
 }
 
@@ -20,9 +26,11 @@ export default function LectureList({
     course,
     query,
     status,
+    sort,
     onCourseChange,
     onQueryChange,
     onStatusChange,
+    onSortChange,
     onOpenLecture,
 }: LectureListProps) {
     const normalizedQuery = query.trim().toLowerCase();
@@ -33,6 +41,15 @@ export default function LectureList({
             (status === "all" || lecture.status === status) &&
             `${lecture.title} ${lecture.description}`.toLowerCase().includes(normalizedQuery),
     );
+
+    lectures.sort((first, second) => {
+        if (sort === "title") {
+            return first.title.localeCompare(second.title, "en", { numeric: true, sensitivity: "base" });
+        }
+
+        // Lecture IDs increase as records are added; the API does not expose creation dates.
+        return sort === "newest" ? Number(second.id) - Number(first.id) : Number(first.id) - Number(second.id);
+    });
 
     let emptyState = {
         title: "No courses yet",
@@ -91,26 +108,34 @@ export default function LectureList({
                     <select
                         value={status}
                         onChange={(event) => {
-                            const value = event.target.value;
+                            const value = statuses.find((item) => item === event.target.value) ?? "all";
 
-                            if (
-                                value === "pending" ||
-                                value === "uploaded" ||
-                                value === "all" ||
-                                value === "ready" ||
-                                value === "processing" ||
-                                value === "failed"
-                            ) {
-                                onStatusChange(value);
-                            }
+                            onStatusChange(value);
                         }}
                     >
                         <option value="all">All states</option>
-                        <option value="pending">Awaiting upload</option>
-                        <option value="uploaded">Uploaded</option>
-                        <option value="ready">Ready</option>
-                        <option value="processing">Processing</option>
-                        <option value="failed">Failed</option>
+                        {statuses.map((item) => (
+                            <option key={item} value={item}>
+                                {statusLabelByStatus[item]}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <label>
+                    Sort by
+                    <select
+                        value={sort}
+                        onChange={(event) => {
+                            const value = event.target.value;
+
+                            if (value === "newest" || value === "oldest" || value === "title") {
+                                onSortChange(value);
+                            }
+                        }}
+                    >
+                        <option value="newest">Newest added</option>
+                        <option value="oldest">Oldest added</option>
+                        <option value="title">Title A–Z</option>
                     </select>
                 </label>
             </div>
@@ -125,7 +150,7 @@ export default function LectureList({
                 </div>
             </div>
 
-            {course?.role === "teacher" && <LectureUploadForm key={course.id} courseId={course.id} />}
+            {course?.role === "teacher" && <LectureUploadForm key={course.id} courseId={course.id} onOpenLecture={onOpenLecture} />}
 
             {lectures.length > 0 ? (
                 <ul className="lecture-list" role="list">
@@ -141,10 +166,7 @@ export default function LectureList({
                                 <span className="lecture-card-description">{lecture.description}</span>
 
                                 <span className="lecture-card-bottom">
-                                    <span>
-                                        {lecture.transcript ? "Transcript available" : "Transcript unavailable"} ·{" "}
-                                        {lecture.resources.length} {lecture.resources.length === 1 ? "resource" : "resources"}
-                                    </span>
+                                    <span>{availabilitySummary(lecture)}</span>
 
                                     <span className="lecture-open">
                                         View lecture

@@ -10,6 +10,25 @@ export function uploadFile(
     onProgress: (progress: number) => void,
     signal?: AbortSignal,
 ): Promise<void> {
+    return transfer(ticket, file, onProgress, signal, true).then(() => {});
+}
+
+export function uploadPart(
+    ticket: FileUploadTicket,
+    file: Blob,
+    onProgress: (progress: number) => void,
+    signal?: AbortSignal,
+): Promise<string> {
+    return transfer(ticket, file, onProgress, signal, false);
+}
+
+function transfer(
+    ticket: FileUploadTicket,
+    file: Blob,
+    onProgress: (progress: number) => void,
+    signal: AbortSignal | undefined,
+    acceptExisting: boolean,
+): Promise<string> {
     return new Promise((resolve, reject) => {
         const request = new XMLHttpRequest();
 
@@ -19,6 +38,8 @@ export function uploadFile(
         request.addEventListener("loadend", () => signal?.removeEventListener("abort", abort));
 
         request.open(ticket.method, ticket.url);
+        request.timeout = 120_000;
+        request.addEventListener("timeout", () => reject(new Error("File transfer timed out. Retry to continue.")));
 
         for (const [name, value] of Object.entries(ticket.headers)) {
             request.setRequestHeader(name, value);
@@ -33,14 +54,20 @@ export function uploadFile(
         });
 
         request.addEventListener("load", () => {
-            if ((request.status >= 200 && request.status < 300) || request.status === 412) {
+            if ((request.status >= 200 && request.status < 300) || (acceptExisting && request.status === 412)) {
                 onProgress(100);
-                resolve();
+                const etag = acceptExisting ? undefined : request.getResponseHeader("ETag");
+                if (!acceptExisting && !etag) {
+                    reject(new Error("File storage did not confirm the uploaded part."));
+
+                    return;
+                }
+                resolve(etag ?? "");
 
                 return;
             }
 
-            reject(new Error("File upload failed."));
+            reject(new Error(`File upload failed (HTTP ${request.status}). Retry to continue.`));
         });
 
         request.addEventListener("error", () => {

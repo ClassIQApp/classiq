@@ -21,6 +21,9 @@ test("private upload storage uses exact browser origins and constrained IAM", ()
             RestrictPublicBuckets: true,
         },
         BucketEncryption: { ServerSideEncryptionConfiguration: [{ ServerSideEncryptionByDefault: { SSEAlgorithm: "AES256" } }] },
+        LifecycleConfiguration: {
+            Rules: Match.arrayWith([Match.objectLike({ Prefix: "courses/", AbortIncompleteMultipartUpload: { DaysAfterInitiation: 1 } })]),
+        },
         VersioningConfiguration: { Status: "Enabled" },
         CorsConfiguration: {
             CorsRules: [
@@ -38,6 +41,11 @@ test("private upload storage uses exact browser origins and constrained IAM", ()
         PolicyDocument: {
             Statement: [
                 {
+                    Action: "s3:ListBucket",
+                    Effect: "Allow",
+                    Resource: stack.resolve(storage.bucket.bucketArn),
+                },
+                {
                     Action: ["s3:GetObject", "s3:PutObject"],
                     Effect: "Allow",
                     Resource: { "Fn::Join": ["", [Match.anyValue(), "/courses/*"]] },
@@ -50,7 +58,11 @@ test("private upload storage uses exact browser origins and constrained IAM", ()
         PolicyDocument: {
             Statement: Match.arrayWith([
                 Match.objectLike({ Effect: "Deny", Action: "s3:*", Condition: { Bool: { "aws:SecureTransport": "false" } } }),
-                Match.objectLike({ Effect: "Deny", Action: "s3:PutObject", Condition: { StringNotEquals: { "s3:if-none-match": "*" } } }),
+                Match.objectLike({
+                    Effect: "Deny",
+                    Action: "s3:PutObject",
+                    Condition: { StringNotEquals: { "s3:if-none-match": "*" }, Bool: { "s3:ObjectCreationOperation": "true" } },
+                }),
             ]),
         },
     });

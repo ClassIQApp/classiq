@@ -139,6 +139,56 @@ test("confirmed missing object allows protected PUT retry", async () => {
     assert.equal(completions, 2);
 });
 
+test("interrupted PUT retries the same recording after missing-object verification", async () => {
+    const session = new RecordingSession();
+    let creates = 0;
+    let tickets = 0;
+    let puts = 0;
+    let stored = false;
+    const keys: string[] = [];
+    const api: ApiFetch = async (path, init) => {
+        if (path.endsWith("/lectures")) {
+            creates++;
+
+            return Response.json({ id: "lecture" });
+        }
+        if (path.endsWith("/upload")) {
+            tickets++;
+            keys.push(String((init?.headers as Record<string, string>)["Idempotency-Key"]));
+
+            return Response.json({ uploadId: "upload" });
+        }
+        assert.equal(JSON.parse(String(init?.body)).uploadId, "upload");
+        if (!stored) throw new ApiError(409, "OBJECT_MISSING", "Upload the file before completing it.");
+
+        return Response.json({ uploadStatus: "uploaded" });
+    };
+    const run = () =>
+        session.run(
+            api,
+            "course",
+            "Title",
+            "Description",
+            file,
+            new AbortController().signal,
+            () => {},
+            async () => {},
+            async () => {
+                puts++;
+                if (puts === 1) throw new Error("Transfer interrupted");
+                stored = true;
+            },
+        );
+
+    await assert.rejects(run(), /Transfer interrupted/);
+    await run();
+    assert.equal(creates, 1);
+    assert.equal(tickets, 2);
+    assert.equal(new Set(keys).size, 1);
+    assert.equal(puts, 2);
+    assert.equal(session.uploaded, true);
+});
+
 test("recording access obtains fresh authorized URLs and preserves audio/video metadata", async () => {
     const { recordingAccess } = await import("../src/api/lectures/recording-access");
 

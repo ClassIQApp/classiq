@@ -1,6 +1,7 @@
 import type { CourseResourceFileConfig } from "../course-resource/file/config.ts";
 import { courseResourceObjectKey } from "../course-resource/file/s3-course-resource-file-facade.ts";
 import { UploadError, type UploadAsset, type UploadStorage, type UploadTicket } from "./model.ts";
+import { S3MultipartUpload } from "./s3-multipart-upload.ts";
 import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3ServiceException, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -9,6 +10,7 @@ const UPLOAD_SECONDS = 300;
 const DOWNLOAD_SECONDS = 60;
 
 export class S3UploadStorage implements UploadStorage {
+    readonly multipart: S3MultipartUpload;
     private readonly config: CourseResourceFileConfig;
     private readonly client: S3Client;
     private readonly signingClient: S3Client;
@@ -24,6 +26,7 @@ export class S3UploadStorage implements UploadStorage {
             forcePathStyle: client.config.forcePathStyle,
             requestChecksumCalculation: "WHEN_REQUIRED",
         });
+        this.multipart = new S3MultipartUpload(config, client, this.signingClient, (asset) => this.location(asset));
     }
 
     async ticket(asset: UploadAsset): Promise<UploadTicket> {
@@ -70,7 +73,7 @@ export class S3UploadStorage implements UploadStorage {
                 throw new UploadError(409, "OBJECT_MISSING", "Upload the file before completing it.");
             }
 
-            throw new UploadError(503, "STORAGE_UNAVAILABLE", "File storage could not verify the upload.");
+            throw new UploadError(503, "STORAGE_UNAVAILABLE", "File storage could not verify the upload.", error);
         }
 
         if (

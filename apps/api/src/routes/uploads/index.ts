@@ -51,8 +51,9 @@ export interface UploadRouteDependencies<E extends Env> {
     requireCourseRole: (role: CourseRole) => MiddlewareHandler<E>;
     getRepository: () => UploadRepository;
     getStorage: () => UploadStorage;
-    /** Indexes a completed resource for retrieval. Failures are recorded by the indexer and never fail the upload. */
-    indexResource?: (asset: UploadAsset) => Promise<unknown>;
+    startRecording?: (asset: UploadAsset) => Promise<unknown>;
+    startResource?: (asset: UploadAsset) => Promise<unknown>;
+    resourceProcessing?: (asset: UploadAsset) => Promise<unknown>;
 }
 
 const validateParents: MiddlewareHandler = async (c, next) => {
@@ -70,7 +71,7 @@ const validateParents: MiddlewareHandler = async (c, next) => {
 };
 
 export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDependencies<E>) {
-    const { requireCourseRole, getRepository, getStorage, indexResource } = dependencies;
+    const { requireCourseRole, getRepository, getStorage, startResource, startRecording, resourceProcessing } = dependencies;
 
     if (typeof requireCourseRole !== "function") {
         throw new TypeError("Course authorization middleware is required");
@@ -86,6 +87,14 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
     const routes = new Hono<E>();
 
     routes.onError((error, c) => {
+        if (!(error instanceof z.ZodError) && !(error instanceof SyntaxError)) {
+            console.warn({
+                event: "upload_request_failed",
+                path: c.req.path,
+                code: error instanceof UploadError ? error.code : "UPLOAD_UNAVAILABLE",
+                errorName: error.cause instanceof Error ? error.cause.name : error.name,
+            });
+        }
         if (error instanceof UploadError) {
             return c.json({ code: error.code, message: error.message }, error.status);
         }
@@ -113,6 +122,54 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
         }
 
         return asset;
+    }
+
+    const multipartRoot = "/:courseId/lectures/:lectureId/recording/multipart";
+    for (const action of ["start", "part", "complete"] as const) {
+        routes.post(`${multipartRoot}/${action}`, validateParents, teacher, async (c) => {
+            const body = z
+                .object({
+                    uploadId: z.uuid(),
+                    id: z.string().min(1).max(2048).optional(),
+                    number: z.number().int().positive().max(10_000).optional(),
+                    parts: z
+                        .array(z.object({ number: z.number().int().positive(), etag: z.string().min(1).max(256) }).strict())
+                        .max(64)
+                        .optional(),
+                })
+                .strict()
+                .parse(await c.req.json());
+            const asset = await find(c.req.param("courseId")!, "recording", c.req.param("lectureId")!);
+            if (asset.uploadId !== body.uploadId || asset.uploadStatus === "failed") {
+                throw new UploadError(409, "UPLOAD_CONFLICT", "Upload ticket does not match this recording.");
+            }
+            const storage = getStorage();
+            if (!storage.multipart) throw new UploadError(503, "STORAGE_UNAVAILABLE", "Resumable uploads are unavailable.");
+            if (action !== "complete" && asset.uploadStatus === "uploaded") {
+                throw new UploadError(409, "UPLOAD_CONFLICT", "Recording is already uploaded.");
+            }
+            if (action === "start") {
+                return c.json(await storage.multipart.start(asset));
+            }
+            const sessionId = z.string().min(1).parse(body.id);
+            if (action === "part") {
+                return c.json(await storage.multipart.part(asset, sessionId, z.number().int().positive().parse(body.number)));
+            }
+            // A lost completion response must not make the browser upload the recording again.
+            try {
+                await storage.verify(asset);
+            } catch (error) {
+                if (!(error instanceof UploadError) || error.code !== "OBJECT_MISSING") throw error;
+                await storage.multipart.complete(
+                    asset,
+                    sessionId,
+                    z.array(z.object({ number: z.number(), etag: z.string() })).parse(body.parts),
+                );
+                await storage.verify(asset);
+            }
+
+            return c.json({ uploaded: true });
+        });
     }
 
     for (const kind of ["recording", "resource"] as const) {
@@ -154,12 +211,16 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
 
             const completed = await getRepository().complete(asset);
 
-            if (kind === "resource" && indexResource) {
-                try {
-                    await indexResource(completed);
-                } catch {
-                    // the upload itself succeeded; indexing can be retried by completing again
-                }
+            if (kind === "resource" && startResource) {
+                const processing = await startResource(completed);
+
+                return c.json({ ...publicAsset(completed), processing });
+            }
+
+            if (kind === "recording" && startRecording) {
+                const processing = await startRecording(completed);
+
+                return c.json({ ...publicAsset(completed), processing });
             }
 
             return c.json(publicAsset(completed));
@@ -188,7 +249,14 @@ export function createUploadRoutes<E extends Env>(dependencies: UploadRouteDepen
 
             const assets = await getRepository().listResources(c.req.param("courseId")!);
 
-            return c.json({ items: assets.map((asset) => publicAsset(asset)) });
+            return c.json({
+                items: await Promise.all(
+                    assets.map(async (asset) => ({
+                        ...publicAsset(asset),
+                        ...(resourceProcessing ? { processing: await resourceProcessing(asset) } : {}),
+                    })),
+                ),
+            });
         });
     }
 

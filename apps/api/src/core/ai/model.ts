@@ -1,7 +1,7 @@
 import * as z from "zod/mini";
 
 export const llmProviderSchema = z.enum(["openai", "deepseek"]);
-export type LlmProviderName = z.infer<typeof llmProviderSchema>;
+export type LlmProviderName = z.infer<typeof llmProviderSchema> | "fixture";
 
 const nonemptyText = z.string().check(z.refine((value) => value.trim().length > 0));
 export const llmMessageSchema = z.strictObject({

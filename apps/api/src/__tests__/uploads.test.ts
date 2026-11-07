@@ -8,7 +8,7 @@ const uploadId = "738f48a8-f87a-4686-bb67-a812a4350ace";
 
 const input = { name: "lecture.webm", contentType: "audio/webm", contentLength: 1024 };
 
-function fixture(indexResource?: (asset: UploadAsset) => Promise<unknown>) {
+function fixture(startResource?: (asset: UploadAsset) => Promise<unknown>) {
     const asset: UploadAsset = {
         id: "80df9e7e-ecc4-47b1-a781-d25eec7bc433",
         uploadId,
@@ -53,7 +53,7 @@ function fixture(indexResource?: (asset: UploadAsset) => Promise<unknown>) {
         createUploadRoutes({
             getRepository: () => repository,
             getStorage: () => storage,
-            indexResource,
+            startResource,
             requireCourseRole: (role) => async (c, next) => {
                 const granted = c.req.header("test-role");
 
@@ -111,21 +111,26 @@ describe("authorized upload router", () => {
         ).toThrow("authorization");
     });
 
-    it.each([`${recording}/upload`, `${recording}/complete`, "1/resources/upload", "1/resources/3/complete"])(
-        "denies unauthenticated and Member mutation: %s",
-        async (path) => {
-            const { request, repository, storage } = fixture();
+    it.each([
+        `${recording}/upload`,
+        `${recording}/complete`,
+        `${recording}/multipart/start`,
+        `${recording}/multipart/part`,
+        `${recording}/multipart/complete`,
+        "1/resources/upload",
+        "1/resources/3/complete",
+    ])("denies unauthenticated and Member mutation: %s", async (path) => {
+        const { request, repository, storage } = fixture();
 
-            const anonymousResponse = await request(path, input, "");
-            const memberResponse = await request(path, input, "member");
+        const anonymousResponse = await request(path, input, "");
+        const memberResponse = await request(path, input, "member");
 
-            expect(anonymousResponse.status).toBe(401);
-            expect(memberResponse.status).toBe(403);
-            expect(repository.checkParent).not.toHaveBeenCalled();
-            expect(storage.ticket).not.toHaveBeenCalled();
-            expect(storage.verify).not.toHaveBeenCalled();
-        },
-    );
+        expect(anonymousResponse.status).toBe(401);
+        expect(memberResponse.status).toBe(403);
+        expect(repository.checkParent).not.toHaveBeenCalled();
+        expect(storage.ticket).not.toHaveBeenCalled();
+        expect(storage.verify).not.toHaveBeenCalled();
+    });
     it.each([recording, `${recording}/download`, "1/resources", "1/resources/3/download"])(
         "protects metadata and downloads: %s",
         async (path) => {
@@ -245,33 +250,35 @@ describe("authorized upload router", () => {
         expect(download.headers.get("cache-control")).toContain("no-store");
     });
 
-    it("indexes completed resources but not recordings", async () => {
-        const indexResource = vi.fn(async () => {});
-        const { request, asset } = fixture(indexResource);
+    it("starts asynchronous processing for resources but not recordings", async () => {
+        const startResource = vi.fn(async () => {});
+        const { request, asset } = fixture(startResource);
 
         const recordingResponse = await request(`${recording}/complete`, { uploadId });
 
         expect(recordingResponse.status).toBe(200);
-        expect(indexResource).not.toHaveBeenCalled();
+        expect(startResource).not.toHaveBeenCalled();
 
         Object.assign(asset, { kind: "resource", resourceId: "3", uploadStatus: "pending" });
 
         const resourceResponse = await request("1/resources/3/complete", { uploadId });
 
         expect(resourceResponse.status).toBe(200);
-        expect(indexResource).toHaveBeenCalledWith(expect.objectContaining({ resourceId: "3", uploadStatus: "uploaded" }));
+        expect(startResource).toHaveBeenCalledWith(expect.objectContaining({ resourceId: "3", uploadStatus: "uploaded" }));
     });
 
-    it("completes the upload even when indexing fails", async () => {
-        const { request, asset } = fixture(async () => {
-            throw new Error("index unavailable");
-        });
+    it("returns the persisted start failure without undoing the upload", async () => {
+        const { request, asset } = fixture(async () => ({ status: "failed", error_code: "START_FAILED" }));
 
         Object.assign(asset, { kind: "resource", resourceId: "3" });
 
         const response = await request("1/resources/3/complete", { uploadId });
 
         expect(response.status).toBe(200);
-        expect(await response.json()).toMatchObject({ id: "3", uploadStatus: "uploaded" });
+        expect(await response.json()).toMatchObject({
+            id: "3",
+            uploadStatus: "uploaded",
+            processing: { status: "failed", error_code: "START_FAILED" },
+        });
     });
 });

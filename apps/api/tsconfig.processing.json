@@ -1,0 +1,9 @@
+{
+    "extends": "./tsconfig.json",
+    "include": [
+        "scripts/generate-pipelines.ts",
+        "scripts/verify-processing-artifacts.ts",
+        "vite.stages.config.ts",
+        "scripts/validate-pipelines.ts"
+    ]
+}

@@ -22,11 +22,15 @@ export function courseListQueryOptions(api: CoursesApi, userId: string) {
     });
 }
 
+const COURSE_PROCESSING_POLL_MS = 30_000;
+
 export function courseQueryOptions(api: CoursesApi, userId: string, courseId: string) {
     return queryOptions({
         queryKey: courseQueryKey(userId, courseId),
         queryFn: ({ signal }) => api.fetchCourse(courseId, signal),
         retry: false,
+        refetchInterval: (query) =>
+            query.state.data?.lectures.some((lecture) => lecture.status === "processing") ? COURSE_PROCESSING_POLL_MS : false,
     });
 }
 

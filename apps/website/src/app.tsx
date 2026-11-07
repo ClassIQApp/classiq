@@ -1,14 +1,17 @@
 import type { AuthUser } from "./api/auth/client";
 import { AuthProvider, useAuth } from "./api/auth/provider";
+import "./components/chat/chat-window.css";
 import InviteForm from "./components/invitations/InviteForm";
 import PendingInvitations from "./components/invitations/PendingInvitations";
 import AppShell from "./components/layout/AppShell";
 import type { NavItem } from "./components/layout/Sidebar";
 import "./components/lectures/lecture-upload-form.css";
 import "./index.css";
+import { useRoute } from "./navigation/route";
 import CoursePage from "./pages/courses/course-page";
 import Login from "./pages/login";
 import Courses from "./pages/teacher/Courses";
+import "./styles/controls.css";
 import { useState } from "react";
 
 interface AccountHomeProps {
@@ -19,19 +22,15 @@ interface AccountHomeProps {
 }
 
 function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomeProps) {
-    const [activeNav, setActiveNav] = useState<NavItem>("Courses");
-    const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+    const [route, go] = useRoute();
+    const activeNav: NavItem = route.name === "settings" ? "Settings" : "Courses";
 
-    function navigate(item: NavItem) {
-        if (item === "Courses" && activeNav === "Courses") {
-            setSelectedCourseId(null);
-        }
-
-        setActiveNav(item);
+    function navigateTo(item: NavItem) {
+        go(item === "Settings" ? { name: "settings" } : { name: "courses" });
     }
 
     function showPage() {
-        if (activeNav === "Settings") {
+        if (route.name === "settings") {
             return (
                 <section>
                     <h1>Account Settings</h1>
@@ -41,15 +40,21 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
             );
         }
 
-        if (selectedCourseId) {
+        if (route.name === "course" || route.name === "lecture") {
             return (
-                <CoursePage courseId={selectedCourseId} onCourseChange={setSelectedCourseId} onClose={() => setSelectedCourseId(null)} />
+                <CoursePage
+                    courseId={route.courseId}
+                    route={route}
+                    onNavigate={go}
+                    onCourseChange={(courseId) => go({ name: "course", courseId, section: "lectures" })}
+                    onClose={() => go({ name: "courses" })}
+                />
             );
         }
 
         return (
             <Courses
-                onOpenCourse={setSelectedCourseId}
+                onOpenCourse={(courseId) => go({ name: "course", courseId, section: "lectures" })}
                 pendingInvitations={<PendingInvitations />}
                 renderInviteForm={(courseId) => <InviteForm courseId={courseId} />}
             />
@@ -57,7 +62,15 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
     }
 
     return (
-        <AppShell activeNav={activeNav} onNavigate={navigate} role="account" user={user} onLogout={onLogout} loggingOut={loggingOut}>
+        <AppShell
+            activeNav={activeNav}
+            onNavigate={navigateTo}
+            role="account"
+            user={user}
+            onLogout={onLogout}
+            loggingOut={loggingOut}
+            viewKey={route.name === "course" || route.name === "lecture" ? `course:${route.courseId}` : route.name}
+        >
             {logoutError && <p role="alert">{logoutError}</p>}
             {showPage()}
         </AppShell>

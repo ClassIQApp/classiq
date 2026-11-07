@@ -1,0 +1,396 @@
+@layer reset, controls;
+
+@layer controls {
+    :focus-visible {
+        outline: var(--focus-width) solid var(--color-focus);
+        outline-offset: var(--focus-offset);
+    }
+
+    :where(
+        .sign-in-button,
+        .teacher-course-primary-btn,
+        .teacher-course-secondary-btn,
+        .teacher-course-settings-btn,
+        .lecture-upload-open,
+        .resources-toggle-btn,
+        .resources-btn,
+        .resources-view-btn,
+        .invitations-button,
+        .logout-button,
+        .resources-container [role="alert"] button
+    ) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        min-height: var(--size-control);
+        padding: 0 var(--space-4);
+        border: var(--border-width) solid transparent;
+        border-radius: var(--radius-md);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        line-height: var(--leading-snug);
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition:
+            background-color var(--duration-base) var(--ease-standard),
+            border-color var(--duration-base) var(--ease-standard),
+            color var(--duration-base) var(--ease-standard),
+            transform var(--duration-fast) var(--ease-standard);
+    }
+
+    :where(
+        .sign-in-button,
+        .teacher-course-primary-btn,
+        .lecture-upload-open,
+        .resources-toggle-btn,
+        .resources-btn,
+        .invitations-button:not(.invitations-button-secondary)
+    ) {
+        background: var(--color-primary-fill);
+        color: var(--color-on-primary-fill);
+    }
+
+    :where(
+            .sign-in-button,
+            .teacher-course-primary-btn,
+            .lecture-upload-open,
+            .resources-toggle-btn,
+            .resources-btn,
+            .invitations-button:not(.invitations-button-secondary)
+        ):hover:not(:disabled) {
+        background: var(--color-primary-fill-hover);
+    }
+
+    :where(
+        .teacher-course-secondary-btn,
+        .teacher-course-settings-btn,
+        .resources-view-btn,
+        .invitations-button-secondary,
+        .logout-button,
+        .resources-container [role="alert"] button
+    ) {
+        border-color: var(--color-border-strong);
+        background: var(--color-surface);
+        color: var(--color-text);
+    }
+
+    :where(
+            .teacher-course-secondary-btn,
+            .teacher-course-settings-btn,
+            .resources-view-btn,
+            .invitations-button-secondary,
+            .logout-button,
+            .resources-container [role="alert"] button
+        ):hover:not(:disabled) {
+        border-color: var(--color-text-muted);
+        background: var(--color-surface-hover);
+    }
+
+    :where(.resources-view-btn, .invitations-button, .logout-button, .resources-container [role="alert"] button) {
+        min-height: var(--size-control-sm);
+        padding: 0 var(--space-3);
+    }
+
+    :where(
+            .sign-in-button,
+            .teacher-course-primary-btn,
+            .teacher-course-secondary-btn,
+            .teacher-course-settings-btn,
+            .lecture-upload-open,
+            .resources-toggle-btn,
+            .resources-btn,
+            .resources-view-btn,
+            .invitations-button,
+            .logout-button,
+            .resources-container [role="alert"] button
+        ):active:not(:disabled) {
+        transform: translateY(0.0625rem);
+    }
+
+    :where(
+        .sign-in-button,
+        .teacher-course-primary-btn,
+        .teacher-course-secondary-btn,
+        .teacher-course-settings-btn,
+        .lecture-upload-open,
+        .resources-toggle-btn,
+        .resources-btn,
+        .resources-view-btn,
+        .invitations-button,
+        .logout-button,
+        .resources-container [role="alert"] button,
+        .lecture-text-button,
+        .login-switch
+    ):disabled {
+        opacity: var(--opacity-disabled);
+        cursor: not-allowed;
+    }
+
+    :where(
+        .sign-in-button,
+        .teacher-course-primary-btn,
+        .lecture-upload-open,
+        .resources-toggle-btn,
+        .resources-btn,
+        .invitations-button:not(.invitations-button-secondary)
+    ):disabled {
+        border-color: var(--color-disabled-border);
+        background: var(--color-disabled);
+        color: var(--color-on-disabled);
+        opacity: 1;
+    }
+
+    :where(.button-icon) {
+        width: var(--size-glyph-sm);
+        height: var(--size-glyph-sm);
+        flex-shrink: 0;
+    }
+
+    :where(.lecture-text-button, .login-switch) {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--color-primary);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        cursor: pointer;
+        text-underline-offset: 0.2em;
+    }
+
+    :where(.lecture-text-button, .login-switch):hover:not(:disabled) {
+        color: var(--color-primary-hover);
+        text-decoration: underline;
+    }
+
+    :where(
+        .login-form label,
+        .lecture-filters label,
+        .teacher-course-form label,
+        .lecture-upload-form label,
+        .invite-form-label,
+        .resources-card > label
+    ) {
+        display: grid;
+        gap: var(--space-2);
+        min-width: 0;
+        color: var(--color-text);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+    }
+
+    :where(
+        .login-form input,
+        .lecture-filters input,
+        .lecture-filters select,
+        .teacher-course-form input,
+        .teacher-course-form textarea,
+        .lecture-upload-form input,
+        .lecture-upload-form textarea,
+        .resources-input,
+        .invite-form-label input
+    ) {
+        width: 100%;
+        min-width: 0;
+        min-height: var(--size-control);
+        padding: var(--space-2) var(--space-3);
+        border: var(--border-width) solid var(--color-border-strong);
+        border-radius: var(--radius-md);
+        background: var(--color-field);
+        color: var(--color-text);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-regular);
+        line-height: var(--leading-normal);
+        transition:
+            border-color var(--duration-base) var(--ease-standard),
+            box-shadow var(--duration-base) var(--ease-standard);
+    }
+
+    :where(.teacher-course-form textarea, .lecture-upload-form textarea) {
+        min-height: calc(var(--size-control) * 2);
+        resize: vertical;
+    }
+
+    :where(.lecture-upload-form input[type="file"], input[type="file"].resources-input) {
+        padding: var(--space-1-5);
+        color: var(--color-text-secondary);
+        cursor: pointer;
+    }
+
+    :where(.lecture-upload-form input[type="file"], input[type="file"].resources-input)::file-selector-button {
+        min-height: var(--size-control-sm);
+        margin-right: var(--space-3);
+        padding: 0 var(--space-3);
+        border: var(--border-width) solid var(--color-border-strong);
+        border-radius: var(--radius-sm);
+        background: var(--color-surface-sunken);
+        color: var(--color-text);
+        font: inherit;
+        font-weight: var(--weight-semibold);
+        cursor: pointer;
+    }
+
+    :where(
+        .login-form input,
+        .lecture-filters input,
+        .lecture-filters select,
+        .teacher-course-form input,
+        .teacher-course-form textarea,
+        .lecture-upload-form input,
+        .lecture-upload-form textarea,
+        .resources-input,
+        .invite-form-label input
+    )::placeholder {
+        color: var(--color-text-muted);
+    }
+
+    :where(
+            .login-form input,
+            .lecture-filters input,
+            .lecture-filters select,
+            .teacher-course-form input,
+            .teacher-course-form textarea,
+            .lecture-upload-form input,
+            .lecture-upload-form textarea,
+            .resources-input,
+            .invite-form-label input
+        ):hover:not(:disabled, :focus) {
+        border-color: var(--color-text-muted);
+    }
+
+    :where(
+        .login-form input,
+        .lecture-filters input,
+        .lecture-filters select,
+        .teacher-course-form input,
+        .teacher-course-form textarea,
+        .lecture-upload-form input,
+        .lecture-upload-form textarea,
+        .resources-input,
+        .invite-form-label input
+    ):focus-visible {
+        border-color: var(--color-focus);
+        outline: none;
+        box-shadow: var(--focus-ring);
+    }
+
+    :where(
+        .login-form input,
+        .lecture-filters input,
+        .lecture-filters select,
+        .teacher-course-form input,
+        .teacher-course-form textarea,
+        .lecture-upload-form input,
+        .lecture-upload-form textarea,
+        .resources-input,
+        .invite-form-label input
+    )[aria-invalid="true"] {
+        border-color: var(--color-danger);
+    }
+
+    :where(
+        .login-form input,
+        .lecture-filters input,
+        .lecture-filters select,
+        .teacher-course-form input,
+        .teacher-course-form textarea,
+        .lecture-upload-form input,
+        .lecture-upload-form textarea,
+        .resources-input,
+        .invite-form-label input
+    ):disabled {
+        opacity: var(--opacity-disabled);
+        cursor: not-allowed;
+    }
+
+    :where(
+        .teacher-course-card,
+        .lecture-card,
+        .teacher-course-form-card,
+        .lecture-upload-panel,
+        .invitations,
+        .resources-card,
+        .resources-item,
+        .login-card
+    ) {
+        border: var(--border-width) solid var(--color-border-card);
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+    }
+
+    :where(.lecture-status, .course-role-badge) {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: var(--space-0-5) var(--space-2);
+        border: var(--border-width) solid color-mix(in srgb, currentColor 22%, transparent);
+        border-radius: var(--radius-full);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+        line-height: var(--leading-snug);
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    :where(
+        .login-error,
+        .teacher-course-form-error,
+        .lecture-upload-error,
+        .lecture-upload-success,
+        .resources-container > [role="alert"]
+    ) {
+        padding: var(--space-3);
+        border: var(--border-width) solid color-mix(in srgb, currentColor 25%, transparent);
+        border-radius: var(--radius-md);
+        font-size: var(--text-sm);
+        line-height: var(--leading-normal);
+    }
+
+    :where(.login-error, .teacher-course-form-error, .lecture-upload-error, .resources-container > [role="alert"]) {
+        background: var(--color-danger-subtle);
+        color: var(--color-danger);
+    }
+
+    :where(.lecture-upload-success) {
+        background: var(--color-success-subtle);
+        color: var(--color-success);
+    }
+
+    :where(.teacher-courses-eyebrow, .courses-eyebrow) {
+        color: var(--color-text-secondary);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+    }
+
+    :where(.courses-heading h1, .teacher-courses-header h1) {
+        font-family: var(--font-display);
+        font-size: var(--text-2xl);
+        font-weight: var(--weight-semibold);
+        letter-spacing: var(--tracking-display);
+        line-height: var(--leading-tight);
+    }
+
+    @media (max-width: 48rem) {
+        :where(
+            .login-form input,
+            .lecture-filters input,
+            .lecture-filters select,
+            .teacher-course-form input,
+            .teacher-course-form textarea,
+            .lecture-upload-form input,
+            .lecture-upload-form textarea,
+            .resources-input,
+            .invite-form-label input
+        ) {
+            font-size: var(--text-base);
+        }
+
+        :where(.courses-heading h1, .teacher-courses-header h1) {
+            font-size: var(--text-xl);
+        }
+    }
+}

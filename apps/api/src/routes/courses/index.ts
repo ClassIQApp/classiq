@@ -174,6 +174,9 @@ routes.patch("/:courseId/lectures/:lectureId", requireCourseRole("teacher"), asy
     const lectureId = c.req.param("lectureId");
 
     const body = await c.req.json<UpdateLectureInput>();
+    if (body.status !== undefined || body.statusMessage !== undefined) {
+        return c.json({ code: "INVALID_LECTURE", message: "Processing manages lecture status." }, 400);
+    }
 
     const database = c.get("getDb")();
     const lectures = new PostgresLectureRepository(database);
