@@ -24,7 +24,7 @@ try {
         await client.send(new CreateBucketCommand({ Bucket }));
     }
 
-    // Compose waits for MinIO's healthcheck; ElasticMQ needs a separate readiness check.
+    // Compose waits for Silo's healthcheck; ElasticMQ needs a separate readiness check.
     for (const queueName of ["classiq-local", "classiq-local-dead-letters"]) {
         for (const attempt of Array.from({ length: 30 }, (_, index) => index)) {
             try {

@@ -42,11 +42,11 @@ pnpm cdk:synth     # build deps, then synthesize cdk
 pnpm cdk:deploy    # deploy resources to AWS
 ```
 
-Have Docker running before starting `pnpm dev`. The API dev script starts PostgreSQL, MinIO (S3), and ElasticMQ (SQS), waits for readiness, creates the local bucket, and applies pending migrations before starting the API server. It also loads `apps/api/.env.development` for the API's database connection. The same setup runs when starting the API directly with `pnpm --filter @classiq/api dev`.
+Have Docker running before starting `pnpm dev`. The API dev script starts PostgreSQL, Silo (S3), and ElasticMQ (SQS), waits for readiness, creates the local bucket, and applies pending migrations before starting the API server. It also loads `apps/api/.env.development` for the API's database connection. The same setup runs when starting the API directly with `pnpm --filter @classiq/api dev`.
 
-PostgreSQL and MinIO keep their data between runs; ElasticMQ messages are ephemeral and its configured queue is recreated on startup. Containers stay running after the dev servers stop. To stop them, run `pnpm --filter @classiq/api db:stop`.
+PostgreSQL and Silo keep their data between runs; ElasticMQ messages are ephemeral and its configured queue is recreated on startup. Containers stay running after the dev servers stop. To stop them, run `pnpm --filter @classiq/api db:stop`.
 
-Local storage uses `http://localhost:9100` with bucket `classiq-local-files`. MinIO's console is at `http://localhost:9101` (user `classiq`, password `classiq-local`). Local presigned uploads and downloads go directly to MinIO; CORS permits both local website origins. MinIO runs without server-side encryption; production uploads still require AES256 encryption.
+Local storage uses `http://localhost:9100` with bucket `classiq-local-files`. Silo's console is at `http://localhost:9101` (user `classiq`, password `classiq-local`). Local presigned uploads and downloads go directly to Silo; CORS permits both local website origins. Silo runs without server-side encryption; production uploads still require AES256 encryption. The image is pinned to the same release as `ourlil`; the `minio` Compose service name, `MINIO_*` settings, and existing data volume are retained for compatibility.
 
 ElasticMQ exposes `http://localhost:9324` with queue URL `http://localhost:9324/000000000000/classiq-local`, provisioned via `apps/api/elasticmq.conf`. There is currently no SQS producer or consumer in the API; the emulator is ready for queue development.
 

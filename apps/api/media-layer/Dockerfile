@@ -2,7 +2,7 @@ FROM public.ecr.aws/sam/build-nodejs24.x:latest-arm64@sha256:e7f36af40dcdf65be63
 RUN dnf install -y gcc gcc-c++ make nasm openssl-devel zlib-devel tar xz
 WORKDIR /build
 ARG FFMPEG_VERSION=7.1.3
-RUN curl -fsSL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz -o ffmpeg.tar.xz \
+RUN curl -fsSL --retry 5 --retry-all-errors --connect-timeout 30 --max-time 180 https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz -o ffmpeg.tar.xz \
     && echo 'f0bf043299db9e3caacb435a712fc541fbb07df613c4b893e8b77e67baf3adbe  ffmpeg.tar.xz' | sha256sum -c - \
     && tar xJf ffmpeg.tar.xz \
     && cd ffmpeg-${FFMPEG_VERSION} \

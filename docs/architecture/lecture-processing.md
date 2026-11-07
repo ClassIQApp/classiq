@@ -7,7 +7,7 @@ The design extends what already exists:
 - Signed S3 uploads for recordings and PDFs: `core/uploads`, `routes/uploads`, migration `007`.
 - The content index: `core/content-index`, migration `008`. It already models `transcript` and `resource` sources and chunks located by time or by page.
 - The LLM layer (`core/ai`) and on-demand quiz generation (`core/quiz`, migration `010`).
-- ElasticMQ and MinIO for local development: `apps/api/docker-compose.yml`, `elasticmq.conf`, and `SQS_ENDPOINT`/`SQS_QUEUE_URL` in `.env.development`.
+- ElasticMQ and Silo for local development: `apps/api/docker-compose.yml`, `elasticmq.conf`, and `SQS_ENDPOINT`/`SQS_QUEUE_URL` in `.env.development`.
 - The AWS deployment in `apps/infra`: one API Lambda behind API Gateway, one versioned S3 bucket, and Neon Postgres. The API Lambda runs Node 24 on arm64 with a **10 s timeout and 512 MB**.
 - The architecture diagram, `classiq-architecture.drawio.xml` / `.png`, which has been redrawn to match this document. It shows the deployed topology only, so the local SQS runner is not drawn. Its "Transcribe Chunk" icon stands for the `SubmitChunk`, `CheckChunk` and `CollectChunk` Lambdas inside the Map.
 
@@ -36,11 +36,11 @@ These are settled and are not revisited below:
 
 ### Supported inputs
 
-| Input | Formats | Limit | Source of the rule |
-| --- | --- | --- | --- |
-| Lecture recording (one per lecture) | `audio/mpeg`, `audio/mp4`, `audio/wav`, `audio/x-wav`, `audio/webm`, `video/mp4`, `video/webm` | 500 MiB | `recordingInput` in `routes/uploads`, CHECK in `007` |
-| Course resource (optionally attached to a lecture) | `application/pdf` | 25 MiB | `resourceInput` in `routes/uploads`, CHECK in `007` |
-| Course resource, DOCX (optional, see [Open decisions](#8-open-decisions)) | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | 25 MiB | Not accepted yet |
+| Input                                                                     | Formats                                                                                        | Limit   | Source of the rule                                   |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------- | ---------------------------------------------------- |
+| Lecture recording (one per lecture)                                       | `audio/mpeg`, `audio/mp4`, `audio/wav`, `audio/x-wav`, `audio/webm`, `video/mp4`, `video/webm` | 500 MiB | `recordingInput` in `routes/uploads`, CHECK in `007` |
+| Course resource (optionally attached to a lecture)                        | `application/pdf`                                                                              | 25 MiB  | `resourceInput` in `routes/uploads`, CHECK in `007`  |
+| Course resource, DOCX (optional, see [Open decisions](#8-open-decisions)) | `application/vnd.openxmlformats-officedocument.wordprocessingml.document`                      | 25 MiB  | Not accepted yet                                     |
 
 ffmpeg reads all of the recording formats. Soniox never sees the original file: it receives normalized FLAC chunks, and Soniox lists `flac` among its supported formats ([async transcription docs](https://docs.soniox.com/stt/async/async-transcription)).
 
@@ -50,19 +50,19 @@ Scanned PDFs without a text layer still fail with the existing message (`"The PD
 
 ### Initial outputs
 
-| Output | Scope | Produced by | Consumed by |
-| --- | --- | --- | --- |
-| Timestamped transcript: segments with start and end seconds, reconciled speaker label and language | **In** (#18) | `StitchTranscript` | Transcript view (#60), AI generation |
-| Spanish transcript, aligned to the source segments | **In, always** (#23) | Soniox, in the same run; aligned in `StitchTranscript` | Transcript view |
-| Indexed transcript passages (`content_sources.kind = 'transcript'`) | **In** | `StitchTranscript`, through `ContentIndexService.indexSource` | Search, quizzes, retrieval |
-| Indexed resource passages (`content_sources.kind = 'resource'`) | **In** (#26, #62) | `ExtractResource` | Search, quizzes, resource views |
-| Lecture summary | **In** (#32) | `GenerateSummary` | Lecture view |
-| Key topics and terms, linked to transcript time ranges | **In** (#34) | `GenerateKeyTerms` | Lecture view |
-| Quizzes | **Unchanged:** generated on demand from indexed passages (`QuizService`) | — | — |
-| Transcript sections linked to related resources | **Deferred** (#36), see below | — | — |
-| Study guides | **Out** (#45): course-level and on demand; builds on these outputs later | — | — |
-| Cleaned transcript and named speakers | **Out** (#20): reconciled provider labels are stored but never mapped to people | — | — |
-| Live transcription | **Out** (#19): a separate streaming path | — | — |
+| Output                                                                                             | Scope                                                                           | Produced by                                                   | Consumed by                          |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------ |
+| Timestamped transcript: segments with start and end seconds, reconciled speaker label and language | **In** (#18)                                                                    | `StitchTranscript`                                            | Transcript view (#60), AI generation |
+| Spanish transcript, aligned to the source segments                                                 | **In, always** (#23)                                                            | Soniox, in the same run; aligned in `StitchTranscript`        | Transcript view                      |
+| Indexed transcript passages (`content_sources.kind = 'transcript'`)                                | **In**                                                                          | `StitchTranscript`, through `ContentIndexService.indexSource` | Search, quizzes, retrieval           |
+| Indexed resource passages (`content_sources.kind = 'resource'`)                                    | **In** (#26, #62)                                                               | `ExtractResource`                                             | Search, quizzes, resource views      |
+| Lecture summary                                                                                    | **In** (#32)                                                                    | `GenerateSummary`                                             | Lecture view                         |
+| Key topics and terms, linked to transcript time ranges                                             | **In** (#34)                                                                    | `GenerateKeyTerms`                                            | Lecture view                         |
+| Quizzes                                                                                            | **Unchanged:** generated on demand from indexed passages (`QuizService`)        | —                                                             | —                                    |
+| Transcript sections linked to related resources                                                    | **Deferred** (#36), see below                                                   | —                                                             | —                                    |
+| Study guides                                                                                       | **Out** (#45): course-level and on demand; builds on these outputs later        | —                                                             | —                                    |
+| Cleaned transcript and named speakers                                                              | **Out** (#20): reconciled provider labels are stored but never mapped to people | —                                                             | —                                    |
+| Live transcription                                                                                 | **Out** (#19): a separate streaming path                                        | —                                                             | —                                    |
 
 Summary and key terms are generated **from the transcript only**. Resources can be uploaded at any time, so making lecture outputs depend on them would make the results depend on upload order. Course-wide synthesis belongs to study guides.
 
@@ -105,17 +105,17 @@ PublishLecture ── lecture → ready
 Any state ── Catch ──▶ RecordFailure ──▶ Failed
 ```
 
-| State | Kind | Projection stage | Required for `ready` | What it does |
-| --- | --- | --- | --- | --- |
-| `VerifyRecording` | task | `verification` | Yes (precursor) | Confirms that the recording is `uploaded` and its object exists and matches the recorded length. Marks the run started. |
-| `NormalizeRecording` | task | `normalization` | Yes (precursor) | Runs ffmpeg to produce one mono 16 kHz FLAC with silence detection, plans the chunks, uploads the chunk FLACs, and writes `recording_chunks`. |
-| `TranscribeChunks` | map | `transcription` | Yes | For each chunk: `SubmitChunk` (await external), then `CheckChunk`, the `ChunkStatus` choice, `WaitForChunk`, and `CollectChunk`. |
-| `StitchTranscript` | task | `transcription`, `translation` | Yes (transcription) | Builds the transcript, segments and Spanish translation, then indexes the transcript. |
-| `GenerateContent` | parallel | — | — | Runs the two branches below. |
-| `GenerateSummary` | task | `summary` | Yes | Generates the summary from the transcript. |
-| `GenerateKeyTerms` | task | `key_terms` | Yes | Generates key terms with transcript time ranges. |
-| `PublishLecture` | task | — | — | Evaluates the readiness rule and sets `lectures.status = 'ready'`. |
-| `RecordFailure` | task (catch target) | the failing stage | — | Marks the failing stage `failed`, sets the lecture to `failed`, then moves to `Failed`. |
+| State                | Kind                | Projection stage               | Required for `ready` | What it does                                                                                                                                  |
+| -------------------- | ------------------- | ------------------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VerifyRecording`    | task                | `verification`                 | Yes (precursor)      | Confirms that the recording is `uploaded` and its object exists and matches the recorded length. Marks the run started.                       |
+| `NormalizeRecording` | task                | `normalization`                | Yes (precursor)      | Runs ffmpeg to produce one mono 16 kHz FLAC with silence detection, plans the chunks, uploads the chunk FLACs, and writes `recording_chunks`. |
+| `TranscribeChunks`   | map                 | `transcription`                | Yes                  | For each chunk: `SubmitChunk` (await external), then `CheckChunk`, the `ChunkStatus` choice, `WaitForChunk`, and `CollectChunk`.              |
+| `StitchTranscript`   | task                | `transcription`, `translation` | Yes (transcription)  | Builds the transcript, segments and Spanish translation, then indexes the transcript.                                                         |
+| `GenerateContent`    | parallel            | —                              | —                    | Runs the two branches below.                                                                                                                  |
+| `GenerateSummary`    | task                | `summary`                      | Yes                  | Generates the summary from the transcript.                                                                                                    |
+| `GenerateKeyTerms`   | task                | `key_terms`                    | Yes                  | Generates key terms with transcript time ranges.                                                                                              |
+| `PublishLecture`     | task                | —                              | —                    | Evaluates the readiness rule and sets `lectures.status = 'ready'`.                                                                            |
+| `RecordFailure`      | task (catch target) | the failing stage              | —                    | Marks the failing stage `failed`, sets the lecture to `failed`, then moves to `Failed`.                                                       |
 
 ### Resource pipeline
 
@@ -131,15 +131,15 @@ Today `POST /courses/:courseId/resources/:resourceId/complete` runs `unpdf` insi
 
 The pipeline is declared once in `core/processing` using a small set of primitives. Both runners support all of them:
 
-| Primitive | Meaning | Step Functions (ASL) | SQS continuation runner |
-| --- | --- | --- | --- |
-| `task(handler, { next, retry, timeoutSeconds })` | Run a handler | `Task` with `arn:aws:states:::lambda:invoke` to that stage's Lambda | Runs the handler in-process and enqueues the `next` continuation |
-| `choice(field, cases, default)` | Branch on a string field of the state | `Choice` with `StringEquals` rules | Reads the field and enqueues the matching state |
-| `wait(seconds)` | Delay | `Wait` | Continuation with `DelaySeconds`, chained when over 900 s |
-| `map(itemsField, iterator, { maxConcurrency })` | Run a sub-pipeline per item and collect the results | Inline `Map` with `ItemsPath` | Runs iterations **sequentially**, carrying collected results in the continuation |
-| `parallel(branches)` | Run branches and collect the results | `Parallel` | Runs branches sequentially, in the same way |
-| `awaitExternal({ start, check })` | Start provider work and resume when it finishes | `Task` with `lambda:invoke.waitForTaskToken` and `TimeoutSeconds`; Catch `States.Timeout` → `check` | Runs `start`, then delayed `check` continuations (polling only) |
-| `succeed` / `fail` | End | `Succeed` / `Fail` | Ends the run |
+| Primitive                                        | Meaning                                             | Step Functions (ASL)                                                                                | SQS continuation runner                                                          |
+| ------------------------------------------------ | --------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `task(handler, { next, retry, timeoutSeconds })` | Run a handler                                       | `Task` with `arn:aws:states:::lambda:invoke` to that stage's Lambda                                 | Runs the handler in-process and enqueues the `next` continuation                 |
+| `choice(field, cases, default)`                  | Branch on a string field of the state               | `Choice` with `StringEquals` rules                                                                  | Reads the field and enqueues the matching state                                  |
+| `wait(seconds)`                                  | Delay                                               | `Wait`                                                                                              | Continuation with `DelaySeconds`, chained when over 900 s                        |
+| `map(itemsField, iterator, { maxConcurrency })`  | Run a sub-pipeline per item and collect the results | Inline `Map` with `ItemsPath`                                                                       | Runs iterations **sequentially**, carrying collected results in the continuation |
+| `parallel(branches)`                             | Run branches and collect the results                | `Parallel`                                                                                          | Runs branches sequentially, in the same way                                      |
+| `awaitExternal({ start, check })`                | Start provider work and resume when it finishes     | `Task` with `lambda:invoke.waitForTaskToken` and `TimeoutSeconds`; Catch `States.Timeout` → `check` | Runs `start`, then delayed `check` continuations (polling only)                  |
+| `succeed` / `fail`                               | End                                                 | `Succeed` / `Fail`                                                                                  | Ends the run                                                                     |
 
 No ASL intrinsics, JSONata or JSONPath expressions appear in the definition. Choices compare one named string field. That restriction is what keeps both runners able to interpret every definition.
 
@@ -173,18 +173,18 @@ Handlers have the signature `(state: S, context: StageContext) => Promise<S>`:
 
 - **Build.** `apps/api` emits the ASL for each pipeline (`dist/pipelines/lecture.asl.json`, `resource.asl.json`), with `${StateName}FunctionArn` placeholders, from the same definition objects. CDK in `apps/infra` loads them with `DefinitionBody.fromFile` and `definitionSubstitutions`. There is no TypeScript import across apps.
 - **Lambdas.** One `NodeLambda` per task state, all from the same `lambda.zip`, with handler exports in `stages.mjs` (for example `stages.verifyRecording`):
-  - `NormalizeRecording`: an ffmpeg layer, 3008 MB, 4 GB ephemeral storage, and a 15 min timeout.
-  - Generation stages: 3 min timeout.
-  - All other stages: 512 MB and 1 min, adjusted from measurement.
+    - `NormalizeRecording`: an ffmpeg layer, 3008 MB, 4 GB ephemeral storage, and a 15 min timeout.
+    - Generation stages: 3 min timeout.
+    - All other stages: 512 MB and 1 min, adjusted from measurement.
 - **Execution names** are `lecture-{lectureId}-run-{number}` and `resource-{resourceId}-run-{number}`. Starting an execution that already exists with the same name and input is idempotent for Standard workflows, so a repeated `complete` cannot start two runs.
 - **API Lambda permissions.** It gains `states:StartExecution` on both state machines, plus `states:SendTaskSuccess` and `states:SendTaskFailure` for the Soniox webhook. Every stage Lambda gets a permissions boundary in the same style as `ApiRuntimeBoundary`.
 - **Soniox webhook.** `POST /webhooks/soniox` on the existing API:
-  1. It compares the `webhook_auth_header_value` header secret in constant time.
-  2. It reads `{ id, status }`, the only fields Soniox sends ([webhooks](https://docs.soniox.com/stt/async/webhooks)), and looks up the task token stored for that transcription id.
-  3. It sends `SendTaskSuccess`. Classification happens in `CheckChunk`, not in the webhook.
-  4. It always answers 200, including for unknown ids, so Soniox's retries do not pile up.
+    1. It compares the `webhook_auth_header_value` header secret in constant time.
+    2. It reads `{ id, status }`, the only fields Soniox sends ([webhooks](https://docs.soniox.com/stt/async/webhooks)), and looks up the task token stored for that transcription id.
+    3. It sends `SendTaskSuccess`. Classification happens in `CheckChunk`, not in the webhook.
+    4. It always answers 200, including for unknown ids, so Soniox's retries do not pile up.
 
-  Task tokens live in `processing_callbacks`, which belongs to the Step Functions adapter and not to the domain. A webhook that arrives before its token is stored, or that is never delivered (Soniox retries "multiple times over a short period" and then gives up), is covered by the `TimeoutSeconds` fallback to polling.
+    Task tokens live in `processing_callbacks`, which belongs to the Step Functions adapter and not to the domain. A webhook that arrives before its token is stored, or that is never delivered (Soniox retries "multiple times over a short period" and then gives up), is covered by the `TimeoutSeconds` fallback to polling.
 
 ### Local and test runner: SQS continuations
 
@@ -199,10 +199,10 @@ Handlers have the signature `(state: S, context: StageContext) => Promise<S>`:
 
 Retry policies are declared once and applied identically by both runners:
 
-| Policy | Errors | Interval, backoff, max attempts | Applied to |
-| --- | --- | --- | --- |
-| `transient` | `RetryableStageError`, `Lambda.ServiceException`, `Lambda.AWSLambdaException`, `Lambda.SdkClientException`, `Lambda.TooManyRequestsException` | 10 s, × 2, 4 attempts, full jitter, max delay 300 s | Every task |
-| `providerJob` | `RetryableStageError` | 60 s, × 2, 3 attempts | `SubmitChunk`: a retryable Soniox failure resubmits the chunk |
+| Policy        | Errors                                                                                                                                        | Interval, backoff, max attempts                     | Applied to                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------- |
+| `transient`   | `RetryableStageError`, `Lambda.ServiceException`, `Lambda.AWSLambdaException`, `Lambda.SdkClientException`, `Lambda.TooManyRequestsException` | 10 s, × 2, 4 attempts, full jitter, max delay 300 s | Every task                                                    |
+| `providerJob` | `RetryableStageError`                                                                                                                         | 60 s, × 2, 3 attempts                               | `SubmitChunk`: a retryable Soniox failure resubmits the chunk |
 
 - **Step Functions:** each task state gets `Retry` from its policy and a `Catch` on `States.ALL` to `RecordFailure`, with `ResultPath: "$.failure"` so the input and the error both reach it. `PermanentStageError` and unknown errors are not retried.
 - **SQS runner:** a handler that throws an error matching the policy is re-enqueued with `attempt + 1` and a delay from the same `retryDelay(policy, attempt)` function. When attempts are exhausted, or the error does not match, the runner enqueues the catch target with the same `failure` shape. A runner crash or a visibility timeout behaves like `Lambda.ServiceException`: the message is redelivered.
@@ -217,15 +217,15 @@ Both runners can run a handler more than once:
 
 The runner does **not** deduplicate. Correctness comes from the handlers, and the tests deliver every continuation twice to prove it.
 
-| Side effect | Why a repeat is harmless |
-| --- | --- |
-| Projection writes | `UPDATE processing_stages … WHERE subject = $1 AND stage = $2 AND run_id = $3`, where `$3` must be the subject's current run. A stale or duplicate execution matches nothing and stops with a `SupersededRunError`, which the definition routes to `Succeed` without recording a failure. |
-| Normalization | If `recording_chunks` already exist for this recording with uploaded objects, the handler returns them. Chunk keys are derived from (lecture, recording, position), so an upload repeats onto the same key. |
-| Soniox submission | The `recording_chunks` row stores `provider_transcription_id`. If it is set, `SubmitChunk` checks that job instead of creating another. A crash between the create call and the row update can leave an orphaned Soniox job. That is bounded to one chunk, it is detectable by `client_reference_id = lecture-{id}-chunk-{n}-attempt-{k}`, and Soniox deletes it automatically after 30 days. |
-| Collecting a chunk | The raw tokens are written to S3 under the chunk's key, then the chunk is marked `collected`, then the Soniox transcription is deleted (404 is treated as success). A collected chunk is skipped. |
-| Transcript, translation and index | `StitchTranscript` computes `content_hash` over the stitched segments. If the stored transcript has the same hash, it is a no-op. Otherwise it upserts the transcript by `lecture_id` and replaces its segments and Spanish segments in one transaction. `ContentIndexService.indexSource` already skips identical content. |
-| Summary and key terms | If `lecture_generated_content.source_hash` equals the transcript's `content_hash`, the stage succeeds without an LLM call. Otherwise it upserts by `(lecture_id, kind)`. |
-| Resource extraction | Already idempotent, through the content-hash check and one source per resource. |
+| Side effect                       | Why a repeat is harmless                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Projection writes                 | `UPDATE processing_stages … WHERE subject = $1 AND stage = $2 AND run_id = $3`, where `$3` must be the subject's current run. A stale or duplicate execution matches nothing and stops with a `SupersededRunError`, which the definition routes to `Succeed` without recording a failure.                                                                                                     |
+| Normalization                     | If `recording_chunks` already exist for this recording with uploaded objects, the handler returns them. Chunk keys are derived from (lecture, recording, position), so an upload repeats onto the same key.                                                                                                                                                                                   |
+| Soniox submission                 | The `recording_chunks` row stores `provider_transcription_id`. If it is set, `SubmitChunk` checks that job instead of creating another. A crash between the create call and the row update can leave an orphaned Soniox job. That is bounded to one chunk, it is detectable by `client_reference_id = lecture-{id}-chunk-{n}-attempt-{k}`, and Soniox deletes it automatically after 30 days. |
+| Collecting a chunk                | The raw tokens are written to S3 under the chunk's key, then the chunk is marked `collected`, then the Soniox transcription is deleted (404 is treated as success). A collected chunk is skipped.                                                                                                                                                                                             |
+| Transcript, translation and index | `StitchTranscript` computes `content_hash` over the stitched segments. If the stored transcript has the same hash, it is a no-op. Otherwise it upserts the transcript by `lecture_id` and replaces its segments and Spanish segments in one transaction. `ContentIndexService.indexSource` already skips identical content.                                                                   |
+| Summary and key terms             | If `lecture_generated_content.source_hash` equals the transcript's `content_hash`, the stage succeeds without an LLM call. Otherwise it upserts by `(lecture_id, kind)`.                                                                                                                                                                                                                      |
+| Resource extraction               | Already idempotent, through the content-hash check and one source per resource.                                                                                                                                                                                                                                                                                                               |
 
 ### Teacher retry: resuming at the failed stage
 
@@ -254,9 +254,9 @@ A new run behaves the same in both runners.
 2. **A small primitive set.** Only the primitives in the table above are allowed, and every one has a direct ASL equivalent. Adding a primitive requires both runner implementations and a contract test.
 3. **The SQS runner is used in tests.** The full lecture and resource pipelines run under it with the fixture providers, covering success, a retryable failure, a permanent failure, duplicate delivery of every message, and a teacher retry. The runner enforces the 256 KiB state cap.
 4. **A contract test on the generated ASL:**
-   - A snapshot of each `*.asl.json`.
-   - A structural test that walks the ASL and the definition and asserts the same states, transitions, choice cases, Map and Parallel structure, `Retry` blocks (errors, interval, backoff, attempts) and `Catch` targets for every state.
-   - `aws stepfunctions validate-state-machine-definition` on the synthesized definition in the deploy pipeline.
+    - A snapshot of each `*.asl.json`.
+    - A structural test that walks the ASL and the definition and asserts the same states, transitions, choice cases, Map and Parallel structure, `Retry` blocks (errors, interval, backoff, attempts) and `Catch` targets for every state.
+    - `aws stepfunctions validate-state-machine-definition` on the synthesized definition in the deploy pipeline.
 
 **Known differences, accepted and tested:**
 
@@ -292,12 +292,12 @@ The Step Functions execution (or the runner's run) is the execution state. Its s
 
 ### Stage status projection
 
-| Status | Meaning |
-| --- | --- |
-| `pending` | Part of the current run, not started. |
-| `running` | The stage has started in the current run. `attempts` counts Retry attempts (`$$.State.RetryCount + 1`, or the runner's `attempt`). |
-| `succeeded` | The outputs are committed. |
-| `failed` | Caught by `RecordFailure`. `error_code` and `status_message` explain why. |
+| Status      | Meaning                                                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `pending`   | Part of the current run, not started.                                                                                              |
+| `running`   | The stage has started in the current run. `attempts` counts Retry attempts (`$$.State.RetryCount + 1`, or the runner's `attempt`). |
+| `succeeded` | The outputs are committed.                                                                                                         |
+| `failed`    | Caught by `RecordFailure`. `error_code` and `status_message` explain why.                                                          |
 
 ```text
 pending ──stage starts──▶ running ──outputs committed──▶ succeeded
@@ -518,10 +518,10 @@ The `content` shapes are zod schemas in `core/lecture-content`, parsed on write 
 1. It streams the recording to ffmpeg through a short-lived signed S3 GET URL (`-i https://…`), so the 500 MiB file is never fully buffered in memory.
 2. In one pass, it writes `-vn -ac 1 -ar 16000 -c:a flac` to `/tmp` and runs `-af silencedetect` (starting at `noise=-35dB:d=0.6`, tuned on the samples).
 3. `planChunks(durationSeconds, silences, options)` is a pure function:
-   - Recordings of up to `singleChunkMaxSeconds` (2400) become one chunk.
-   - Otherwise, `n = ceil(duration / targetSeconds)` and the ideal cuts are `k × duration / n`, which balances the chunks so there is no short tail.
-   - Each cut snaps to the longest silence within `±windowSeconds` (180), at the silence's midpoint. With no silence in the window, the cut falls at the ideal point.
-   - Each chunk after the first starts `overlapSeconds` (5) before its cut.
+    - Recordings of up to `singleChunkMaxSeconds` (2400) become one chunk.
+    - Otherwise, `n = ceil(duration / targetSeconds)` and the ideal cuts are `k × duration / n`, which balances the chunks so there is no short tail.
+    - Each cut snaps to the longest silence within `±windowSeconds` (180), at the silence's midpoint. With no silence in the window, the cut falls at the ideal point.
+    - Each chunk after the first starts `overlapSeconds` (5) before its cut.
 4. It cuts the FLAC at those points without re-encoding and uploads each chunk.
 
 Input and duration failures are permanent:
@@ -538,26 +538,26 @@ Recordings over Soniox's 300-minute file limit cannot occur after chunking.
 1. **Offset.** A token's absolute time is `chunk.audio_start_seconds + start_ms / 1000`.
 2. **Remove the overlap.** Chunk `i` keeps only the spoken tokens whose absolute start lies in its owned span `[start_seconds, end_seconds)`. The owned spans partition the recording, and the overlap exists only to give the model context at the start of a chunk. Translation tokens follow the fate of the spoken run they translate.
 3. **Segments and Spanish alignment.** Soniox returns spoken tokens (`translation_status` `original` or `none`, with `start_ms` and `end_ms`) and translation tokens (`translation`, without timestamps) in one stream, and the docs say they are "not 1-to-1 mapped" ([async translation](https://docs.soniox.com/translation/stt-translation/async-translation)).
-   - A segment is a maximal run of spoken tokens together with the run of translation tokens that follows it. That makes alignment exact by construction, and the segment's times come from its spoken tokens.
-   - A run longer than 30 s is split at punctuation, and its translation stays with the last part.
-   - A trailing translation run with no spoken run is attached to the previous segment.
-   - Whether translation runs always follow their spoken run must be confirmed on the representative samples (§6). If not, `translation` fails while the transcript still succeeds.
+    - A segment is a maximal run of spoken tokens together with the run of translation tokens that follows it. That makes alignment exact by construction, and the segment's times come from its spoken tokens.
+    - A run longer than 30 s is split at punctuation, and its translation stays with the last part.
+    - A trailing translation run with no spoken run is attached to the previous segment.
+    - Whether translation runs always follow their spoken run must be confirmed on the representative samples (§6). If not, `translation` fails while the transcript still succeeds.
 4. **Speakers.** Soniox labels speakers per transcription ([speaker diarization](https://docs.soniox.com/stt/concepts/speaker-diarization)), so "1" in chunk 2 is not necessarily "1" in chunk 1.
-   - Labels are mapped through the overlap: tokens transcribed in both chunks are matched on text within ±0.3 s, and labels are mapped by majority when at least 5 tokens match.
-   - Otherwise, each chunk's dominant speaker by talk time maps to the previous chunk's dominant speaker.
-   - Labels that remain unmatched get new labels.
-   - The results are stored as `S1`, `S2`, …, and are not displayed until #20.
+    - Labels are mapped through the overlap: tokens transcribed in both chunks are matched on text within ±0.3 s, and labels are mapped by majority when at least 5 tokens match.
+    - Otherwise, each chunk's dominant speaker by talk time maps to the previous chunk's dominant speaker.
+    - Labels that remain unmatched get new labels.
+    - The results are stored as `S1`, `S2`, …, and are not displayed until #20.
 5. **Language.** Each segment takes the majority language of its spoken tokens. The transcript's language is the one with the most spoken duration.
 6. **Empty result.** If no tokens remain, the stage fails permanently with "No speech was detected in the recording."
 
 ### Error classification
 
-| Class | Examples | Behavior |
-| --- | --- | --- |
-| Retryable | Network errors, 5xx, Soniox 429 ("Rate / capacity limit exceeded"), S3 throttling, `LlmError` with `retryable` or code `timeout`, a Soniox job that fails fetching an expired signed URL | `Retry` per policy, then caught |
-| Permanent: input | Corrupt media, no audio, no speech, empty or scanned PDF, LLM `refused` | Caught immediately with an actionable message |
-| Permanent: account | Soniox 401, or 402 ("Balance or budget exhausted") | Caught with a generic message; logged at error level; alarm |
-| Permanent: system | Invalid configuration, missing object, unknown state | Caught with a generic message; logged at error level |
+| Class              | Examples                                                                                                                                                                                 | Behavior                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Retryable          | Network errors, 5xx, Soniox 429 ("Rate / capacity limit exceeded"), S3 throttling, `LlmError` with `retryable` or code `timeout`, a Soniox job that fails fetching an expired signed URL | `Retry` per policy, then caught                             |
+| Permanent: input   | Corrupt media, no audio, no speech, empty or scanned PDF, LLM `refused`                                                                                                                  | Caught immediately with an actionable message               |
+| Permanent: account | Soniox 401, or 402 ("Balance or budget exhausted")                                                                                                                                       | Caught with a generic message; logged at error level; alarm |
+| Permanent: system  | Invalid configuration, missing object, unknown state                                                                                                                                     | Caught with a generic message; logged at error level        |
 
 Signed URLs are generated per submission, so a resubmission always carries a fresh URL. Signed URLs made with Lambda role credentials expire no later than those credentials, so the effective expiry is measured, not assumed (§6).
 
@@ -568,10 +568,10 @@ Signed URLs are generated per submission, so a resubmission always carries a fre
 
 ### What users see
 
-| Who | Sees | Can do |
-| --- | --- | --- |
+| Who     | Sees                                                                                                                                                                                                                                          | Can do                                                              |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Teacher | Lecture status, and each stage's status and `status_message` (for example "No speech was detected in the recording.", "The PDF has no extractable text...", "Summary generation failed. Retry processing."), plus `n of m chunks transcribed` | Use the retry endpoint (§2). For a resource, call `complete` again. |
-| Student | `processing`: "Lecture content is being prepared." `failed`: "Some lecture content is unavailable. Your teacher has been notified." Every output that exists is shown regardless of status. | Nothing to retry. |
+| Student | `processing`: "Lecture content is being prepared." `failed`: "Some lecture content is unavailable. Your teacher has been notified." Every output that exists is shown regardless of status.                                                   | Nothing to retry.                                                   |
 
 ### Resuming without duplicate content
 
@@ -583,19 +583,19 @@ Every output has a unique key on its subject (transcript per lecture, translatio
 
 Facts from Soniox's documentation and pricing, as read on 2026-11-03:
 
-| Item | Value | Source |
-| --- | --- | --- |
-| Create a transcription | `POST https://api.soniox.com/v1/transcriptions` with `model`, `audio_url` (or `file_id`), `language_hints`, `enable_language_identification`, `enable_speaker_diarization`, `translation`, `webhook_url`, `webhook_auth_header_name`, `webhook_auth_header_value`, `client_reference_id` | [Create transcription](https://docs.soniox.com/stt/api-reference/transcriptions/create_transcription) |
-| Model | `stt-async-v6` (active); `stt-async-v5` is deprecated and removed on 2026-12-15 | [Models](https://docs.soniox.com/stt/models) |
-| Status and result | `GET /v1/transcriptions/{id}` (`queued`, `processing`, `completed`, `error`), `GET /v1/transcriptions/{id}/transcript` (tokens with `text`, `start_ms`, `end_ms`, `confidence`, plus `speaker`, `language`, `translation_status`) | [Async transcription](https://docs.soniox.com/stt/async/async-transcription), [Timestamps](https://docs.soniox.com/stt/concepts/timestamps) |
-| Webhooks | Yes. A POST of `{ id, status }` on completion or error, with an optional auth header. Retried "multiple times over a short period". `webhook_url` has a maximum of 256 characters. | [Webhooks](https://docs.soniox.com/stt/async/webhooks) |
-| File duration limit | **300 minutes**, "fixed and cannot be increased" | [Limits and quotas](https://docs.soniox.com/stt/async/limits-and-quotas) |
-| Quotas | 100 pending transcriptions; 2,000 total including completed and failed (delete after use); 10 GB and 1,000 stored files; everything is deleted automatically after 30 days | [Limits and quotas](https://docs.soniox.com/stt/async/limits-and-quotas) |
-| Translation | `translation: { "type": "one_way", "target_language": "es" }` is supported in async. Translated tokens have no timestamps and are not 1-to-1 with the source. | [Async translation](https://docs.soniox.com/translation/stt-translation/async-translation) |
-| Diarization and language ID | Up to 15 speakers per transcription. Bundled into the hourly rate. | [Speaker diarization](https://docs.soniox.com/stt/concepts/speaker-diarization), [Pricing](https://soniox.com/pricing) |
-| Formats | aac, aiff, amr, asf, flac, mp3, ogg, wav, webm, m4a, mp4 | [Async transcription](https://docs.soniox.com/stt/async/async-transcription) |
-| Transcription price | $0.10 per audio hour, async | [Pricing](https://soniox.com/pricing) |
-| Translation price | **Conflicting:** $0.16 per hour async on the speech-translation page, but "included … at no extra cost" in the pricing FAQ | [Speech translation](https://soniox.com/speech-translation), [Pricing](https://soniox.com/pricing) |
+| Item                        | Value                                                                                                                                                                                                                                                                                    | Source                                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create a transcription      | `POST https://api.soniox.com/v1/transcriptions` with `model`, `audio_url` (or `file_id`), `language_hints`, `enable_language_identification`, `enable_speaker_diarization`, `translation`, `webhook_url`, `webhook_auth_header_name`, `webhook_auth_header_value`, `client_reference_id` | [Create transcription](https://docs.soniox.com/stt/api-reference/transcriptions/create_transcription)                                       |
+| Model                       | `stt-async-v6` (active); `stt-async-v5` is deprecated and removed on 2026-12-15                                                                                                                                                                                                          | [Models](https://docs.soniox.com/stt/models)                                                                                                |
+| Status and result           | `GET /v1/transcriptions/{id}` (`queued`, `processing`, `completed`, `error`), `GET /v1/transcriptions/{id}/transcript` (tokens with `text`, `start_ms`, `end_ms`, `confidence`, plus `speaker`, `language`, `translation_status`)                                                        | [Async transcription](https://docs.soniox.com/stt/async/async-transcription), [Timestamps](https://docs.soniox.com/stt/concepts/timestamps) |
+| Webhooks                    | Yes. A POST of `{ id, status }` on completion or error, with an optional auth header. Retried "multiple times over a short period". `webhook_url` has a maximum of 256 characters.                                                                                                       | [Webhooks](https://docs.soniox.com/stt/async/webhooks)                                                                                      |
+| File duration limit         | **300 minutes**, "fixed and cannot be increased"                                                                                                                                                                                                                                         | [Limits and quotas](https://docs.soniox.com/stt/async/limits-and-quotas)                                                                    |
+| Quotas                      | 100 pending transcriptions; 2,000 total including completed and failed (delete after use); 10 GB and 1,000 stored files; everything is deleted automatically after 30 days                                                                                                               | [Limits and quotas](https://docs.soniox.com/stt/async/limits-and-quotas)                                                                    |
+| Translation                 | `translation: { "type": "one_way", "target_language": "es" }` is supported in async. Translated tokens have no timestamps and are not 1-to-1 with the source.                                                                                                                            | [Async translation](https://docs.soniox.com/translation/stt-translation/async-translation)                                                  |
+| Diarization and language ID | Up to 15 speakers per transcription. Bundled into the hourly rate.                                                                                                                                                                                                                       | [Speaker diarization](https://docs.soniox.com/stt/concepts/speaker-diarization), [Pricing](https://soniox.com/pricing)                      |
+| Formats                     | aac, aiff, amr, asf, flac, mp3, ogg, wav, webm, m4a, mp4                                                                                                                                                                                                                                 | [Async transcription](https://docs.soniox.com/stt/async/async-transcription)                                                                |
+| Transcription price         | $0.10 per audio hour, async                                                                                                                                                                                                                                                              | [Pricing](https://soniox.com/pricing)                                                                                                       |
+| Translation price           | **Conflicting:** $0.16 per hour async on the speech-translation page, but "included … at no extra cost" in the pricing FAQ                                                                                                                                                               | [Speech translation](https://soniox.com/speech-translation), [Pricing](https://soniox.com/pricing)                                          |
 
 **The file-duration limit differs from what was planned.** The owner's decision cites a 60-minute limit. The limits page currently states 300 minutes. Chunking is kept as decided, but it is now motivated by parallelism, cheaper retries, and keeping each Lambda's work bounded, not by a hard provider limit. This is listed under [Open decisions](#8-open-decisions).
 
@@ -621,9 +621,9 @@ The model, the language hints and the target language come from configuration.
 **Waiting for results.** Soniox has webhooks, so `SubmitChunk` is an `awaitExternal` state:
 
 - **Deployed:** the state uses `.waitForTaskToken` with `TimeoutSeconds = 1800`. The Lambda adapter stores (Soniox id → task token) in `processing_callbacks` after the submission.
-  - The webhook resumes the task, and `CheckChunk` confirms the status.
-  - On `States.Timeout` (a lost webhook, or a webhook that arrived before the token row existed), `CheckChunk` polls. `ChunkStatus` either loops through `WaitForChunk` (120 s) or moves on.
-  - A Soniox `error` status raises a classified error from `CheckChunk`. A retryable error routes back to `SubmitChunk`, bounded by `recording_chunks.submissions`, and a permanent one is caught.
+    - The webhook resumes the task, and `CheckChunk` confirms the status.
+    - On `States.Timeout` (a lost webhook, or a webhook that arrived before the token row existed), `CheckChunk` polls. `ChunkStatus` either loops through `WaitForChunk` (120 s) or moves on.
+    - A Soniox `error` status raises a classified error from `CheckChunk`. A retryable error routes back to `SubmitChunk`, bounded by `recording_chunks.submissions`, and a permanent one is caught.
 - **Locally:** the runner polls `CheckChunk` with the same `WaitForChunk` interval.
 
 **Secrets.** `SONIOX_API_KEY` and the webhook secret are stored in AWS Secrets Manager. They are read once per cold start at the composition boundary (`src/stages.ts` for the Soniox stages, the API for the webhook route) and passed in as values. The Lambdas get `secretsmanager:GetSecretValue` on those two ARNs only. The secrets never go in code, `DeploymentConfig.apiEnvironment` or a Lambda environment variable. Locally the fixture facade needs no key.
@@ -638,13 +638,13 @@ The model, the language hints and the target language come from configuration.
 
 Comparison for a 3-hour lecture:
 
-| | 15-minute chunks | 30-minute chunks | 60-minute chunks |
-| --- | --- | --- | --- |
-| Chunks / boundaries | 12 / 11 | 6 / 5 | 3 / 2 |
-| Wall-clock (with Map parallelism) | ≈ turnaround of a 15-minute file, if Soniox capacity is free | ≈ turnaround of a 30-minute file | ≈ turnaround of a 60-minute file |
-| Cost of retrying one chunk | 0.25 audio hours (about $0.025, plus translation) | 0.5 audio hours (about $0.05) | 1 audio hour (about $0.10) |
-| Lectures of this length that fit under the 100-pending quota at once | 8 | 16 | 33 |
-| Total cost | Same per audio hour; the overlap adds about 5 s per boundary | Same | Same |
+|                                                                      | 15-minute chunks                                             | 30-minute chunks                 | 60-minute chunks                 |
+| -------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------- | -------------------------------- |
+| Chunks / boundaries                                                  | 12 / 11                                                      | 6 / 5                            | 3 / 2                            |
+| Wall-clock (with Map parallelism)                                    | ≈ turnaround of a 15-minute file, if Soniox capacity is free | ≈ turnaround of a 30-minute file | ≈ turnaround of a 60-minute file |
+| Cost of retrying one chunk                                           | 0.25 audio hours (about $0.025, plus translation)            | 0.5 audio hours (about $0.05)    | 1 audio hour (about $0.10)       |
+| Lectures of this length that fit under the 100-pending quota at once | 8                                                            | 16                               | 33                               |
+| Total cost                                                           | Same per audio hour; the overlap adds about 5 s per boundary | Same                             | Same                             |
 
 **Why 30 minutes:**
 
@@ -659,16 +659,16 @@ Move to 15 minutes only if the measurement shows turnaround scaling close to lin
 
 ### Execution limits
 
-| Limit | Value | Consequence |
-| --- | --- | --- |
-| API Lambda | 10 s, 512 MB | Requests only start executions. No extraction, ffmpeg or generation runs in the API. |
-| Stage Lambdas | 15 min maximum | `NormalizeRecording` is the only long stage. Soniox waits do not hold a Lambda. |
-| `NormalizeRecording` | 3008 MB (more memory also means more CPU), 4 GB `/tmp` | Mono 16 kHz FLAC is roughly 1 MB per audio minute (raw is 1.92 MB/min), so a 3-hour lecture is a few hundred MB in `/tmp`. Measure the runtime on the largest 500 MiB video. If it approaches 15 minutes, see Open decisions (Fargate). |
-| ffmpeg binary | A static arm64 build in a Lambda layer, pinned by version and checksum | Review its license (GPL or LGPL build) before shipping. |
-| Step Functions Standard | 256 KiB payload per state; 25,000 history events per execution; inline Map | The state carries identifiers only. Six chunks use well under 1% of the history limit. Map `MaxConcurrency` is 10. |
-| Soniox | 100 pending, 2,000 total, 300 min per file | 429 is retryable with backoff. Transcriptions are deleted after collection. A quota increase can be requested in the Soniox Console. |
-| LLM | `DEFAULT_LLM_TIMEOUT_MS` is 30 s | Generation passes `timeoutMs: 120_000`. A single call must fit the model's context window; measure transcript tokens for 1 h and 3 h lectures. |
-| Postgres (Neon) | Connection limits | Reserved concurrency of 10 on each stage Lambda. Each invocation uses one pooled connection. |
+| Limit                   | Value                                                                      | Consequence                                                                                                                                                                                                                             |
+| ----------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API Lambda              | 10 s, 512 MB                                                               | Requests only start executions. No extraction, ffmpeg or generation runs in the API.                                                                                                                                                    |
+| Stage Lambdas           | 15 min maximum                                                             | `NormalizeRecording` is the only long stage. Soniox waits do not hold a Lambda.                                                                                                                                                         |
+| `NormalizeRecording`    | 3008 MB (more memory also means more CPU), 4 GB `/tmp`                     | Mono 16 kHz FLAC is roughly 1 MB per audio minute (raw is 1.92 MB/min), so a 3-hour lecture is a few hundred MB in `/tmp`. Measure the runtime on the largest 500 MiB video. If it approaches 15 minutes, see Open decisions (Fargate). |
+| ffmpeg binary           | A static arm64 build in a Lambda layer, pinned by version and checksum     | Review its license (GPL or LGPL build) before shipping.                                                                                                                                                                                 |
+| Step Functions Standard | 256 KiB payload per state; 25,000 history events per execution; inline Map | The state carries identifiers only. Six chunks use well under 1% of the history limit. Map `MaxConcurrency` is 10.                                                                                                                      |
+| Soniox                  | 100 pending, 2,000 total, 300 min per file                                 | 429 is retryable with backoff. Transcriptions are deleted after collection. A quota increase can be requested in the Soniox Console.                                                                                                    |
+| LLM                     | `DEFAULT_LLM_TIMEOUT_MS` is 30 s                                           | Generation passes `timeoutMs: 120_000`. A single call must fit the model's context window; measure transcript tokens for 1 h and 3 h lectures.                                                                                          |
+| Postgres (Neon)         | Connection limits                                                          | Reserved concurrency of 10 on each stage Lambda. Each invocation uses one pooled connection.                                                                                                                                            |
 
 ### What to measure (#95 testing and verification)
 
@@ -702,21 +702,21 @@ Each issue can be picked up independently in the order listed. Later items depen
 - CDK deploys both state machines from the generated ASL, one Lambda per task state from the shared bundle, and the permissions boundaries in §2. `pnpm pipeline:dev` runs pipelines on ElasticMQ, with the DLQ configured.
 - Contract tests pass: ASL snapshots; the structural ASL-versus-definition test; `validate-state-machine-definition` in the deploy pipeline.
 - Under the SQS runner with a test pipeline, these all behave as designed:
-  - Success.
-  - A retryable failure retried per policy and then succeeding.
-  - A permanent failure caught to `RecordFailure` with a message.
-  - Every message delivered twice, with no duplicate effects.
-  - A superseded run that writes nothing.
-  - A message that crashes the runner and lands in the DLQ.
+    - Success.
+    - A retryable failure retried per policy and then succeeding.
+    - A permanent failure caught to `RecordFailure` with a message.
+    - Every message delivered twice, with no duplicate effects.
+    - A superseded run that writes nothing.
+    - A message that crashes the runner and lands in the DLQ.
 
 ### #26 / #62: Document extraction in the resource pipeline
 
 - `complete` on a resource returns without extracting text and starts a resource run. The `indexResource` route dependency is removed.
 - `ExtractResource` runs `ResourceContentIndexer`:
-  - A text PDF ends `indexed` with chunks.
-  - An empty or scanned PDF ends `failed` with the existing message.
-  - A corrupt PDF ends `failed`.
-  - A failure on one resource affects neither other resources nor lecture status.
+    - A text PDF ends `indexed` with chunks.
+    - An empty or scanned PDF ends `failed` with the existing message.
+    - A corrupt PDF ends `failed`.
+    - A failure on one resource affects neither other resources nor lecture status.
 - `GET /courses/:courseId/resources` includes each resource's processing state (§3). Completing a failed resource again re-runs extraction without duplicating chunks.
 
 ### #27: DOCX (if accepted in Open decisions)
@@ -790,15 +790,15 @@ Each issue can be picked up independently in the order listed. Later items depen
 
 ## 8. Open decisions
 
-| # | Decision | Options | Recommendation |
-| --- | --- | --- | --- |
-| 1 | Chunking now that Soniox documents a 300-minute file limit, not 60 | Keep chunking; send whole recordings of up to 300 minutes | **Keep chunking at a 30-minute target** for parallelism, cheaper retries and bounded per-Lambda work. Revisit after the turnaround measurement: if a whole 90-minute file returns about as fast as a 30-minute one, sending whole files would remove the stitching boundaries. |
-| 2 | Translation cost | Budget $0.16/h (speech-translation page); assume included (pricing FAQ) | **Budget $0.16/h** until Soniox confirms, and check the first invoice. |
-| 3 | `NormalizeRecording` compute if the 500 MiB measurement nears 15 minutes | Lambda; an ECS Fargate task through `ecs:runTask.sync` | **Lambda**, moving only that stage to Fargate if the measurement requires it. The stage handler stays the same either way. |
-| 4 | Resource linking (#36) | Build it in the initial pipeline; defer it | **Defer** (§1). When picked up, decide between read-time relevance (no staleness) and stored links refreshed by both pipelines. |
-| 5 | DOCX in the initial scope (#27) | Now; after the PDF move | **After the PDF move, as its own slice.** It needs an upload-allowlist migration, `mammoth`, and a relaxed chunk-location CHECK. |
-| 6 | Recording replacement | Keep write-once; allow replacement | **Keep write-once.** Replacement needs upload changes plus a new run that resets chunks and outputs, and is a separate issue. |
-| 7 | Language hints | `["en", "es"]`; per-course configuration | **`["en", "es"]` from configuration**, with identification on. Add a per-course setting only if identification proves unreliable. |
-| 8 | Raw output retention | Delete after stitching; 30-day lifecycle | **30-day lifecycle on `processing/`.** Soniox transcriptions are deleted at collection. |
-| 9 | Long transcripts and the LLM input budget | Single call; map-then-combine | **Single call initially.** Add map-then-combine only if the 3-hour measurement exceeds the model's budget. |
-| 10 | Migration grouping | One migration; one per slice | **One per slice:** the projection with #16, chunks and transcripts with #18, generated content with #63. Each takes the next available number when it lands. |
+| #   | Decision                                                                 | Options                                                                 | Recommendation                                                                                                                                                                                                                                                                 |
+| --- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Chunking now that Soniox documents a 300-minute file limit, not 60       | Keep chunking; send whole recordings of up to 300 minutes               | **Keep chunking at a 30-minute target** for parallelism, cheaper retries and bounded per-Lambda work. Revisit after the turnaround measurement: if a whole 90-minute file returns about as fast as a 30-minute one, sending whole files would remove the stitching boundaries. |
+| 2   | Translation cost                                                         | Budget $0.16/h (speech-translation page); assume included (pricing FAQ) | **Budget $0.16/h** until Soniox confirms, and check the first invoice.                                                                                                                                                                                                         |
+| 3   | `NormalizeRecording` compute if the 500 MiB measurement nears 15 minutes | Lambda; an ECS Fargate task through `ecs:runTask.sync`                  | **Lambda**, moving only that stage to Fargate if the measurement requires it. The stage handler stays the same either way.                                                                                                                                                     |
+| 4   | Resource linking (#36)                                                   | Build it in the initial pipeline; defer it                              | **Defer** (§1). When picked up, decide between read-time relevance (no staleness) and stored links refreshed by both pipelines.                                                                                                                                                |
+| 5   | DOCX in the initial scope (#27)                                          | Now; after the PDF move                                                 | **After the PDF move, as its own slice.** It needs an upload-allowlist migration, `mammoth`, and a relaxed chunk-location CHECK.                                                                                                                                               |
+| 6   | Recording replacement                                                    | Keep write-once; allow replacement                                      | **Keep write-once.** Replacement needs upload changes plus a new run that resets chunks and outputs, and is a separate issue.                                                                                                                                                  |
+| 7   | Language hints                                                           | `["en", "es"]`; per-course configuration                                | **`["en", "es"]` from configuration**, with identification on. Add a per-course setting only if identification proves unreliable.                                                                                                                                              |
+| 8   | Raw output retention                                                     | Delete after stitching; 30-day lifecycle                                | **30-day lifecycle on `processing/`.** Soniox transcriptions are deleted at collection.                                                                                                                                                                                        |
+| 9   | Long transcripts and the LLM input budget                                | Single call; map-then-combine                                           | **Single call initially.** Add map-then-combine only if the 3-hour measurement exceeds the model's budget.                                                                                                                                                                     |
+| 10  | Migration grouping                                                       | One migration; one per slice                                            | **One per slice:** the projection with #16, chunks and transcripts with #18, generated content with #63. Each takes the next available number when it lands.                                                                                                                   |
