@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 
-export type CourseSection = "lectures" | "resources" | "search" | "chat";
+export type CourseSection = "lectures" | "resources" | "study-guides" | "search" | "chat";
 
 export type AppRoute =
     | { name: "courses" }
@@ -12,7 +12,8 @@ export interface NavigateOptions {
     replace?: boolean;
 }
 
-const courseSections: ReadonlySet<string> = new Set<CourseSection>(["lectures", "resources", "search", "chat"]);
+const courseSections: ReadonlySet<string> = new Set<CourseSection>(["lectures", "resources", "study-guides", "search", "chat"]);
+
 const NAVIGATION_EVENT = "classiq:navigate";
 
 function isCourseSection(value: string | undefined): value is CourseSection {
@@ -37,31 +38,51 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
     }
 
     if (second === "lectures" && lectureId && rest.length === 0) {
-        return { name: "lecture", courseId, lectureId, startSeconds: readStartSeconds(search) };
+        return {
+            name: "lecture",
+            courseId,
+            lectureId,
+            startSeconds: readStartSeconds(search),
+        };
     }
 
     if (second === undefined) {
-        return { name: "course", courseId, section: "lectures" };
+        return {
+            name: "course",
+            courseId,
+            section: "lectures",
+        };
     }
 
     if (isCourseSection(second) && lectureId === undefined) {
-        return { name: "course", courseId, section: second };
+        return {
+            name: "course",
+            courseId,
+            section: second,
+        };
     }
 
-    return { name: "course", courseId, section: "lectures" };
+    return {
+        name: "course",
+        courseId,
+        section: "lectures",
+    };
 }
 
 export function routeUrl(route: AppRoute): string {
     switch (route.name) {
         case "courses":
             return "/";
+
         case "settings":
             return "/settings";
+
         case "course": {
             const course = `/courses/${encodeURIComponent(route.courseId)}`;
 
             return route.section === "lectures" ? course : `${course}/${route.section}`;
         }
+
         case "lecture": {
             const lecture = `/courses/${encodeURIComponent(route.courseId)}/lectures/${encodeURIComponent(route.lectureId)}`;
 
@@ -100,6 +121,7 @@ const currentUrl = () => `${location.pathname}${location.search}`;
 
 export function useRoute(): [AppRoute, typeof navigate] {
     const url = useSyncExternalStore(subscribe, currentUrl, () => "/");
+
     const query = url.indexOf("?");
     const go = useCallback(navigate, []);
 
