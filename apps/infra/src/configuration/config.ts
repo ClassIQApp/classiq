@@ -7,12 +7,17 @@ export interface DeploymentConfig {
     };
     readonly domainName: string;
     readonly apiDomainName: string;
-    readonly processingEnvironment?: { readonly databaseUrl: string; readonly sonioxApiKey: string; readonly deepseekApiKey: string };
+    readonly processingEnvironment?: {
+        readonly databaseUrl: string;
+        readonly sonioxApiKey: string;
+        readonly deepseekApiKey: string;
+    };
     readonly apiEnvironment: Readonly<Record<string, string>>;
 }
 
 export function readDeploymentConfig(): DeploymentConfig {
     const secret = requireEnv("BETTER_AUTH_SECRET");
+
     if (secret.trim().length < 32) {
         throw new Error("BETTER_AUTH_SECRET must contain at least 32 characters");
     }
@@ -22,8 +27,11 @@ export function readDeploymentConfig(): DeploymentConfig {
             account: requireEnv("CDK_DEFAULT_ACCOUNT"),
             region: requireEnv("CDK_DEFAULT_REGION"),
         },
+
         domainName: DOMAIN_NAME,
+
         apiDomainName: `api.${DOMAIN_NAME}`,
+
         processingEnvironment:
             process.env.PROCESSING_ENABLED === "1"
                 ? {
@@ -32,18 +40,24 @@ export function readDeploymentConfig(): DeploymentConfig {
                       deepseekApiKey: requireEnv("DEEPSEEK_API_KEY"),
                   }
                 : undefined,
+
         apiEnvironment: {
             NODE_ENV: "production",
             DATABASE_URL: requireEnv("DATABASE_URL"),
             BETTER_AUTH_SECRET: secret,
             BETTER_AUTH_URL: `https://api.${DOMAIN_NAME}`,
             AUTH_TRUSTED_ORIGINS: `https://${DOMAIN_NAME}`,
+
+            LLM_PROVIDER: "deepseek",
+            DEEPSEEK_API_KEY: requireEnv("DEEPSEEK_API_KEY"),
+            DEEPSEEK_MODEL: "deepseek-flash",
         },
     };
 }
 
 function requireEnv(name: string): string {
     const value = process.env[name];
+
     if (!value) {
         throw new Error(`${name} must be set`);
     }
