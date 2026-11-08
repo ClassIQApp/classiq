@@ -6,10 +6,14 @@ import { fileURLToPath } from "node:url";
 export class RecordingMediaLayer extends LayerVersion {
     constructor(scope: Construct, id: string) {
         const directory = fileURLToPath(new URL("../../../api/media-layer", import.meta.url));
+        // CI restores a verified image keyed by all media-layer sources; local synths build it on demand.
+        const image = process.env.CDK_RECORDING_MEDIA_IMAGE
+            ? DockerImage.fromRegistry(process.env.CDK_RECORDING_MEDIA_IMAGE)
+            : DockerImage.fromBuild(directory, { platform: "linux/arm64", targetStage: "verify" });
         super(scope, id, {
             code: Code.fromAsset(directory, {
                 bundling: {
-                    image: DockerImage.fromBuild(directory, { platform: "linux/arm64", targetStage: "verify" }),
+                    image,
                     platform: "linux/arm64",
                     entrypoint: ["/bin/sh"],
                     command: ["-c", "cp -a /opt/bin /opt/lib /opt/share /asset-output/"],

@@ -15,7 +15,7 @@ permissions:
 
 jobs:
     deploy:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@v4
 
@@ -33,12 +33,33 @@ jobs:
                   role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
                   aws-region: ${{ vars.AWS_REGION }}
 
-            - uses: docker/setup-qemu-action@v3
+            - name: Restore verified FFmpeg image
+              id: media-cache
+              uses: actions/cache/restore@v4
               with:
-                  platforms: arm64
+                  path: /tmp/classiq-media-image.tar
+                  key: media-image-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('apps/api/media-layer/**') }}
 
-            - run: pnpm exec turbo run deploy --filter=@classiq/infra -- --require-approval never
+            - name: Load cached FFmpeg image
+              if: steps.media-cache.outputs.cache-hit == 'true'
+              run: docker load --input /tmp/classiq-media-image.tar
+
+            - name: Build and verify FFmpeg image natively
+              if: steps.media-cache.outputs.cache-hit != 'true'
+              run: |
+                  docker build --progress=plain --platform linux/arm64 --target verify --tag classiq-recording-media:ci apps/api/media-layer
+                  docker save --output /tmp/classiq-media-image.tar classiq-recording-media:ci
+
+            - name: Cache verified FFmpeg image
+              if: steps.media-cache.outputs.cache-hit != 'true'
+              uses: actions/cache/save@v4
+              with:
+                  path: /tmp/classiq-media-image.tar
+                  key: ${{ steps.media-cache.outputs.cache-primary-key }}
+
+            - run: pnpm exec turbo run deploy --output-logs=full --log-order=stream --filter=@classiq/infra -- --require-approval never
               env:
+                  CDK_RECORDING_MEDIA_IMAGE: classiq-recording-media:ci
                   DATABASE_URL: ${{ secrets.DATABASE_URL }}
                   BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
                   PROCESSING_ENABLED: ${{ vars.PROCESSING_ENABLED }}
