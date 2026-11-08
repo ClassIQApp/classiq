@@ -46,6 +46,7 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
     const [lectureId, setLectureId] = useState("");
     const [selectedGuideId, setSelectedGuideId] = useState<string>();
     const [generating, setGenerating] = useState(false);
+    const [deletingGuideId, setDeletingGuideId] = useState<string | null>(null);
     const [openingResource, setOpeningResource] = useState<string | null>(null);
     const [error, setError] = useState("");
 
@@ -118,6 +119,54 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
         } finally {
             if (!signal?.aborted) {
                 setGenerating(false);
+            }
+        }
+    }
+
+    async function deleteGuide(studyGuideId: string, title: string) {
+        if (!canManage || deletingGuideId !== null) {
+            return;
+        }
+
+        const confirmed = globalThis.confirm(`Delete "${title}"?\n\nThis study guide will be permanently removed.`);
+
+        if (!confirmed) {
+            return;
+        }
+
+        const signal = lifetime.current?.signal;
+
+        setDeletingGuideId(studyGuideId);
+        setError("");
+
+        try {
+            await api.remove(courseId, studyGuideId, signal);
+
+            queryClient.removeQueries({
+                queryKey: [...listQueryKey, "guide", studyGuideId],
+                exact: true,
+            });
+
+            const nextGuide = guides.data?.find((guide) => guide.id !== studyGuideId);
+
+            setSelectedGuideId(nextGuide?.id);
+
+            await queryClient.invalidateQueries({
+                queryKey: listQueryKey,
+            });
+        } catch (error_) {
+            if (!signal?.aborted) {
+                setError(
+                    error_ instanceof ApiError
+                        ? error_.message
+                        : error_ instanceof Error
+                          ? error_.message
+                          : "Could not delete the study guide.",
+                );
+            }
+        } finally {
+            if (!signal?.aborted) {
+                setDeletingGuideId(null);
             }
         }
     }
@@ -302,13 +351,28 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                     {selectedGuide.data && (
                         <article className="study-guide-document">
                             <header className="study-guide-document-header">
-                                <span className="study-guide-document-scope">{guideScope(selectedGuide.data.lectureId)}</span>
+                                <div className="study-guide-document-heading">
+                                    <span className="study-guide-document-scope">{guideScope(selectedGuide.data.lectureId)}</span>
 
-                                <h3>{selectedGuide.data.title}</h3>
+                                    <h3>{selectedGuide.data.title}</h3>
 
-                                <span className="study-guide-document-meta">
-                                    {selectedGuide.data.sectionCount === 1 ? "1 section" : `${selectedGuide.data.sectionCount} sections`}
-                                </span>
+                                    <span className="study-guide-document-meta">
+                                        {selectedGuide.data.sectionCount === 1
+                                            ? "1 section"
+                                            : `${selectedGuide.data.sectionCount} sections`}
+                                    </span>
+                                </div>
+
+                                {canManage && (
+                                    <button
+                                        type="button"
+                                        className="study-guide-delete-button"
+                                        disabled={deletingGuideId !== null}
+                                        onClick={() => void deleteGuide(selectedGuide.data.id, selectedGuide.data.title)}
+                                    >
+                                        {deletingGuideId === selectedGuide.data.id ? "Deleting…" : "Delete guide"}
+                                    </button>
+                                )}
                             </header>
 
                             <section className="study-guide-overview">
