@@ -79,6 +79,8 @@ export default function LectureDetail({ courseId, lecture, role, startSeconds, o
                                 lectureId={lecture.id}
                                 seek={seek}
                                 onTimeChange={(seconds) => setPlayhead(Math.floor(seconds))}
+                                transcript={content.transcript.data}
+                                spanish={content.spanish.data}
                             />
                         </div>
                         <section className="lecture-card lecture-transcript-card" aria-labelledby="lecture-transcript-heading">

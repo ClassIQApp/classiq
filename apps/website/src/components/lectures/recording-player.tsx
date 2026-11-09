@@ -1,5 +1,7 @@
 import { useAuth } from "../../api/auth/provider";
+import type { SpanishTranscript, Transcript } from "../../api/lectures/content";
 import { recordingAccess } from "../../api/lectures/recording-access";
+import CaptionTrack from "./caption-track";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
@@ -14,11 +16,13 @@ interface RecordingPlayerProps {
     lectureId: string;
     seek?: SeekRequest;
     onTimeChange?: (seconds: number) => void;
+    transcript?: Transcript | null;
+    spanish?: SpanishTranscript | null;
 }
 
 const HAVE_METADATA = 1;
 
-export default function RecordingPlayer({ courseId, lectureId, seek, onTimeChange }: RecordingPlayerProps) {
+export default function RecordingPlayer({ courseId, lectureId, seek, onTimeChange, transcript, spanish }: RecordingPlayerProps) {
     const { state, apiFetch } = useAuth();
     const userId = state.status === "authenticated" ? state.user.id : undefined;
     const [mediaFailed, setMediaFailed] = useState(false);
@@ -124,7 +128,19 @@ export default function RecordingPlayer({ courseId, lectureId, seek, onTimeChang
             {data && !recording.isError ? (
                 <>
                     {data.contentType.startsWith("video/") ? (
-                        <video ref={(element) => void (media.current = element)} {...mediaProps} />
+                        <video ref={(element) => void (media.current = element)} {...mediaProps} playsInline>
+                            {transcript && transcript.segments.length > 0 && (
+                                <CaptionTrack
+                                    segments={transcript.segments}
+                                    language={transcript.language}
+                                    label={`Original (${transcript.language})`}
+                                    kind="captions"
+                                />
+                            )}
+                            {transcript?.translationStatus === "succeeded" && spanish && spanish.segments.length > 0 && (
+                                <CaptionTrack segments={spanish.segments} language="es" label="Español" kind="subtitles" />
+                            )}
+                        </video>
                     ) : (
                         <audio ref={(element) => void (media.current = element)} {...mediaProps} />
                     )}
