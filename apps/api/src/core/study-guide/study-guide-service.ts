@@ -71,7 +71,9 @@ export class StudyGuideService {
         return this.repository.listStudyGuides(courseId, lectureId);
     }
 
-    /** Retrieves one complete study guide with its source context. */
+    /**
+     * Retrieves one complete study guide with its source context.
+     */
     async getStudyGuide(courseId: string, studyGuideId: string): Promise<StudyGuide> {
         parseIds(courseId, studyGuideId);
 
@@ -82,6 +84,19 @@ export class StudyGuideService {
         }
 
         return guide;
+    }
+
+    /**
+     * Deletes one study guide belonging to the supplied course.
+     */
+    async deleteStudyGuide(courseId: string, studyGuideId: string): Promise<void> {
+        parseIds(courseId, studyGuideId);
+
+        const deleted = await this.repository.deleteStudyGuide(courseId, studyGuideId);
+
+        if (!deleted) {
+            throw new StudyGuideError("not_found");
+        }
     }
 }
 

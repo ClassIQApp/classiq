@@ -93,7 +93,9 @@ export class PostgresStudyGuideRepository implements StudyGuideRepository {
             let studyGuideId: number;
 
             try {
-                const result = await client.query<{ id: number }>(
+                const result = await client.query<{
+                    id: number;
+                }>(
                     `
                     INSERT INTO study_guides (
                         course_id,
@@ -176,12 +178,12 @@ export class PostgresStudyGuideRepository implements StudyGuideRepository {
     async listStudyGuides(courseId: string, lectureId?: string): Promise<StudyGuideSummary[]> {
         const result = await this.db.query<StudyGuideRow>(
             `
-            SELECT ${STUDY_GUIDE_COLUMNS}
-            FROM study_guides
-            WHERE course_id = $1
-                AND ($2::int IS NULL OR lecture_id = $2)
-            ORDER BY created_at DESC, id DESC
-            `,
+                SELECT ${STUDY_GUIDE_COLUMNS}
+                FROM study_guides
+                WHERE course_id = $1
+                    AND ($2::int IS NULL OR lecture_id = $2)
+                ORDER BY created_at DESC, id DESC
+                `,
             [courseId, lectureId ?? null],
         );
 
@@ -198,14 +200,27 @@ export class PostgresStudyGuideRepository implements StudyGuideRepository {
         }
     }
 
-    private async readStudyGuide(client: PoolClient, courseId: string, studyGuideId: string): Promise<StudyGuide | undefined> {
-        const guides = await client.query<StudyGuideRow>(
+    async deleteStudyGuide(courseId: string, studyGuideId: string): Promise<boolean> {
+        const result = await this.db.query(
             `
-            SELECT ${STUDY_GUIDE_COLUMNS}
-            FROM study_guides
+            DELETE FROM study_guides
             WHERE course_id = $1
                 AND id = $2
             `,
+            [courseId, studyGuideId],
+        );
+
+        return Boolean(result.rowCount);
+    }
+
+    private async readStudyGuide(client: PoolClient, courseId: string, studyGuideId: string): Promise<StudyGuide | undefined> {
+        const guides = await client.query<StudyGuideRow>(
+            `
+                SELECT ${STUDY_GUIDE_COLUMNS}
+                FROM study_guides
+                WHERE course_id = $1
+                    AND id = $2
+                `,
             [courseId, studyGuideId],
         );
 
@@ -217,17 +232,17 @@ export class PostgresStudyGuideRepository implements StudyGuideRepository {
 
         const sections = await client.query<StudyGuideSectionRow>(
             `
-            SELECT
-                id,
-                position,
-                heading,
-                content,
-                key_points,
-                sources
-            FROM study_guide_sections
-            WHERE study_guide_id = $1
-            ORDER BY position
-            `,
+                SELECT
+                    id,
+                    position,
+                    heading,
+                    content,
+                    key_points,
+                    sources
+                FROM study_guide_sections
+                WHERE study_guide_id = $1
+                ORDER BY position
+                `,
             [row.id],
         );
 

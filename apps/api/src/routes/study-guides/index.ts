@@ -145,5 +145,15 @@ export function createStudyGuideRoutes<E extends Env>(dependencies: StudyGuideRo
         return c.json(guide);
     });
 
+    /*
+     * Delete a study guide.
+     * Only teachers are allowed to remove guides.
+     */
+    routes.delete("/:courseId/study-guides/:studyGuideId", teacher, async (c) => {
+        await getService().deleteStudyGuide(c.req.param("courseId")!, c.req.param("studyGuideId")!);
+
+        return c.body(null, 204);
+    });
+
     return routes;
 }

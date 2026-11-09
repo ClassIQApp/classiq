@@ -69,9 +69,17 @@ export function createStudyGuidesApi(request: ApiFetch) {
         return response.json();
     }
 
+    async function remove(courseId: string, studyGuideId: string, signal?: AbortSignal): Promise<void> {
+        await request(`${root(courseId)}/${encodeURIComponent(studyGuideId)}`, {
+            method: "DELETE",
+            signal,
+        });
+    }
+
     return {
         list,
         get,
         generate,
+        remove,
     };
 }
