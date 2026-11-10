@@ -127,17 +127,3 @@ main {
     padding: var(--space-4);
     text-align: center;
 }
-
-/* Accessibility text-size preference */
-
-:root[data-text-size="small"] {
-    font-size: 14px;
-}
-
-:root[data-text-size="default"] {
-    font-size: 16px;
-}
-
-:root[data-text-size="large"] {
-    font-size: 18px;
-}

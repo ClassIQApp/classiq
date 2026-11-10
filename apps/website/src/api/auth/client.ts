@@ -2,8 +2,6 @@ export interface AuthUser {
     id: string;
     name: string;
     email: string;
-    firstName?: string | null;
-    lastName?: string | null;
 }
 
 export interface Credentials {
@@ -13,18 +11,6 @@ export interface Credentials {
 
 export interface Registration extends Credentials {
     name: string;
-}
-
-export interface ProfileUpdate {
-    firstName: string;
-    lastName: string;
-    name: string;
-}
-
-export interface PasswordChange {
-    currentPassword: string;
-    newPassword: string;
-    revokeOtherSessions?: boolean;
 }
 
 export type ApiFetch = (path: string, init?: RequestInit) => Promise<Response>;
@@ -74,10 +60,7 @@ export function createAuthApi(request: ApiFetch) {
         let response: Response;
 
         try {
-            response = await request("/api/auth/get-session", {
-                signal,
-                cache: "no-store",
-            });
+            response = await request("/api/auth/get-session", { signal, cache: "no-store" });
         } catch (error) {
             if (error instanceof ApiError && error.status === 401) {
                 return null;
@@ -105,57 +88,26 @@ export function createAuthApi(request: ApiFetch) {
                 typeof user.name === "string" &&
                 typeof user.email === "string"
             ) {
-                const firstName = "firstName" in user ? user.firstName : undefined;
-
-                const lastName = "lastName" in user ? user.lastName : undefined;
-
-                return {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    ...(typeof firstName === "string" || firstName === null ? { firstName } : {}),
-                    ...(typeof lastName === "string" || lastName === null ? { lastName } : {}),
-                };
+                return { id: user.id, name: user.name, email: user.email };
             }
         }
 
         throw new Error("The server returned an invalid session. Please try again.");
     }
 
-    async function post(path: string, body: unknown): Promise<Response> {
-        return request(`/api/auth/${path}`, {
+    async function post(path: string, body: Credentials | Registration | Record<string, never>) {
+        await request(`/api/auth/${path}`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
-        });
-    }
-
-    async function updateProfile(body: ProfileUpdate): Promise<void> {
-        await post("update-user", body);
-    }
-
-    async function changePassword(body: PasswordChange): Promise<void> {
-        await post("change-password", {
-            currentPassword: body.currentPassword,
-            newPassword: body.newPassword,
-            revokeOtherSessions: body.revokeOtherSessions ?? true,
         });
     }
 
     return {
         getSession,
-
         signIn: (body: Credentials) => post("sign-in/email", body),
-
         signUp: (body: Registration) => post("sign-up/email", body),
-
         signOut: () => post("sign-out", {}),
-
-        updateProfile,
-
-        changePassword,
     };
 }
 
