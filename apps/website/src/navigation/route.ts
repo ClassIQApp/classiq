@@ -5,8 +5,19 @@ export type CourseSection = "lectures" | "resources" | "study-guides" | "search"
 export type AppRoute =
     | { name: "courses" }
     | { name: "settings" }
-    | { name: "course"; courseId: string; section: CourseSection }
-    | { name: "lecture"; courseId: string; lectureId: string; startSeconds?: number };
+    | { name: "account-settings" }
+    | { name: "accessibility-settings" }
+    | {
+          name: "course";
+          courseId: string;
+          section: CourseSection;
+      }
+    | {
+          name: "lecture";
+          courseId: string;
+          lectureId: string;
+          startSeconds?: number;
+      };
 
 export interface NavigateOptions {
     replace?: boolean;
@@ -27,17 +38,37 @@ function readStartSeconds(search: string): number | undefined {
 }
 
 export function parseRoute(pathname: string, search = ""): AppRoute {
-    const [first, courseId, second, lectureId, ...rest] = pathname.split("/").filter(Boolean);
+    const [first, second, third, fourth, ...rest] = pathname.split("/").filter(Boolean);
 
-    if (first === "settings" && !courseId) {
+    if (first === "settings") {
+        if (!second) {
+            return { name: "settings" };
+        }
+
+        if (second === "account" && !third) {
+            return {
+                name: "account-settings",
+            };
+        }
+
+        if (second === "accessibility" && !third) {
+            return {
+                name: "accessibility-settings",
+            };
+        }
+
         return { name: "settings" };
     }
 
-    if (first !== "courses" || !courseId) {
+    if (first !== "courses" || !second) {
         return { name: "courses" };
     }
 
-    if (second === "lectures" && lectureId && rest.length === 0) {
+    const courseId = second;
+    const section = third;
+    const lectureId = fourth;
+
+    if (section === "lectures" && lectureId && rest.length === 0) {
         return {
             name: "lecture",
             courseId,
@@ -46,7 +77,7 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
         };
     }
 
-    if (second === undefined) {
+    if (section === undefined) {
         return {
             name: "course",
             courseId,
@@ -54,11 +85,11 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
         };
     }
 
-    if (isCourseSection(second) && lectureId === undefined) {
+    if (isCourseSection(section) && lectureId === undefined) {
         return {
             name: "course",
             courseId,
-            section: second,
+            section,
         };
     }
 
@@ -76,6 +107,12 @@ export function routeUrl(route: AppRoute): string {
 
         case "settings":
             return "/settings";
+
+        case "account-settings":
+            return "/settings/account";
+
+        case "accessibility-settings":
+            return "/settings/accessibility";
 
         case "course": {
             const course = `/courses/${encodeURIComponent(route.courseId)}`;
@@ -109,10 +146,12 @@ export function navigate(route: AppRoute, options: NavigateOptions = {}) {
 
 function subscribe(onChange: () => void) {
     globalThis.addEventListener("popstate", onChange);
+
     globalThis.addEventListener(NAVIGATION_EVENT, onChange);
 
     return () => {
         globalThis.removeEventListener("popstate", onChange);
+
         globalThis.removeEventListener(NAVIGATION_EVENT, onChange);
     };
 }
