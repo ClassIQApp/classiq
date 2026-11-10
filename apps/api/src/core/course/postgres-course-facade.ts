@@ -47,7 +47,7 @@ export class PostgresCourseFacade implements CourseRepository {
         registration: CourseRegistration & { joinCode?: string },
         creator: Omit<CourseMembership, "courseId">,
     ): Promise<MemberCourse> {
-        const joinCode = registration.joinCode || Math.random().toString(36).substring(2, 8).toUpperCase();
+        const joinCode = registration.joinCode || Math.random().toString(36).slice(2, 8).toUpperCase();
 
         const request = {
             text: `

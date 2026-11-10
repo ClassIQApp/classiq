@@ -10,6 +10,10 @@ import "./index.css";
 import { useRoute } from "./navigation/route";
 import CoursePage from "./pages/courses/course-page";
 import Login from "./pages/login";
+import { loadAccessibilityPreferences } from "./pages/settings/accessibility-preferences";
+import AccessibilitySettings from "./pages/settings/accessibility-settings";
+import AccountSettings from "./pages/settings/account-settings";
+import SettingsPage from "./pages/settings/settings-page";
 import Courses from "./pages/teacher/Courses";
 import "./styles/controls.css";
 import { useState } from "react";
@@ -23,7 +27,9 @@ interface AccountHomeProps {
 
 function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomeProps) {
     const [route, go] = useRoute();
-    const activeNav: NavItem = route.name === "settings" ? "Settings" : "Courses";
+
+    const activeNav: NavItem =
+        route.name === "settings" || route.name === "account-settings" || route.name === "accessibility-settings" ? "Settings" : "Courses";
 
     function navigateTo(item: NavItem) {
         go(item === "Settings" ? { name: "settings" } : { name: "courses" });
@@ -32,11 +38,42 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
     function showPage() {
         if (route.name === "settings") {
             return (
-                <section>
-                    <h1>Account Settings</h1>
-                    <p>{user.name}</p>
-                    <p>{user.email}</p>
-                </section>
+                <SettingsPage
+                    onOpenAccount={() =>
+                        go({
+                            name: "account-settings",
+                        })
+                    }
+                    onOpenAccessibility={() =>
+                        go({
+                            name: "accessibility-settings",
+                        })
+                    }
+                />
+            );
+        }
+
+        if (route.name === "account-settings") {
+            return (
+                <AccountSettings
+                    onBack={() =>
+                        go({
+                            name: "settings",
+                        })
+                    }
+                />
+            );
+        }
+
+        if (route.name === "accessibility-settings") {
+            return (
+                <AccessibilitySettings
+                    onBack={() =>
+                        go({
+                            name: "settings",
+                        })
+                    }
+                />
             );
         }
 
@@ -46,15 +83,31 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
                     courseId={route.courseId}
                     route={route}
                     onNavigate={go}
-                    onCourseChange={(courseId) => go({ name: "course", courseId, section: "lectures" })}
-                    onClose={() => go({ name: "courses" })}
+                    onCourseChange={(courseId) =>
+                        go({
+                            name: "course",
+                            courseId,
+                            section: "lectures",
+                        })
+                    }
+                    onClose={() =>
+                        go({
+                            name: "courses",
+                        })
+                    }
                 />
             );
         }
 
         return (
             <Courses
-                onOpenCourse={(courseId) => go({ name: "course", courseId, section: "lectures" })}
+                onOpenCourse={(courseId) =>
+                    go({
+                        name: "course",
+                        courseId,
+                        section: "lectures",
+                    })
+                }
                 pendingInvitations={<PendingInvitations />}
                 renderInviteForm={(courseId) => <InviteForm courseId={courseId} />}
             />
@@ -72,6 +125,7 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
             viewKey={route.name === "course" || route.name === "lecture" ? `course:${route.courseId}` : route.name}
         >
             {logoutError && <p role="alert">{logoutError}</p>}
+
             {showPage()}
         </AppShell>
     );
@@ -79,7 +133,9 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
 
 function Account() {
     const { state, controller } = useAuth();
+
     const [loggingOut, setLoggingOut] = useState(false);
+
     const [logoutError, setLogoutError] = useState<string | null>(null);
 
     async function handleLogout() {
@@ -111,6 +167,7 @@ function Account() {
         return (
             <div className="auth-status" role="alert">
                 <p>{state.message}</p>
+
                 <button type="button" onClick={() => void controller.restore()}>
                     Retry
                 </button>
@@ -134,6 +191,8 @@ function Account() {
 }
 
 export default function App() {
+    loadAccessibilityPreferences();
+
     return (
         <AuthProvider>
             <Account />

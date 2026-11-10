@@ -6,12 +6,16 @@ export interface AuthenticatedUser {
     id: string;
     name: string;
     email: string;
+    firstName?: string | null;
+    lastName?: string | null;
 }
 
 export interface AuthService {
     handler: (request: Request) => Promise<Response>;
     api: {
-        getSession: (input: { headers: Headers }) => Promise<{ user: AuthenticatedUser } | null>;
+        getSession: (input: { headers: Headers }) => Promise<{
+            user: AuthenticatedUser;
+        } | null>;
     };
 }
 
@@ -23,18 +27,45 @@ export function createAuth(database: Pool, config: AuthConfig) {
         baseURL: config.baseURL,
         basePath: "/api/auth",
         trustedOrigins: config.trustedOrigins,
+
         emailAndPassword: {
             enabled: true,
             requireEmailVerification: false,
             minPasswordLength: 8,
             maxPasswordLength: 128,
         },
+
         user: {
             modelName: "users",
-            fields: { emailVerified: "email_verified", createdAt: "created_at", updatedAt: "updated_at" },
+
+            fields: {
+                emailVerified: "email_verified",
+                createdAt: "created_at",
+                updatedAt: "updated_at",
+            },
+
+            additionalFields: {
+                firstName: {
+                    type: "string",
+                    required: false,
+                    input: true,
+                    returned: true,
+                    fieldName: "first_name",
+                },
+
+                lastName: {
+                    type: "string",
+                    required: false,
+                    input: true,
+                    returned: true,
+                    fieldName: "last_name",
+                },
+            },
         },
+
         session: {
             modelName: "auth_sessions",
+
             fields: {
                 userId: "user_id",
                 expiresAt: "expires_at",
@@ -43,10 +74,15 @@ export function createAuth(database: Pool, config: AuthConfig) {
                 ipAddress: "ip_address",
                 userAgent: "user_agent",
             },
-            cookieCache: { enabled: false },
+
+            cookieCache: {
+                enabled: false,
+            },
         },
+
         account: {
             modelName: "auth_accounts",
+
             fields: {
                 userId: "user_id",
                 accountId: "account_id",
@@ -60,17 +96,34 @@ export function createAuth(database: Pool, config: AuthConfig) {
                 updatedAt: "updated_at",
             },
         },
+
         verification: {
             modelName: "auth_verifications",
-            fields: { expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at" },
+
+            fields: {
+                expiresAt: "expires_at",
+                createdAt: "created_at",
+                updatedAt: "updated_at",
+            },
         },
+
         rateLimit: {
             enabled: false,
         },
+
         advanced: {
-            database: { generateId: "serial" },
+            database: {
+                generateId: "serial",
+            },
+
             useSecureCookies: config.production || config.baseURL.startsWith("https:"),
-            defaultCookieAttributes: { httpOnly: true, sameSite: "lax", path: "/" },
+
+            defaultCookieAttributes: {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+            },
+
             disableCSRFCheck: false,
             disableOriginCheck: false,
         },
