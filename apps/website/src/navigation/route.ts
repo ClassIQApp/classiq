@@ -7,6 +7,7 @@ export type AppRoute =
     | { name: "settings" }
     | { name: "account-settings" }
     | { name: "accessibility-settings" }
+    | { name: "language-settings" }
     | {
           name: "course";
           courseId: string;
@@ -54,6 +55,12 @@ export function parseRoute(pathname: string, search = ""): AppRoute {
         if (second === "accessibility" && !third) {
             return {
                 name: "accessibility-settings",
+            };
+        }
+
+        if (second === "language" && !third) {
+            return {
+                name: "language-settings",
             };
         }
 
@@ -113,6 +120,9 @@ export function routeUrl(route: AppRoute): string {
 
         case "accessibility-settings":
             return "/settings/accessibility";
+
+        case "language-settings":
+            return "/settings/language";
 
         case "course": {
             const course = `/courses/${encodeURIComponent(route.courseId)}`;

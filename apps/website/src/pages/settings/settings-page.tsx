@@ -1,17 +1,21 @@
-﻿import "./settings-page.css";
+﻿import { useTranslation } from "../../i18n/use-translation";
+import "./settings-page.css";
 
 interface SettingsPageProps {
     onOpenAccount: () => void;
     onOpenAccessibility: () => void;
+    onOpenLanguage: () => void;
 }
 
-export default function SettingsPage({ onOpenAccount, onOpenAccessibility }: SettingsPageProps) {
+export default function SettingsPage({ onOpenAccount, onOpenAccessibility, onOpenLanguage }: SettingsPageProps) {
+    const { t } = useTranslation();
+
     return (
         <section className="settings-page">
             <header className="settings-heading">
-                <h1>Settings</h1>
+                <h1>{t("settings.title")}</h1>
 
-                <p>Manage your account and ClassIQ preferences.</p>
+                <p>{t("settings.description")}</p>
             </header>
 
             <div className="settings-options">
@@ -22,9 +26,9 @@ export default function SettingsPage({ onOpenAccount, onOpenAccessibility }: Set
                         </div>
 
                         <div className="settings-option-text">
-                            <h2>Account Settings</h2>
+                            <h2>{t("settings.account.title")}</h2>
 
-                            <p>Manage your name, email, password, and account security.</p>
+                            <p>{t("settings.account.description")}</p>
                         </div>
                     </div>
 
@@ -40,9 +44,27 @@ export default function SettingsPage({ onOpenAccount, onOpenAccessibility }: Set
                         </div>
 
                         <div className="settings-option-text">
-                            <h2>Accessibility</h2>
+                            <h2>{t("settings.accessibility.title")}</h2>
 
-                            <p>Adjust text size, captions, playback, and interface preferences.</p>
+                            <p>{t("settings.accessibility.description")}</p>
+                        </div>
+                    </div>
+
+                    <span className="settings-option-arrow" aria-hidden="true">
+                        ›
+                    </span>
+                </button>
+
+                <button type="button" className="settings-option" onClick={onOpenLanguage}>
+                    <div className="settings-option-content">
+                        <div className="settings-option-icon" aria-hidden="true">
+                            <span>🌐</span>
+                        </div>
+
+                        <div className="settings-option-text">
+                            <h2>{t("settings.language.title")}</h2>
+
+                            <p>{t("settings.language.description")}</p>
                         </div>
                     </div>
 

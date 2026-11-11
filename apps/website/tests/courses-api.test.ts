@@ -169,10 +169,18 @@ test("Teacher settings updates refresh the course; Member updates are rejected a
 test("logout and account switching discard the selected course and course list", async () => {
     const cache = new QueryClient();
     const auth: AuthApi = {
-        getSession: async () => alice,
-        signIn: async () => {},
-        signUp: async () => {},
-        signOut: async () => {},
+        getSession: async () => ({
+            id: "1",
+            name: "Test User",
+            email: "test@example.com",
+        }),
+
+        signIn: async () => new Response(),
+        signUp: async () => new Response(),
+        signOut: async () => new Response(),
+
+        updateProfile: async () => {},
+        changePassword: async () => {},
     };
     const controller = new SessionController(auth, () => {
         void cache.cancelQueries();

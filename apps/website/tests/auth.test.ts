@@ -13,9 +13,13 @@ function fixture(overrides: Partial<AuthApi> = {}) {
     const cache = new QueryClient();
     const api: AuthApi = {
         getSession: async () => alice,
-        signIn: async () => {},
-        signUp: async () => {},
-        signOut: async () => {},
+        signIn: async () => new Response(),
+        signUp: async () => new Response(),
+        signOut: async () => new Response(),
+
+        updateProfile: async () => {},
+        changePassword: async () => {},
+
         ...overrides,
     };
     const controller = new SessionController(api, () => {
@@ -190,7 +194,7 @@ test("failed credentials and missing post-login session never establish an ident
     await assert.rejects(controller.authenticate({ email: alice.email, password: "incorrect" }), /Invalid credentials/);
     assert.deepEqual(controller.state, { status: "anonymous" });
 
-    api.signIn = async () => {};
+    api.signIn = async () => new Response();
     api.getSession = async () => null;
 
     await assert.rejects(

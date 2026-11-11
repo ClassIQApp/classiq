@@ -87,6 +87,7 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     let invitationService: CourseInvitationService | undefined;
     let quizService: QuizService | undefined;
     let studyGuideService: StudyGuideService | undefined;
+    let llmService: ReturnType<typeof createLlmService> | undefined;
 
     const getConfig = () => (config ??= (options.getAuthConfig ?? readAuthConfig)());
 
@@ -102,18 +103,20 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
 
     const getContentIndexService = () => (contentIndexService ??= new ContentIndexService(new PostgresContentIndexRepository(getDb())));
 
+    const getLlmService = () => (llmService ??= createLlmService());
+
     const getQuizService = () =>
         (quizService ??= new QuizService(
             new PostgresQuizRepository(getDb()),
             getContentIndexService(),
-            new QuizGenerator(createLlmService()),
+            new QuizGenerator(getLlmService()),
         ));
 
     const getStudyGuideService = () =>
         (studyGuideService ??= new StudyGuideService(
             new PostgresStudyGuideRepository(getDb()),
             getContentIndexService(),
-            new StudyGuideGenerator(createLlmService()),
+            new StudyGuideGenerator(getLlmService()),
         ));
 
     const processingRepository = () => new PostgresProcessingRepository(getDb());
@@ -235,6 +238,7 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
         createLectureRoutes<AppEnv>({
             getDb,
             getProcessing,
+            getLlmService,
             requireCourseRole,
         }),
     );

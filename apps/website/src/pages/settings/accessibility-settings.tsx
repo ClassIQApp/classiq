@@ -1,4 +1,5 @@
-﻿import { loadAccessibilityPreferences, saveAccessibilityPreferences } from "./accessibility-preferences";
+﻿import { useTranslation } from "../../i18n/use-translation";
+import { loadAccessibilityPreferences, saveAccessibilityPreferences } from "./accessibility-preferences";
 import type { AccessibilityPreferences, PlaybackSpeed, TextSize } from "./accessibility-preferences";
 import "./accessibility-settings.css";
 import { useState } from "react";
@@ -8,6 +9,8 @@ interface AccessibilitySettingsProps {
 }
 
 export default function AccessibilitySettings({ onBack }: AccessibilitySettingsProps) {
+    const { t } = useTranslation();
+
     const [preferences, setPreferences] = useState<AccessibilityPreferences>(() => loadAccessibilityPreferences());
 
     function updatePreferences(changes: Partial<AccessibilityPreferences>) {
@@ -41,38 +44,38 @@ export default function AccessibilitySettings({ onBack }: AccessibilitySettingsP
     return (
         <section className="accessibility-page">
             <button type="button" className="settings-back-button" onClick={onBack}>
-                ← Back to Settings
+                {t("settings.back")}
             </button>
 
             <header className="accessibility-header">
-                <p className="accessibility-eyebrow">Preferences</p>
+                <p className="accessibility-eyebrow">{t("accessibility.eyebrow")}</p>
 
-                <h1>Accessibility</h1>
+                <h1>{t("accessibility.title")}</h1>
 
-                <p className="accessibility-description">Make ClassIQ more comfortable to read, watch, and use.</p>
+                <p className="accessibility-description">{t("accessibility.description")}</p>
             </header>
 
             <div className="accessibility-settings-list">
                 <section className="accessibility-group">
                     <div className="accessibility-group-title">
-                        <h2>Display</h2>
+                        <h2>{t("accessibility.display")}</h2>
                     </div>
 
                     <div className="accessibility-setting">
                         <div className="accessibility-setting-copy">
-                            <h3>Text size</h3>
+                            <h3>{t("accessibility.textSize")}</h3>
 
-                            <p>Change the size of text throughout ClassIQ.</p>
+                            <p>{t("accessibility.textSizeDescription")}</p>
                         </div>
 
-                        <div className="accessibility-segmented-control" aria-label="Text size">
+                        <div className="accessibility-segmented-control" aria-label={t("accessibility.textSize")}>
                             <button
                                 type="button"
                                 className={preferences.textSize === "small" ? "active" : ""}
                                 aria-pressed={preferences.textSize === "small"}
                                 onClick={() => changeTextSize("small")}
                             >
-                                Small
+                                {t("accessibility.small")}
                             </button>
 
                             <button
@@ -81,7 +84,7 @@ export default function AccessibilitySettings({ onBack }: AccessibilitySettingsP
                                 aria-pressed={preferences.textSize === "default"}
                                 onClick={() => changeTextSize("default")}
                             >
-                                Default
+                                {t("accessibility.default")}
                             </button>
 
                             <button
@@ -90,7 +93,7 @@ export default function AccessibilitySettings({ onBack }: AccessibilitySettingsP
                                 aria-pressed={preferences.textSize === "large"}
                                 onClick={() => changeTextSize("large")}
                             >
-                                Large
+                                {t("accessibility.large")}
                             </button>
                         </div>
                     </div>
@@ -98,20 +101,20 @@ export default function AccessibilitySettings({ onBack }: AccessibilitySettingsP
 
                 <section className="accessibility-group">
                     <div className="accessibility-group-title">
-                        <h2>Captions</h2>
+                        <h2>{t("accessibility.captions")}</h2>
                     </div>
 
                     <div className="accessibility-setting">
                         <div className="accessibility-setting-copy">
-                            <h3>Automatic captions</h3>
+                            <h3>{t("accessibility.automaticCaptions")}</h3>
 
-                            <p>Show captions automatically when they are available.</p>
+                            <p>{t("accessibility.captionsDescription")}</p>
                         </div>
 
                         <button
                             type="button"
                             role="switch"
-                            aria-label="Automatic captions"
+                            aria-label={t("accessibility.automaticCaptions")}
                             aria-checked={preferences.automaticCaptions}
                             className={`accessibility-switch ${preferences.automaticCaptions ? "active" : ""}`}
                             onClick={toggleCaptions}
@@ -123,21 +126,21 @@ export default function AccessibilitySettings({ onBack }: AccessibilitySettingsP
 
                 <section className="accessibility-group">
                     <div className="accessibility-group-title">
-                        <h2>Playback</h2>
+                        <h2>{t("accessibility.playback")}</h2>
                     </div>
 
                     <div className="accessibility-setting">
                         <div className="accessibility-setting-copy">
-                            <h3>Default playback speed</h3>
+                            <h3>{t("accessibility.playbackSpeed")}</h3>
 
-                            <p>Choose the speed used when a lecture starts playing.</p>
+                            <p>{t("accessibility.playbackDescription")}</p>
                         </div>
 
                         <select
                             className="accessibility-speed-select"
                             value={preferences.playbackSpeed}
                             onChange={(event) => changePlaybackSpeed(event.target.value as PlaybackSpeed)}
-                            aria-label="Default playback speed"
+                            aria-label={t("accessibility.playbackSpeed")}
                         >
                             <option value="0.75">0.75x</option>
 

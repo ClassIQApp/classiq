@@ -13,6 +13,8 @@ import Login from "./pages/login";
 import { loadAccessibilityPreferences } from "./pages/settings/accessibility-preferences";
 import AccessibilitySettings from "./pages/settings/accessibility-settings";
 import AccountSettings from "./pages/settings/account-settings";
+import { loadLanguagePreference } from "./pages/settings/language-preferences";
+import LanguageSettings from "./pages/settings/language-settings";
 import SettingsPage from "./pages/settings/settings-page";
 import Courses from "./pages/teacher/Courses";
 import "./styles/controls.css";
@@ -29,7 +31,12 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
     const [route, go] = useRoute();
 
     const activeNav: NavItem =
-        route.name === "settings" || route.name === "account-settings" || route.name === "accessibility-settings" ? "Settings" : "Courses";
+        route.name === "settings" ||
+        route.name === "account-settings" ||
+        route.name === "accessibility-settings" ||
+        route.name === "language-settings"
+            ? "Settings"
+            : "Courses";
 
     function navigateTo(item: NavItem) {
         go(item === "Settings" ? { name: "settings" } : { name: "courses" });
@@ -47,6 +54,11 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
                     onOpenAccessibility={() =>
                         go({
                             name: "accessibility-settings",
+                        })
+                    }
+                    onOpenLanguage={() =>
+                        go({
+                            name: "language-settings",
                         })
                     }
                 />
@@ -68,6 +80,18 @@ function AccountHome({ user, loggingOut, logoutError, onLogout }: AccountHomePro
         if (route.name === "accessibility-settings") {
             return (
                 <AccessibilitySettings
+                    onBack={() =>
+                        go({
+                            name: "settings",
+                        })
+                    }
+                />
+            );
+        }
+
+        if (route.name === "language-settings") {
+            return (
+                <LanguageSettings
                     onBack={() =>
                         go({
                             name: "settings",
@@ -192,6 +216,7 @@ function Account() {
 
 export default function App() {
     loadAccessibilityPreferences();
+    loadLanguagePreference();
 
     return (
         <AuthProvider>

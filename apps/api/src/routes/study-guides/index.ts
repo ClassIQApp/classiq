@@ -7,7 +7,9 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 export interface StudyGuideRouteDependencies<E extends Env> {
     requireCourseRole: (role: CourseRole) => MiddlewareHandler<E>;
+
     getUserId: (c: Context) => string;
+
     getService: () => StudyGuideService;
 }
 
@@ -26,6 +28,7 @@ export function createStudyGuideRoutes<E extends Env>(dependencies: StudyGuideRo
     }
 
     const teacher = requireCourseRole("teacher");
+
     const member = requireCourseRole("member");
 
     if (typeof teacher !== "function" || typeof member !== "function") {
@@ -91,8 +94,12 @@ export function createStudyGuideRoutes<E extends Env>(dependencies: StudyGuideRo
     });
 
     /*
-     * Generate a study guide from a lecture's indexed content,
-     * or from the entire course when lectureId is omitted.
+     * Generate a study guide from a lecture's indexed
+     * content, or from the entire course when lectureId
+     * is omitted.
+     *
+     * language controls the language used by the AI
+     * for the generated study guide.
      */
     routes.post("/:courseId/study-guides", teacher, async (c) => {
         const body: unknown = await c.req.json();
@@ -101,18 +108,31 @@ export function createStudyGuideRoutes<E extends Env>(dependencies: StudyGuideRo
             throw new StudyGuideError("invalid_request");
         }
 
-        if (Object.keys(body).some((key) => key !== "lectureId")) {
+        if (Object.keys(body).some((key) => key !== "lectureId" && key !== "language")) {
             throw new StudyGuideError("invalid_request");
         }
 
-        const { lectureId } = body as {
+        const { lectureId, language } = body as {
             lectureId?: string;
+            language?: "en" | "es" | "ar" | "de" | "fr";
         };
 
         const guide = await getService().generateStudyGuide(
             {
                 courseId: c.req.param("courseId")!,
-                lectureId,
+
+                ...(lectureId === undefined
+                    ? {}
+                    : {
+                          lectureId,
+                      }),
+
+                ...(language === undefined
+                    ? {}
+                    : {
+                          language,
+                      }),
+
                 createdByUserId: getUserId(c),
             },
             {
@@ -125,7 +145,8 @@ export function createStudyGuideRoutes<E extends Env>(dependencies: StudyGuideRo
 
     /*
      * List study guides for the course.
-     * lectureId can optionally filter the list to one lecture.
+     * lectureId can optionally filter the list
+     * to one lecture.
      */
     routes.get("/:courseId/study-guides", member, async (c) => {
         const guides = await getService().listStudyGuides(c.req.param("courseId")!, c.req.query("lectureId"));
