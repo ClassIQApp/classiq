@@ -3,6 +3,8 @@ import { useAuth } from "../../api/auth/provider";
 import type { Lecture } from "../../api/lectures/types";
 import { createResourcesApi } from "../../api/resources/client";
 import { createStudyGuidesApi, studyGuideQueryKey, type StudyGuideSource } from "../../api/study-guides/client";
+import { useTranslation } from "../../i18n/use-translation";
+import type { InterfaceLanguage } from "../../pages/settings/language-preferences";
 import { formatTimestamp } from "../lectures/timestamp";
 import { openInNewTab } from "./open-in-new-tab";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +18,7 @@ interface CourseStudyGuidesProps {
 }
 
 type StudyGuidesApi = ReturnType<typeof createStudyGuidesApi>;
+
 type ResourcesApi = ReturnType<typeof createResourcesApi>;
 
 interface StudyGuidePanelProps extends CourseStudyGuidesProps {
@@ -23,6 +26,280 @@ interface StudyGuidePanelProps extends CourseStudyGuidesProps {
     api: StudyGuidesApi;
     resources: ResourcesApi;
 }
+
+interface StudyGuideMessages {
+    ariaLabel: string;
+    title: string;
+    description: string;
+
+    generateTitle: string;
+    generateDescription: string;
+    scope: string;
+    entireCourse: string;
+    lectureFallback: string;
+
+    generating: string;
+    generateGuide: string;
+    generationFailed: string;
+
+    popupBlocked: string;
+    openPdfFailed: string;
+
+    availableGuides: string;
+    guideCount: (count: number) => string;
+
+    loadingGuides: string;
+    guidesUnavailable: string;
+    retry: string;
+
+    noGuidesYet: string;
+    guidesAppearHere: string;
+
+    sectionCount: (count: number) => string;
+
+    selectGuide: string;
+    selectGuideDescription: string;
+
+    loadingGuide: string;
+    guideUnavailable: string;
+
+    overview: string;
+    keyPoints: string;
+
+    sources: string;
+    page: (page: number) => string;
+    opening: string;
+}
+
+const messagesByLanguage: Record<InterfaceLanguage, StudyGuideMessages> = {
+    en: {
+        ariaLabel: "Study guides",
+        title: "Study Guides",
+        description: "Create and review study guides from lecture transcripts and course resources.",
+
+        generateTitle: "Generate a study guide",
+        generateDescription: "Create a guide for the entire course or choose one lecture to focus on.",
+        scope: "Study guide scope",
+        entireCourse: "Entire course",
+        lectureFallback: "Lecture",
+
+        generating: "Generating…",
+        generateGuide: "Generate guide",
+        generationFailed: "Could not generate the study guide.",
+
+        popupBlocked: "Allow popups and try opening the PDF again.",
+        openPdfFailed: "Could not open this PDF.",
+
+        availableGuides: "Available guides",
+        guideCount: (count) => (count === 1 ? "1 guide" : `${count} guides`),
+
+        loadingGuides: "Loading study guides…",
+        guidesUnavailable: "Study guides are unavailable right now.",
+        retry: "Retry",
+
+        noGuidesYet: "No study guides yet",
+        guidesAppearHere: "Generated guides will appear here.",
+
+        sectionCount: (count) => (count === 1 ? "1 section" : `${count} sections`),
+
+        selectGuide: "Select a study guide",
+        selectGuideDescription: "Choose a guide from the list to read the overview, key points, and source material.",
+
+        loadingGuide: "Loading study guide…",
+        guideUnavailable: "Could not load this study guide.",
+
+        overview: "Overview",
+        keyPoints: "Key points",
+
+        sources: "Sources",
+        page: (page) => `Page ${page}`,
+        opening: "Opening…",
+    },
+
+    es: {
+        ariaLabel: "Guías de estudio",
+        title: "Guías de estudio",
+        description: "Crea y revisa guías de estudio a partir de transcripciones de clases y recursos del curso.",
+
+        generateTitle: "Generar una guía de estudio",
+        generateDescription: "Crea una guía para todo el curso o elige una clase específica.",
+        scope: "Alcance de la guía de estudio",
+        entireCourse: "Curso completo",
+        lectureFallback: "Clase",
+
+        generating: "Generando…",
+        generateGuide: "Generar guía",
+        generationFailed: "No se pudo generar la guía de estudio.",
+
+        popupBlocked: "Permite las ventanas emergentes e intenta abrir el PDF nuevamente.",
+        openPdfFailed: "No se pudo abrir este PDF.",
+
+        availableGuides: "Guías disponibles",
+        guideCount: (count) => (count === 1 ? "1 guía" : `${count} guías`),
+
+        loadingGuides: "Cargando guías de estudio…",
+        guidesUnavailable: "Las guías de estudio no están disponibles en este momento.",
+        retry: "Reintentar",
+
+        noGuidesYet: "Aún no hay guías de estudio",
+        guidesAppearHere: "Las guías generadas aparecerán aquí.",
+
+        sectionCount: (count) => (count === 1 ? "1 sección" : `${count} secciones`),
+
+        selectGuide: "Selecciona una guía de estudio",
+        selectGuideDescription: "Elige una guía de la lista para leer el resumen, los puntos clave y el material de origen.",
+
+        loadingGuide: "Cargando guía de estudio…",
+        guideUnavailable: "No se pudo cargar esta guía de estudio.",
+
+        overview: "Resumen",
+        keyPoints: "Puntos clave",
+
+        sources: "Fuentes",
+        page: (page) => `Página ${page}`,
+        opening: "Abriendo…",
+    },
+
+    ar: {
+        ariaLabel: "أدلة الدراسة",
+        title: "أدلة الدراسة",
+        description: "أنشئ وراجع أدلة الدراسة من نصوص المحاضرات ومصادر المقرر.",
+
+        generateTitle: "إنشاء دليل دراسة",
+        generateDescription: "أنشئ دليلاً للمقرر بالكامل أو اختر محاضرة محددة للتركيز عليها.",
+        scope: "نطاق دليل الدراسة",
+        entireCourse: "المقرر بالكامل",
+        lectureFallback: "محاضرة",
+
+        generating: "جارٍ الإنشاء…",
+        generateGuide: "إنشاء الدليل",
+        generationFailed: "تعذر إنشاء دليل الدراسة.",
+
+        popupBlocked: "اسمح بالنوافذ المنبثقة ثم حاول فتح ملف PDF مرة أخرى.",
+        openPdfFailed: "تعذر فتح ملف PDF.",
+
+        availableGuides: "الأدلة المتاحة",
+        guideCount: (count) => `${count} دليل`,
+
+        loadingGuides: "جارٍ تحميل أدلة الدراسة…",
+        guidesUnavailable: "أدلة الدراسة غير متاحة حالياً.",
+        retry: "إعادة المحاولة",
+
+        noGuidesYet: "لا توجد أدلة دراسة بعد",
+        guidesAppearHere: "ستظهر الأدلة التي تم إنشاؤها هنا.",
+
+        sectionCount: (count) => `${count} قسم`,
+
+        selectGuide: "اختر دليل دراسة",
+        selectGuideDescription: "اختر دليلاً من القائمة لقراءة الملخص والنقاط الرئيسية والمصادر.",
+
+        loadingGuide: "جارٍ تحميل دليل الدراسة…",
+        guideUnavailable: "تعذر تحميل دليل الدراسة هذا.",
+
+        overview: "نظرة عامة",
+        keyPoints: "النقاط الرئيسية",
+
+        sources: "المصادر",
+        page: (page) => `الصفحة ${page}`,
+        opening: "جارٍ الفتح…",
+    },
+
+    de: {
+        ariaLabel: "Lernhilfen",
+        title: "Lernhilfen",
+        description: "Erstelle und überprüfe Lernhilfen aus Vorlesungstranskripten und Kursmaterialien.",
+
+        generateTitle: "Lernhilfe erstellen",
+        generateDescription: "Erstelle eine Lernhilfe für den gesamten Kurs oder wähle eine bestimmte Vorlesung aus.",
+        scope: "Umfang der Lernhilfe",
+        entireCourse: "Gesamter Kurs",
+        lectureFallback: "Vorlesung",
+
+        generating: "Wird erstellt…",
+        generateGuide: "Lernhilfe erstellen",
+        generationFailed: "Die Lernhilfe konnte nicht erstellt werden.",
+
+        popupBlocked: "Erlaube Pop-ups und versuche erneut, die PDF-Datei zu öffnen.",
+        openPdfFailed: "Diese PDF-Datei konnte nicht geöffnet werden.",
+
+        availableGuides: "Verfügbare Lernhilfen",
+        guideCount: (count) => (count === 1 ? "1 Lernhilfe" : `${count} Lernhilfen`),
+
+        loadingGuides: "Lernhilfen werden geladen…",
+        guidesUnavailable: "Lernhilfen sind derzeit nicht verfügbar.",
+        retry: "Erneut versuchen",
+
+        noGuidesYet: "Noch keine Lernhilfen",
+        guidesAppearHere: "Erstellte Lernhilfen werden hier angezeigt.",
+
+        sectionCount: (count) => (count === 1 ? "1 Abschnitt" : `${count} Abschnitte`),
+
+        selectGuide: "Lernhilfe auswählen",
+        selectGuideDescription: "Wähle eine Lernhilfe aus der Liste, um Übersicht, Kernpunkte und Quellen zu lesen.",
+
+        loadingGuide: "Lernhilfe wird geladen…",
+        guideUnavailable: "Diese Lernhilfe konnte nicht geladen werden.",
+
+        overview: "Übersicht",
+        keyPoints: "Kernpunkte",
+
+        sources: "Quellen",
+        page: (page) => `Seite ${page}`,
+        opening: "Wird geöffnet…",
+    },
+
+    fr: {
+        ariaLabel: "Guides d’étude",
+        title: "Guides d’étude",
+        description: "Créez et consultez des guides d’étude à partir des transcriptions de cours et des ressources du cours.",
+
+        generateTitle: "Générer un guide d’étude",
+        generateDescription: "Créez un guide pour l’ensemble du cours ou choisissez un cours particulier.",
+        scope: "Portée du guide d’étude",
+        entireCourse: "Cours entier",
+        lectureFallback: "Cours",
+
+        generating: "Génération…",
+        generateGuide: "Générer le guide",
+        generationFailed: "Impossible de générer le guide d’étude.",
+
+        popupBlocked: "Autorisez les fenêtres contextuelles puis essayez d’ouvrir le PDF à nouveau.",
+        openPdfFailed: "Impossible d’ouvrir ce PDF.",
+
+        availableGuides: "Guides disponibles",
+        guideCount: (count) => (count === 1 ? "1 guide" : `${count} guides`),
+
+        loadingGuides: "Chargement des guides d’étude…",
+        guidesUnavailable: "Les guides d’étude sont actuellement indisponibles.",
+        retry: "Réessayer",
+
+        noGuidesYet: "Aucun guide d’étude pour le moment",
+        guidesAppearHere: "Les guides générés apparaîtront ici.",
+
+        sectionCount: (count) => (count === 1 ? "1 section" : `${count} sections`),
+
+        selectGuide: "Sélectionner un guide d’étude",
+        selectGuideDescription: "Choisissez un guide dans la liste pour consulter le résumé, les points clés et les sources.",
+
+        loadingGuide: "Chargement du guide d’étude…",
+        guideUnavailable: "Impossible de charger ce guide d’étude.",
+
+        overview: "Aperçu",
+        keyPoints: "Points clés",
+
+        sources: "Sources",
+        page: (page) => `Page ${page}`,
+        opening: "Ouverture…",
+    },
+};
+
+const localeByLanguage: Record<InterfaceLanguage, string> = {
+    en: "en-US",
+    es: "es-ES",
+    ar: "ar",
+    de: "de-DE",
+    fr: "fr-FR",
+};
 
 export default function CourseStudyGuides(props: CourseStudyGuidesProps) {
     const { state, apiFetch } = useAuth();
@@ -41,19 +318,27 @@ export default function CourseStudyGuides(props: CourseStudyGuidesProps) {
 }
 
 function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, accountId, api, resources }: StudyGuidePanelProps) {
+    const { language } = useTranslation();
+
+    const messages = messagesByLanguage[language];
+
     const queryClient = useQueryClient();
 
     const [lectureId, setLectureId] = useState("");
+
     const [selectedGuideId, setSelectedGuideId] = useState<string>();
+
     const [generating, setGenerating] = useState(false);
-    const [deletingGuideId, setDeletingGuideId] = useState<string | null>(null);
+
     const [openingResource, setOpeningResource] = useState<string | null>(null);
+
     const [error, setError] = useState("");
 
     const lifetime = useRef<AbortController | null>(null);
 
     useEffect(() => {
         const controller = new AbortController();
+
         lifetime.current = controller;
 
         return () => controller.abort();
@@ -69,23 +354,28 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
 
     const selectedGuide = useQuery({
         queryKey: [...listQueryKey, "guide", selectedGuideId ?? "none"],
+
         queryFn: ({ signal }) => api.get(courseId, selectedGuideId!, signal),
+
         enabled: selectedGuideId !== undefined,
+
         retry: false,
     });
 
     useEffect(() => {
-        if (selectedGuideId === undefined && guides.data && guides.data.length > 0) {
-            setSelectedGuideId(guides.data[0].id);
+        const firstGuide = guides.data?.[0];
+
+        if (selectedGuideId === undefined && firstGuide) {
+            setSelectedGuideId(firstGuide.id);
         }
     }, [guides.data, selectedGuideId]);
 
     function guideScope(guideLectureId?: string) {
         if (!guideLectureId) {
-            return "Entire course";
+            return messages.entireCourse;
         }
 
-        return lectures.find((lecture) => lecture.id === guideLectureId)?.title ?? "Lecture";
+        return lectures.find((lecture) => lecture.id === guideLectureId)?.title ?? messages.lectureFallback;
     }
 
     async function generateGuide() {
@@ -99,7 +389,7 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
         setError("");
 
         try {
-            const guide = await api.generate(courseId, lectureId || undefined, signal);
+            const guide = await api.generate(courseId, lectureId || undefined, language, signal);
 
             await queryClient.invalidateQueries({
                 queryKey: listQueryKey,
@@ -109,64 +399,14 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
         } catch (error_) {
             if (!signal?.aborted) {
                 setError(
-                    error_ instanceof ApiError
+                    language === "en" && (error_ instanceof ApiError || error_ instanceof Error)
                         ? error_.message
-                        : error_ instanceof Error
-                          ? error_.message
-                          : "Could not generate the study guide.",
+                        : messages.generationFailed,
                 );
             }
         } finally {
             if (!signal?.aborted) {
                 setGenerating(false);
-            }
-        }
-    }
-
-    async function deleteGuide(studyGuideId: string, title: string) {
-        if (!canManage || deletingGuideId !== null) {
-            return;
-        }
-
-        const confirmed = globalThis.confirm(`Delete "${title}"?\n\nThis study guide will be permanently removed.`);
-
-        if (!confirmed) {
-            return;
-        }
-
-        const signal = lifetime.current?.signal;
-
-        setDeletingGuideId(studyGuideId);
-        setError("");
-
-        try {
-            await api.remove(courseId, studyGuideId, signal);
-
-            queryClient.removeQueries({
-                queryKey: [...listQueryKey, "guide", studyGuideId],
-                exact: true,
-            });
-
-            const nextGuide = guides.data?.find((guide) => guide.id !== studyGuideId);
-
-            setSelectedGuideId(nextGuide?.id);
-
-            await queryClient.invalidateQueries({
-                queryKey: listQueryKey,
-            });
-        } catch (error_) {
-            if (!signal?.aborted) {
-                setError(
-                    error_ instanceof ApiError
-                        ? error_.message
-                        : error_ instanceof Error
-                          ? error_.message
-                          : "Could not delete the study guide.",
-                );
-            }
-        } finally {
-            if (!signal?.aborted) {
-                setDeletingGuideId(null);
             }
         }
     }
@@ -179,6 +419,7 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
         }
 
         setOpeningResource(source.resourceId);
+
         setError("");
 
         try {
@@ -193,11 +434,11 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
             }, signal);
 
             if (outcome === "blocked") {
-                setError("Allow popups and try opening the PDF again.");
+                setError(messages.popupBlocked);
             }
         } catch (error_) {
             if (!signal.aborted) {
-                setError(error_ instanceof Error ? error_.message : "Could not open this PDF.");
+                setError(language === "en" && error_ instanceof Error ? error_.message : messages.openPdfFailed);
             }
         } finally {
             if (!signal.aborted) {
@@ -207,24 +448,24 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
     }
 
     return (
-        <section className="study-guides-container" aria-label="Study guides">
+        <section className="study-guides-container" aria-label={messages.ariaLabel}>
             <header className="study-guides-header">
-                <h2>Study Guides</h2>
+                <h2>{messages.title}</h2>
 
-                <p>Create and review study guides from lecture transcripts and course resources.</p>
+                <p>{messages.description}</p>
             </header>
 
             {canManage && (
                 <section className="study-guides-generate">
                     <div className="study-guides-generate-info">
-                        <h3>Generate a study guide</h3>
+                        <h3>{messages.generateTitle}</h3>
 
-                        <p>Create a guide for the entire course or choose one lecture to focus on.</p>
+                        <p>{messages.generateDescription}</p>
                     </div>
 
                     <div className="study-guides-generate-actions">
                         <label htmlFor="study-guide-scope">
-                            <span>Study guide scope</span>
+                            <span>{messages.scope}</span>
 
                             <select
                                 id="study-guide-scope"
@@ -232,7 +473,7 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                                 disabled={generating}
                                 onChange={(event) => setLectureId(event.target.value)}
                             >
-                                <option value="">Entire course</option>
+                                <option value="">{messages.entireCourse}</option>
 
                                 {lectures.map((lecture) => (
                                     <option key={lecture.id} value={lecture.id}>
@@ -248,7 +489,7 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                             disabled={generating}
                             onClick={() => void generateGuide()}
                         >
-                            {generating ? "Generating…" : "Generate guide"}
+                            {generating ? messages.generating : messages.generateGuide}
                         </button>
                     </div>
                 </section>
@@ -263,32 +504,34 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
             <div className="study-guides-workspace">
                 <aside className="study-guides-sidebar">
                     <div className="study-guides-sidebar-heading">
-                        <h3>Available guides</h3>
+                        <h3>{messages.availableGuides}</h3>
 
-                        {guides.data && <span>{guides.data.length === 1 ? "1 guide" : `${guides.data.length} guides`}</span>}
+                        {guides.data && <span>{messages.guideCount(guides.data.length)}</span>}
                     </div>
 
                     {guides.isPending && (
                         <p className="study-guides-status" role="status">
-                            Loading study guides…
+                            {messages.loadingGuides}
                         </p>
                     )}
 
                     {guides.isError && (
                         <div className="study-guides-load-error" role="alert">
-                            <p>{guides.error instanceof ApiError ? guides.error.message : "Study guides are unavailable right now."}</p>
+                            <p>
+                                {language === "en" && guides.error instanceof ApiError ? guides.error.message : messages.guidesUnavailable}
+                            </p>
 
                             <button type="button" className="lecture-text-button" onClick={() => void guides.refetch()}>
-                                Retry
+                                {messages.retry}
                             </button>
                         </div>
                     )}
 
                     {guides.isSuccess && guides.data.length === 0 && (
                         <div className="study-guides-empty">
-                            <h4>No study guides yet</h4>
+                            <h4>{messages.noGuidesYet}</h4>
 
-                            <p>Generated guides will appear here.</p>
+                            <p>{messages.guidesAppearHere}</p>
                         </div>
                     )}
 
@@ -309,9 +552,9 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                                             <span className="study-guide-card-scope">{guideScope(guide.lectureId)}</span>
 
                                             <span className="study-guide-card-meta">
-                                                <span>{guide.sectionCount === 1 ? "1 section" : `${guide.sectionCount} sections`}</span>
+                                                <span>{messages.sectionCount(guide.sectionCount)}</span>
 
-                                                <span>{new Date(guide.createdAt).toLocaleDateString()}</span>
+                                                <span>{new Date(guide.createdAt).toLocaleDateString(localeByLanguage[language])}</span>
                                             </span>
                                         </button>
                                     </li>
@@ -324,26 +567,28 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                 <div className="study-guide-viewer">
                     {!selectedGuideId && (
                         <div className="study-guide-placeholder">
-                            <h3>Select a study guide</h3>
+                            <h3>{messages.selectGuide}</h3>
 
-                            <p>Choose a guide from the list to read the overview, key points, and source material.</p>
+                            <p>{messages.selectGuideDescription}</p>
                         </div>
                     )}
 
                     {selectedGuideId && selectedGuide.isPending && (
                         <p className="study-guides-status" role="status">
-                            Loading study guide…
+                            {messages.loadingGuide}
                         </p>
                     )}
 
                     {selectedGuide.isError && (
                         <div className="study-guides-load-error" role="alert">
                             <p>
-                                {selectedGuide.error instanceof ApiError ? selectedGuide.error.message : "Could not load this study guide."}
+                                {language === "en" && selectedGuide.error instanceof ApiError
+                                    ? selectedGuide.error.message
+                                    : messages.guideUnavailable}
                             </p>
 
                             <button type="button" className="lecture-text-button" onClick={() => void selectedGuide.refetch()}>
-                                Retry
+                                {messages.retry}
                             </button>
                         </div>
                     )}
@@ -351,32 +596,15 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                     {selectedGuide.data && (
                         <article className="study-guide-document">
                             <header className="study-guide-document-header">
-                                <div className="study-guide-document-heading">
-                                    <span className="study-guide-document-scope">{guideScope(selectedGuide.data.lectureId)}</span>
+                                <span className="study-guide-document-scope">{guideScope(selectedGuide.data.lectureId)}</span>
 
-                                    <h3>{selectedGuide.data.title}</h3>
+                                <h3>{selectedGuide.data.title}</h3>
 
-                                    <span className="study-guide-document-meta">
-                                        {selectedGuide.data.sectionCount === 1
-                                            ? "1 section"
-                                            : `${selectedGuide.data.sectionCount} sections`}
-                                    </span>
-                                </div>
-
-                                {canManage && (
-                                    <button
-                                        type="button"
-                                        className="study-guide-delete-button"
-                                        disabled={deletingGuideId !== null}
-                                        onClick={() => void deleteGuide(selectedGuide.data.id, selectedGuide.data.title)}
-                                    >
-                                        {deletingGuideId === selectedGuide.data.id ? "Deleting…" : "Delete guide"}
-                                    </button>
-                                )}
+                                <span className="study-guide-document-meta">{messages.sectionCount(selectedGuide.data.sectionCount)}</span>
                             </header>
 
                             <section className="study-guide-overview">
-                                <h4>Overview</h4>
+                                <h4>{messages.overview}</h4>
 
                                 <p>{selectedGuide.data.overview}</p>
 
@@ -399,7 +627,7 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
                                             <p className="study-guide-section-content">{section.content}</p>
 
                                             <div className="study-guide-key-points">
-                                                <h5>Key points</h5>
+                                                <h5>{messages.keyPoints}</h5>
 
                                                 <ul>
                                                     {section.keyPoints.map((point, pointIndex) => (
@@ -429,18 +657,24 @@ function StudyGuidePanel({ courseId, lectures, canManage, onOpenLecture, account
 interface SourceListProps {
     sources: StudyGuideSource[];
     openingResource: string | null;
+
     onOpenLecture: (lectureId: string, startSeconds?: number) => void;
+
     onOpenResource: (source: StudyGuideSource) => void;
 }
 
 function SourceList({ sources, openingResource, onOpenLecture, onOpenResource }: SourceListProps) {
+    const { language } = useTranslation();
+
+    const messages = messagesByLanguage[language];
+
     if (sources.length === 0) {
         return null;
     }
 
     return (
         <div className="study-guide-sources">
-            <span className="study-guide-sources-label">Sources</span>
+            <span className="study-guide-sources-label">{messages.sources}</span>
 
             <div className="study-guide-source-list">
                 {sources.map((source, index) => {
@@ -449,7 +683,7 @@ function SourceList({ sources, openingResource, onOpenLecture, onOpenResource }:
                             ? source.startSeconds === undefined
                                 ? undefined
                                 : formatTimestamp(source.startSeconds)
-                            : `Page ${source.pageNumber}`;
+                            : messages.page(source.pageNumber);
 
                     const label = location ? `${source.title} · ${location}` : source.title;
 
@@ -475,7 +709,7 @@ function SourceList({ sources, openingResource, onOpenLecture, onOpenResource }:
                                 disabled={openingResource !== null}
                                 onClick={() => onOpenResource(source)}
                             >
-                                {openingResource === source.resourceId ? "Opening…" : label}
+                                {openingResource === source.resourceId ? messages.opening : label}
                             </button>
                         );
                     }

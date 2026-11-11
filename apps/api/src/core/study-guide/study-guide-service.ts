@@ -10,7 +10,9 @@ const idSchema = z.string().check(z.regex(/^[1-9]\d{0,9}$/));
 
 export class StudyGuideService {
     private readonly repository: StudyGuideRepository;
+
     private readonly content: Pick<ContentIndexService, "listPassages">;
+
     private readonly generator: Pick<StudyGuideGenerator, "generate">;
 
     constructor(
@@ -24,8 +26,9 @@ export class StudyGuideService {
     }
 
     /**
-     * Generates and stores a study guide from one lecture's indexed
-     * content, or from the entire course when lectureId is omitted.
+     * Generates and stores a study guide from one lecture's
+     * indexed content, or from the entire course when
+     * lectureId is omitted.
      */
     async generateStudyGuide(request: StudyGuideGenerationRequest, options: LlmCallOptions = {}): Promise<StudyGuideSummary> {
         const parsed = studyGuideGenerationRequestSchema.safeParse(request);
@@ -34,7 +37,7 @@ export class StudyGuideService {
             throw new StudyGuideError("invalid_request");
         }
 
-        const { courseId, lectureId, createdByUserId } = parsed.data;
+        const { courseId, lectureId, createdByUserId, language = "en" } = parsed.data;
 
         if (!(await this.repository.scopeExists(courseId, lectureId))) {
             throw new StudyGuideError("not_found");
@@ -42,19 +45,35 @@ export class StudyGuideService {
 
         const passages = await this.content.listPassages({
             courseId,
-            ...(lectureId === undefined ? {} : { lectureId }),
+
+            ...(lectureId === undefined
+                ? {}
+                : {
+                      lectureId,
+                  }),
         });
 
         if (passages.length === 0) {
             throw new StudyGuideError("no_content");
         }
 
-        const generated = await this.generator.generate(passages, options);
+        const generated = await this.generator.generate(passages, options, language);
 
         const guide = await this.repository.createStudyGuide({
             courseId,
-            ...(lectureId === undefined ? {} : { lectureId }),
-            ...(createdByUserId === undefined ? {} : { createdByUserId }),
+
+            ...(lectureId === undefined
+                ? {}
+                : {
+                      lectureId,
+                  }),
+
+            ...(createdByUserId === undefined
+                ? {}
+                : {
+                      createdByUserId,
+                  }),
+
             ...generated,
         });
 
@@ -62,8 +81,8 @@ export class StudyGuideService {
     }
 
     /**
-     * Lists guides for the entire course, or only guides generated
-     * for one lecture when lectureId is supplied.
+     * Lists guides for the entire course, or only guides
+     * generated for one lecture when lectureId is supplied.
      */
     async listStudyGuides(courseId: string, lectureId?: string): Promise<StudyGuideSummary[]> {
         parseIds(courseId, ...(lectureId === undefined ? [] : [lectureId]));
@@ -110,7 +129,13 @@ function summarize({ id, courseId, lectureId, title, sectionCount, createdAt }: 
     return {
         id,
         courseId,
-        ...(lectureId === undefined ? {} : { lectureId }),
+
+        ...(lectureId === undefined
+            ? {}
+            : {
+                  lectureId,
+              }),
+
         title,
         sectionCount,
         createdAt,

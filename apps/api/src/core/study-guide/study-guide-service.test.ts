@@ -139,7 +139,7 @@ describe("StudyGuideService", () => {
             lectureId: "2",
         });
 
-        expect(generator.generate).toHaveBeenCalledWith([passage], {});
+        expect(generator.generate).toHaveBeenCalledWith([passage], {}, "en");
 
         expect(repository.createStudyGuide).toHaveBeenCalledWith(
             expect.objectContaining({

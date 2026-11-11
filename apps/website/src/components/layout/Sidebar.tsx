@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n/use-translation";
 import { BookOpenIcon, BroadcastIcon, FileTextIcon, GearIcon, SquaresFourIcon } from "@phosphor-icons/react";
 
 export type NavItem = "Live Lecture" | "Dashboard" | "Courses" | "Materials" | "Settings";
@@ -9,6 +10,8 @@ type SidebarProps = {
 };
 
 export default function Sidebar({ activeNav, onNavigate, role }: SidebarProps) {
+    const { t } = useTranslation();
+
     const primaryNavigationByRole = {
         teacher: "Live Lecture",
         student: "Dashboard",
@@ -16,7 +19,16 @@ export default function Sidebar({ activeNav, onNavigate, role }: SidebarProps) {
     } satisfies Record<SidebarProps["role"], NavItem | null>;
 
     const primaryNavigation = primaryNavigationByRole[role];
+
     const PrimaryIcon = role === "teacher" ? BroadcastIcon : SquaresFourIcon;
+
+    const navigationLabels: Record<NavItem, string> = {
+        "Live Lecture": t("nav.liveLecture"),
+        Dashboard: t("nav.dashboard"),
+        Courses: t("nav.courses"),
+        Materials: t("nav.materials"),
+        Settings: t("nav.settings"),
+    };
 
     return (
         <aside className="sidebar">
@@ -33,32 +45,38 @@ export default function Sidebar({ activeNav, onNavigate, role }: SidebarProps) {
                         onClick={() => onNavigate(primaryNavigation)}
                     >
                         <PrimaryIcon className="nav-icon" aria-hidden />
-                        <span>{primaryNavigation}</span>
+
+                        <span>{navigationLabels[primaryNavigation]}</span>
                     </button>
                 )}
 
                 <button className={`nav-item ${activeNav === "Courses" ? "active" : ""}`} onClick={() => onNavigate("Courses")}>
                     <BookOpenIcon className="nav-icon" aria-hidden />
-                    <span>Courses</span>
+
+                    <span>{t("nav.courses")}</span>
                 </button>
 
                 {role !== "account" && (
                     <button className={`nav-item ${activeNav === "Materials" ? "active" : ""}`} onClick={() => onNavigate("Materials")}>
                         <FileTextIcon className="nav-icon" aria-hidden />
-                        <span>Materials</span>
+
+                        <span>{t("nav.materials")}</span>
                     </button>
                 )}
 
                 <button className={`nav-item ${activeNav === "Settings" ? "active" : ""}`} onClick={() => onNavigate("Settings")}>
                     <GearIcon className="nav-icon" aria-hidden />
-                    <span>Settings</span>
+
+                    <span>{t("nav.settings")}</span>
                 </button>
             </nav>
 
             <div className="sidebar-footer">
                 <div className="sidebar-rule" />
-                <p>Better understanding.</p>
-                <p>Brighter futures.</p>
+
+                <p>{t("sidebar.betterUnderstanding")}</p>
+
+                <p>{t("sidebar.brighterFutures")}</p>
             </div>
         </aside>
     );

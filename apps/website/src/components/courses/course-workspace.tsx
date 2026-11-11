@@ -1,6 +1,8 @@
 import type { Course } from "../../api/courses/types";
 import type { LectureStatus } from "../../api/lectures/types";
+import { useTranslation } from "../../i18n/use-translation";
 import type { AppRoute, CourseSection } from "../../navigation/route";
+import type { InterfaceLanguage } from "../../pages/settings/language-preferences";
 import ChatWindow from "../chat/chat-window";
 import LectureDetail from "../lectures/lecture-detail";
 import LectureList from "../lectures/lecture-list";
@@ -15,12 +17,78 @@ import { useEffect, useRef, useState } from "react";
 
 export type CourseRoute = Extract<AppRoute, { name: "course" | "lecture" }>;
 
-const sectionLabelBySection: Record<CourseSection, string> = {
-    lectures: "Lectures",
-    resources: "Resources",
-    "study-guides": "Study Guides",
-    chat: "Chat",
-    search: "Search",
+interface CourseWorkspaceMessages {
+    allCourses: string;
+    myCourses: string;
+    courseSections: string;
+    sections: Record<CourseSection, string>;
+}
+
+const messagesByLanguage: Record<InterfaceLanguage, CourseWorkspaceMessages> = {
+    en: {
+        allCourses: "← All courses",
+        myCourses: "My Courses",
+        courseSections: "Course sections",
+        sections: {
+            lectures: "Lectures",
+            resources: "Resources",
+            "study-guides": "Study Guides",
+            search: "Search",
+            chat: "Chat",
+        },
+    },
+
+    es: {
+        allCourses: "← Todos los cursos",
+        myCourses: "Mis cursos",
+        courseSections: "Secciones del curso",
+        sections: {
+            lectures: "Clases",
+            resources: "Recursos",
+            "study-guides": "Guías de estudio",
+            search: "Buscar",
+            chat: "Chat",
+        },
+    },
+
+    ar: {
+        allCourses: "جميع المقررات →",
+        myCourses: "مقرراتي",
+        courseSections: "أقسام المقرر",
+        sections: {
+            lectures: "المحاضرات",
+            resources: "المصادر",
+            "study-guides": "أدلة الدراسة",
+            search: "البحث",
+            chat: "الدردشة",
+        },
+    },
+
+    de: {
+        allCourses: "← Alle Kurse",
+        myCourses: "Meine Kurse",
+        courseSections: "Kursbereiche",
+        sections: {
+            lectures: "Vorlesungen",
+            resources: "Materialien",
+            "study-guides": "Lernhilfen",
+            search: "Suche",
+            chat: "Chat",
+        },
+    },
+
+    fr: {
+        allCourses: "← Tous les cours",
+        myCourses: "Mes cours",
+        courseSections: "Sections du cours",
+        sections: {
+            lectures: "Cours",
+            resources: "Ressources",
+            "study-guides": "Guides d’étude",
+            search: "Recherche",
+            chat: "Discussion",
+        },
+    },
 };
 
 const iconBySection: Record<CourseSection, Icon> = {
@@ -43,11 +111,18 @@ interface CourseWorkspaceProps {
 }
 
 export default function CourseWorkspace({ course, courses, route, onNavigate, onCourseChange, onClose }: CourseWorkspaceProps) {
+    const { language } = useTranslation();
+
+    const messages = messagesByLanguage[language];
+
     const [query, setQuery] = useState("");
+
     const [status, setStatus] = useState<LectureStatus | "all">("all");
+
     const [sort, setSort] = useState<LectureSort>("newest");
 
     const workspace = useRef<HTMLDivElement>(null);
+
     const heading = useRef<HTMLHeadingElement>(null);
 
     const lecture = route.name === "lecture" ? course.lectures.find((item) => item.id === route.lectureId) : undefined;
@@ -104,13 +179,7 @@ export default function CourseWorkspace({ course, courses, route, onNavigate, on
         }
 
         if (view === "chat") {
-            return (
-                <ChatWindow
-                /* courseCode={course.code} courseName={course.name} */
-                />
-            );
-
-            // pass other params in if needed by the ai
+            return <ChatWindow />;
         }
 
         if (lecture) {
@@ -146,11 +215,11 @@ export default function CourseWorkspace({ course, courses, route, onNavigate, on
         <div ref={workspace} className="courses-page">
             <header className="courses-heading">
                 <button type="button" className="lecture-text-button" onClick={onClose}>
-                    ← All courses
+                    {messages.allCourses}
                 </button>
 
                 <p className="courses-eyebrow">
-                    My Courses / {course.code} <CourseRoleBadge role={course.role} />
+                    {messages.myCourses} / {course.code} <CourseRoleBadge role={course.role} />
                 </p>
 
                 <h1 ref={heading} tabIndex={-1}>
@@ -159,7 +228,7 @@ export default function CourseWorkspace({ course, courses, route, onNavigate, on
 
                 <p>{lecture ? lecture.description : course.description}</p>
 
-                <nav className="course-sections" aria-label="Course sections">
+                <nav className="course-sections" aria-label={messages.courseSections}>
                     {courseSections.map((item) => {
                         const SectionIcon = iconBySection[item];
 
@@ -175,7 +244,7 @@ export default function CourseWorkspace({ course, courses, route, onNavigate, on
                             >
                                 <SectionIcon className="course-section-icon" weight={active ? "fill" : "regular"} aria-hidden />
 
-                                {sectionLabelBySection[item]}
+                                {messages.sections[item]}
                             </button>
                         );
                     })}

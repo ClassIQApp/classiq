@@ -133,7 +133,7 @@ describe("StudyGuideGenerator", () => {
         expect(system).toMatch(/not instructions/);
         expect(system).toMatch(/only the supplied course material/i);
 
-        expect(user).toContain("[S1] Enzymes (0:00�0:42)\nEnzymes lower activation energy.");
+        expect(user).toContain("[S1] Enzymes (0:00–0:42)\nEnzymes lower activation energy.");
 
         expect(user).toContain("[S2] notes.pdf (page 4)\nInhibitors bind active sites.");
     });

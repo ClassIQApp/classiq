@@ -48,11 +48,23 @@ interface GeneratedContent<Kind extends string, Content> {
     model: string;
 }
 
-export type Summary = GeneratedContent<"summary", { text: string }>;
+export type Summary = GeneratedContent<
+    "summary",
+    {
+        text: string;
+    }
+>;
 
-export type KeyTerms = GeneratedContent<"key_terms", { terms: KeyTerm[] }>;
+export type KeyTerms = GeneratedContent<
+    "key_terms",
+    {
+        terms: KeyTerm[];
+    }
+>;
 
 export type LectureContentKind = "transcript" | "spanish" | "summary" | "key_terms";
+
+export type GeneratedContentLanguage = "en" | "es" | "ar" | "de" | "fr";
 
 const pathByKind: Record<LectureContentKind, string> = {
     transcript: "transcript",
@@ -61,9 +73,23 @@ const pathByKind: Record<LectureContentKind, string> = {
     key_terms: "generated-content/key_terms",
 };
 
-async function fetchContent<T>(apiFetch: ApiFetch, courseId: string, lectureId: string, kind: LectureContentKind, signal?: AbortSignal) {
+async function fetchContent<T>(
+    apiFetch: ApiFetch,
+    courseId: string,
+    lectureId: string,
+    kind: LectureContentKind,
+    signal?: AbortSignal,
+    language?: GeneratedContentLanguage,
+) {
     try {
-        const response = await apiFetch(`${lecturePath(courseId, lectureId)}/${pathByKind[kind]}`, { signal });
+        const basePath = `${lecturePath(courseId, lectureId)}/${pathByKind[kind]}`;
+
+        const path =
+            language && (kind === "summary" || kind === "key_terms") ? `${basePath}?language=${encodeURIComponent(language)}` : basePath;
+
+        const response = await apiFetch(path, {
+            signal,
+        });
 
         return (await response.json()) as T;
     } catch (error) {
@@ -81,11 +107,21 @@ export const fetchTranscript = (apiFetch: ApiFetch, courseId: string, lectureId:
 export const fetchSpanishTranscript = (apiFetch: ApiFetch, courseId: string, lectureId: string, signal?: AbortSignal) =>
     fetchContent<SpanishTranscript>(apiFetch, courseId, lectureId, "spanish", signal);
 
-export const fetchSummary = (apiFetch: ApiFetch, courseId: string, lectureId: string, signal?: AbortSignal) =>
-    fetchContent<Summary>(apiFetch, courseId, lectureId, "summary", signal);
+export const fetchSummary = (
+    apiFetch: ApiFetch,
+    courseId: string,
+    lectureId: string,
+    language: GeneratedContentLanguage = "en",
+    signal?: AbortSignal,
+) => fetchContent<Summary>(apiFetch, courseId, lectureId, "summary", signal, language);
 
-export const fetchKeyTerms = (apiFetch: ApiFetch, courseId: string, lectureId: string, signal?: AbortSignal) =>
-    fetchContent<KeyTerms>(apiFetch, courseId, lectureId, "key_terms", signal);
+export const fetchKeyTerms = (
+    apiFetch: ApiFetch,
+    courseId: string,
+    lectureId: string,
+    language: GeneratedContentLanguage = "en",
+    signal?: AbortSignal,
+) => fetchContent<KeyTerms>(apiFetch, courseId, lectureId, "key_terms", signal, language);
 
 export function isFixtureProvider(provider: string) {
     return provider.includes("fixture");

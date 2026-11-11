@@ -3,14 +3,24 @@ import * as z from "zod/mini";
 
 const id = z.string().check(z.regex(/^[1-9]\d{0,9}$/));
 
+export const studyGuideLanguageSchema = z.enum(["en", "es", "ar", "de", "fr"]);
+
+export type StudyGuideLanguage = z.infer<typeof studyGuideLanguageSchema>;
+
 /**
  * Request used to generate a study guide.
  * If lectureId is omitted, the guide covers the whole course.
+ *
+ * Language controls the language used for the generated
+ * title, overview, section headings, section content,
+ * and key points.
  */
 export const studyGuideGenerationRequestSchema = z.strictObject({
     courseId: id,
     lectureId: z.optional(id),
     createdByUserId: z.optional(id),
+
+    language: z.optional(studyGuideLanguageSchema),
 });
 
 export type StudyGuideGenerationRequest = z.infer<typeof studyGuideGenerationRequestSchema>;
@@ -18,13 +28,15 @@ export type StudyGuideGenerationRequest = z.infer<typeof studyGuideGenerationReq
 /**
  * Structure the LLM must return.
  *
- * Validation of things such as empty sections, unknown source IDs,
- * duplicate sections, and length limits is handled by the generator.
+ * Validation of things such as empty sections,
+ * unknown source IDs, duplicate sections,
+ * and length limits is handled by the generator.
  */
 export const generatedStudyGuideSchema = z.strictObject({
     title: z.string(),
     overview: z.string(),
     overviewSourceIds: z.array(z.string()),
+
     sections: z.array(
         z.strictObject({
             heading: z.string(),

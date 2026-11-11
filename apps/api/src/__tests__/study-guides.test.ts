@@ -264,6 +264,7 @@ describe("study guide router", () => {
             expect.objectContaining({
                 signal: expect.any(AbortSignal),
             }),
+            "en",
         ]);
 
         expect(repository.createStudyGuide).toHaveBeenCalledWith(
