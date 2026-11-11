@@ -16,6 +16,7 @@ permissions:
 jobs:
     deploy:
         runs-on: ubuntu-24.04-arm
+
         steps:
             - uses: actions/checkout@v4
 
@@ -33,6 +34,19 @@ jobs:
                   role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
                   aws-region: ${{ vars.AWS_REGION }}
 
+            - name: Install PostgreSQL client
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y postgresql-client
+
+            - name: Apply account profile migration
+              env:
+                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+              run: |
+                  psql "$DATABASE_URL" \
+                    -v ON_ERROR_STOP=1 \
+                    -f apps/api/db/migrations/020_account_profile.sql
+
             - name: Restore verified FFmpeg image
               id: media-cache
               uses: actions/cache/restore@v4
@@ -47,8 +61,16 @@ jobs:
             - name: Build and verify FFmpeg image natively
               if: steps.media-cache.outputs.cache-hit != 'true'
               run: |
-                  docker build --progress=plain --platform linux/arm64 --target verify --tag classiq-recording-media:ci apps/api/media-layer
-                  docker save --output /tmp/classiq-media-image.tar classiq-recording-media:ci
+                  docker build \
+                    --progress=plain \
+                    --platform linux/arm64 \
+                    --target verify \
+                    --tag classiq-recording-media:ci \
+                    apps/api/media-layer
+
+                  docker save \
+                    --output /tmp/classiq-media-image.tar \
+                    classiq-recording-media:ci
 
             - name: Cache verified FFmpeg image
               if: steps.media-cache.outputs.cache-hit != 'true'
@@ -57,7 +79,8 @@ jobs:
                   path: /tmp/classiq-media-image.tar
                   key: ${{ steps.media-cache.outputs.cache-primary-key }}
 
-            - run: pnpm exec turbo run deploy --output-logs=full --log-order=stream --filter=@classiq/infra -- --require-approval never
+            - name: Deploy ClassIQ
+              run: pnpm exec turbo run deploy --output-logs=full --log-order=stream --filter=@classiq/infra -- --require-approval never
               env:
                   CDK_RECORDING_MEDIA_IMAGE: classiq-recording-media:ci
                   DATABASE_URL: ${{ secrets.DATABASE_URL }}
