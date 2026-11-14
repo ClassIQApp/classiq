@@ -16,6 +16,9 @@
     },
     "prettier": "@classiq/prettier",
     "dependencies": {
+        "@dnd-kit/core": "catalog:",
+        "@dnd-kit/sortable": "catalog:",
+        "@dnd-kit/utilities": "catalog:",
         "@fontsource-variable/fraunces": "catalog:",
         "@fontsource-variable/inter": "catalog:",
         "@phosphor-icons/react": "catalog:",
@@ -31,11 +34,11 @@
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "@vitejs/plugin-react": "catalog:",
+        "dotenv-cli": "catalog:",
         "eslint": "catalog:",
         "prettier": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:",
-        "vite": "catalog:",
-        "dotenv-cli": "catalog:"
+        "vite": "catalog:"
     }
 }
