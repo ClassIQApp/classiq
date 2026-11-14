@@ -6,8 +6,11 @@ import CourseCard from "../../components/courses/course-card";
 import CourseForm from "../../components/courses/course-form";
 import { useTranslation } from "../../i18n/use-translation";
 import "./TeacherCourses.css";
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { PlusIcon } from "@phosphor-icons/react";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 const emptyCourse: CourseSettingsUpdate = {
@@ -32,11 +35,13 @@ interface CoursesProps {
 
 export default function Courses({ onOpenCourse, pendingInvitations, renderInviteForm }: CoursesProps) {
     const { t } = useTranslation();
-    const { apiFetch } = useAuth();
+
+    const { state, apiFetch } = useAuth();
 
     const { data: courses = [], isPending, isError, error, refetch } = useCourses();
 
     const createCourse = useCreateCourse();
+
     const updateCourse = useUpdateCourse();
 
     const [showCreateForm, setShowCreateForm] = useState(false);
@@ -51,7 +56,97 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
 
     const [joinError, setJoinError] = useState<string | null>(null);
 
+    const accountId = state.status === "authenticated" ? state.user.id : "anonymous";
+
+    const courseOrderStorageKey = `classiq-course-order:${accountId}`;
+
+    const [courseOrder, setCourseOrder] = useState<string[]>([]);
+
+    const courseIds = useMemo(() => courses.map((course) => String(course.id)), [courses]);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+    );
+
     const editingCourse = courses.find((course) => course.id === editingCourseId && course.role === "teacher");
+
+    useEffect(() => {
+        if (state.status !== "authenticated") {
+            return;
+        }
+
+        try {
+            const savedValue = globalThis.localStorage.getItem(courseOrderStorageKey);
+
+            const parsed: unknown = savedValue ? JSON.parse(savedValue) : [];
+
+            const savedOrder = Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+
+            const validSavedOrder = savedOrder.filter((id) => courseIds.includes(id));
+
+            const newCourseIds = courseIds.filter((id) => !validSavedOrder.includes(id));
+
+            setCourseOrder([...validSavedOrder, ...newCourseIds]);
+        } catch {
+            setCourseOrder(courseIds);
+        }
+    }, [courseIds, courseOrderStorageKey, state.status]);
+
+    useEffect(() => {
+        if (state.status !== "authenticated" || courseOrder.length === 0) {
+            return;
+        }
+
+        try {
+            globalThis.localStorage.setItem(courseOrderStorageKey, JSON.stringify(courseOrder));
+        } catch {
+            // Keep the current order for
+            // this session if storage is
+            // unavailable.
+        }
+    }, [courseOrder, courseOrderStorageKey, state.status]);
+
+    const orderedCourses = useMemo(() => {
+        const orderIndex = new Map(courseOrder.map((courseId, index) => [courseId, index]));
+
+        return courses.toSorted((first, second) => {
+            const firstIndex = orderIndex.get(String(first.id)) ?? Number.MAX_SAFE_INTEGER;
+
+            const secondIndex = orderIndex.get(String(second.id)) ?? Number.MAX_SAFE_INTEGER;
+
+            return firstIndex - secondIndex;
+        });
+    }, [courses, courseOrder]);
+
+    function handleCourseDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+
+        if (!over || active.id === over.id) {
+            return;
+        }
+
+        setCourseOrder((current) => {
+            const order = current.length > 0 ? current : courses.map((course) => String(course.id));
+
+            const oldIndex = order.indexOf(String(active.id));
+
+            const newIndex = order.indexOf(String(over.id));
+
+            if (oldIndex === -1 || newIndex === -1) {
+                return current;
+            }
+
+            return arrayMove(order, oldIndex, newIndex);
+        });
+    }
 
     function describeCourseError(courseError: Error | null) {
         if (!courseError) {
@@ -67,18 +162,23 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
 
     function openCreateForm() {
         createCourse.reset();
+
         setEditingCourseId(null);
+
         setShowCreateForm(true);
     }
 
     function openEditForm(courseId: string) {
         updateCourse.reset();
+
         setShowCreateForm(false);
+
         setEditingCourseId(courseId);
     }
 
     function cancelForm() {
         setShowCreateForm(false);
+
         setEditingCourseId(null);
     }
 
@@ -110,8 +210,8 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
         );
     }
 
-    async function handleJoinSubmit(e: FormEvent) {
-        e.preventDefault();
+    async function handleJoinSubmit(event: FormEvent) {
+        event.preventDefault();
 
         setJoinError(null);
         setIsJoining(true);
@@ -134,6 +234,7 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
             }
 
             setIsJoinModalOpen(false);
+
             setJoinCode("");
 
             await refetch();
@@ -182,7 +283,9 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
                             type="button"
                             onClick={() => {
                                 setJoinError(null);
+
                                 setJoinCode("");
+
                                 setIsJoinModalOpen(true);
                             }}
                         >
@@ -214,7 +317,7 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
                                 type="text"
                                 placeholder={t("courses.joinCodePlaceholder")}
                                 value={joinCode}
-                                onChange={(e) => setJoinCode(e.target.value)}
+                                onChange={(event) => setJoinCode(event.target.value)}
                                 className="teacher-join-code-input"
                                 maxLength={6}
                                 required
@@ -321,16 +424,20 @@ export default function Courses({ onOpenCourse, pendingInvitations, renderInvite
                         )}
                     </div>
                 ) : (
-                    <ul className="teacher-course-grid" role="list">
-                        {courses.map((course) => (
-                            <CourseCard
-                                key={course.id}
-                                course={course}
-                                onOpen={() => onOpenCourse(course.id)}
-                                onEditSettings={() => openEditForm(course.id)}
-                            />
-                        ))}
-                    </ul>
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCourseDragEnd}>
+                        <SortableContext items={orderedCourses.map((course) => String(course.id))} strategy={rectSortingStrategy}>
+                            <ul className="teacher-course-grid" role="list">
+                                {orderedCourses.map((course) => (
+                                    <CourseCard
+                                        key={course.id}
+                                        course={course}
+                                        onOpen={() => onOpenCourse(course.id)}
+                                        onEditSettings={() => openEditForm(course.id)}
+                                    />
+                                ))}
+                            </ul>
+                        </SortableContext>
+                    </DndContext>
                 )}
             </section>
         </div>
