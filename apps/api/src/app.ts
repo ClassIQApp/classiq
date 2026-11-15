@@ -2,6 +2,8 @@ import { createLlmService } from "./core/ai/create-llm-service.ts";
 import { createAuth, type AuthenticatedUser, type AuthService } from "./core/auth/auth.ts";
 import { readAuthConfig, type AuthConfig } from "./core/auth/config.ts";
 import { requireSession } from "./core/auth/middleware.ts";
+import { ChatService } from "./core/chat/chat-service.ts";
+import { PostgresChatRepository } from "./core/chat/postgres-chat-repository.ts";
 import { ContentIndexService } from "./core/content-index/content-index-service.ts";
 import { PostgresContentIndexRepository } from "./core/content-index/postgres-content-index-repository.ts";
 import { requireCourseRole } from "./core/course-access/middleware.ts";
@@ -15,6 +17,8 @@ import { PostgresProcessingRepository } from "./core/processing/postgres-process
 import { ProcessingService, type PipelineStarter } from "./core/processing/processing-service.ts";
 import { resourcePipeline } from "./core/processing/resource-pipeline.ts";
 import { sqsPipelineStarter } from "./core/processing/sqs-pipeline-starter.ts";
+import { QuestionAnswerer } from "./core/qa/question-answerer.ts";
+import { QuestionService } from "./core/qa/question-service.ts";
 import { PostgresQuizRepository } from "./core/quiz/postgres-quiz-repository.ts";
 import { QuizGenerator } from "./core/quiz/quiz-generator.ts";
 import { QuizService } from "./core/quiz/quiz-service.ts";
@@ -25,10 +29,12 @@ import type { UploadAsset, UploadStorage } from "./core/uploads/model.ts";
 import { PostgresUploadRepository } from "./core/uploads/postgres-upload-repository.ts";
 import { S3UploadStorage } from "./core/uploads/s3-upload-storage.ts";
 import authRoutes from "./routes/auth/index.ts";
+import { createChatRoutes } from "./routes/chat/index.ts";
 import { createContentRoutes } from "./routes/content/index.ts";
 import courseRoutes from "./routes/courses/index.ts";
 import { createCourseInvitationRoutes, createInvitationRoutes } from "./routes/invitations/index.ts";
 import { createLectureRoutes } from "./routes/lectures/index.ts";
+import { createQuestionRoutes } from "./routes/questions/index.ts";
 import { createQuizRoutes } from "./routes/quizzes/index.ts";
 import { createStudyGuideRoutes } from "./routes/study-guides/index.ts";
 import { createUploadRoutes } from "./routes/uploads/index.ts";
@@ -126,6 +132,8 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     let contentIndexService: ContentIndexService | undefined;
     let processing: ProcessingService | undefined;
     let invitationService: CourseInvitationService | undefined;
+    let chatService: ChatService | undefined;
+    let questionService: QuestionService | undefined;
     let quizService: QuizService | undefined;
     let studyGuideService: StudyGuideService | undefined;
     let llmService: ReturnType<typeof createLlmService> | undefined;
@@ -145,6 +153,11 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     const getContentIndexService = () => (contentIndexService ??= new ContentIndexService(new PostgresContentIndexRepository(getDb())));
 
     const getLlmService = () => (llmService ??= createLlmService());
+
+    const getQuestionService = () =>
+        (questionService ??= new QuestionService(getContentIndexService(), new QuestionAnswerer(getLlmService())));
+
+    const getChatService = () => (chatService ??= new ChatService(new PostgresChatRepository(getDb()), getQuestionService()));
 
     const getQuizService = () =>
         (quizService ??= new QuizService(
@@ -281,6 +294,23 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             getProcessing,
             getLlmService,
             requireCourseRole,
+        }),
+    );
+
+    app.route(
+        "/courses",
+        createChatRoutes<AppEnv>({
+            requireCourseRole,
+            getPoster: (c) => ({ id: c.get("user").id, role: c.get("courseRole") }),
+            getService: getChatService,
+        }),
+    );
+
+    app.route(
+        "/courses",
+        createQuestionRoutes<AppEnv>({
+            requireCourseRole,
+            getService: getQuestionService,
         }),
     );
 
