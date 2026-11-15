@@ -36,6 +36,8 @@ import { S3Client } from "@aws-sdk/client-s3";
 import { SQSClient } from "@aws-sdk/client-sqs";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
+import { requestId } from "hono/request-id";
 import type { Pool } from "pg";
 
 export interface AppEnv {
@@ -78,6 +80,45 @@ function createUploadStorage(): UploadStorage {
 
 export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<AppEnv> {
     const app = new Hono<AppEnv>();
+
+    app.use(requestId());
+
+    app.use(async (c, next) => {
+        const startedAt = performance.now();
+
+        await next();
+
+        console.info(
+            JSON.stringify({
+                requestId: c.get("requestId"),
+                method: c.req.method,
+                path: c.req.path,
+                status: c.res.status,
+                durationMs: Math.round(performance.now() - startedAt),
+            }),
+        );
+    });
+
+    app.notFound((c) => c.json({ code: "NOT_FOUND", message: "Not found" }, 404));
+
+    app.onError((error, c) => {
+        if (error instanceof HTTPException) {
+            return error.getResponse();
+        }
+
+        console.error(
+            JSON.stringify({
+                requestId: c.get("requestId"),
+                method: c.req.method,
+                path: c.req.path,
+                error: error.name,
+                message: error.message,
+                stack: error.stack,
+            }),
+        );
+
+        return c.json({ code: "INTERNAL_ERROR", message: "Something went wrong. Try again." }, 500);
+    });
 
     let auth: AuthService | undefined;
     let config: AuthConfig | undefined;
