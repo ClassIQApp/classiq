@@ -23,7 +23,14 @@
         "pipeline:dev": "dotenv --override --no-expand -e .env.development -- tsx src/pipeline-dev.ts",
         "pipeline:generate": "tsx scripts/generate-pipelines.ts",
         "pipeline:verify": "tsx scripts/verify-processing-artifacts.ts",
-        "pipeline:validate": "tsx scripts/validate-pipelines.ts"
+        "pipeline:validate": "tsx scripts/validate-pipelines.ts",
+        "eval:run": "dotenv --override --no-expand -e .env.evaluation -- tsx scripts/eval/run.ts",
+        "eval:export": "tsx scripts/eval/export.ts",
+        "eval:analyze": "tsx scripts/eval/analyze.ts",
+        "eval:pull": "tsx scripts/eval/pull.ts",
+        "eval:timing": "tsx scripts/eval/timing.ts",
+        "eval:wer": "tsx scripts/eval/wer.ts",
+        "eval:failures": "dotenv --override --no-expand -e .env.evaluation -- tsx scripts/eval/failures.ts"
     },
     "prettier": "@classiq/prettier",
     "dependencies": {
