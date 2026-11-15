@@ -3,7 +3,7 @@ import { createDatabase } from "../db/client.ts";
 import app from "../index.ts";
 import { handler } from "../lambda.ts";
 import type { LambdaEvent } from "hono/aws-lambda";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 describe("api", () => {
     it("returns the expected response", async () => {
@@ -60,5 +60,32 @@ describe("api", () => {
 
         expect(await response.json()).toEqual({ same: true });
         await db.end();
+    });
+
+    it("answers unknown routes with a JSON not-found error", async () => {
+        const response = await app.request("/missing");
+
+        expect(response.status).toBe(404);
+        expect(await response.json()).toEqual({ code: "NOT_FOUND", message: "Not found" });
+    });
+
+    it("hides unexpected error details and returns a request id", async () => {
+        const failing = createApp(() => createDatabase("postgres://user:pass@localhost:5432/test"));
+        const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+        failing.get("/boom", () => {
+            throw new Error("password=hunter2");
+        });
+
+        const response = await failing.request("/boom");
+        const body = JSON.stringify(await response.clone().json());
+
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ code: "INTERNAL_ERROR", message: "Something went wrong. Try again." });
+        expect(body).not.toContain("hunter2");
+        expect(response.headers.get("X-Request-Id")).toBeTruthy();
+        expect(error).toHaveBeenCalledOnce();
+
+        error.mockRestore();
     });
 });

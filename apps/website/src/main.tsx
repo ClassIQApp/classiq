@@ -1,3 +1,5 @@
+import { ErrorBoundary } from "./components/layout/error-boundary";
+import "./components/layout/error-boundary.css";
 import "./styles/tokens.css";
 import "@fontsource-variable/fraunces";
 import "@fontsource-variable/inter";
@@ -10,10 +12,12 @@ const Page = location.pathname.startsWith("/mock") ? lazy(() => import("./mock/M
 
 createRoot(document.querySelector("#root")!).render(
     <StrictMode>
-        <QueryClientProvider client={queryClient}>
-            <Suspense fallback={<div>Loading...</div>}>
-                <Page />
-            </Suspense>
-        </QueryClientProvider>
+        <ErrorBoundary>
+            <QueryClientProvider client={queryClient}>
+                <Suspense fallback={<div>Loading...</div>}>
+                    <Page />
+                </Suspense>
+            </QueryClientProvider>
+        </ErrorBoundary>
     </StrictMode>,
 );
