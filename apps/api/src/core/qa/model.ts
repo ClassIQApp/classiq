@@ -26,9 +26,15 @@ export interface QuestionSource extends ContentLocation {
     readonly title: string;
 }
 
+export interface AnswerContext {
+    readonly passages: number;
+    readonly characters: number;
+}
+
 export interface CourseAnswer {
     readonly answerable: boolean;
     readonly answer: string;
     readonly sources: readonly QuestionSource[];
+    readonly context: AnswerContext;
     readonly model?: string;
 }

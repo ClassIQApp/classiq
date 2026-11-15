@@ -32,7 +32,7 @@ function repository(overrides: Partial<ChatRepository> = {}): ChatRepository {
     };
 }
 
-const answer: CourseAnswer = { answerable: true, answer: "Activation energy.", sources: [] };
+const answer: CourseAnswer = { answerable: true, answer: "Activation energy.", sources: [], context: { passages: 1, characters: 32 } };
 const member = { id: "5", role: "member" } as const;
 
 describe("needsReply", () => {
@@ -74,7 +74,12 @@ describe("ChatService.postMessage", () => {
 
     it("stays quiet when the course material does not answer the question", async () => {
         const repo = repository();
-        const ask = vi.fn(async (): Promise<CourseAnswer> => ({ answerable: false, answer: "Nothing found.", sources: [] }));
+        const ask = vi.fn(async (): Promise<CourseAnswer> => ({
+            answerable: false,
+            answer: "Nothing found.",
+            sources: [],
+            context: { passages: 0, characters: 0 },
+        }));
         const posted = await new ChatService(repo, { ask }).postMessage(
             { courseId: "1", body: "Anyone going to the review session?" },
             member,

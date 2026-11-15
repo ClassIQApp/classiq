@@ -134,7 +134,7 @@ describe("ContentIndexService", () => {
         { courseId: "1", text: "x".repeat(501) },
         { courseId: "abc", text: "enzymes" },
         { courseId: "1", text: "enzymes", limit: 0 },
-        { courseId: "1", text: "enzymes", limit: 21 },
+        { courseId: "1", text: "enzymes", limit: 51 },
         { courseId: "1", text: "enzymes", limit: Number.NaN },
         { courseId: "1", text: "enzymes", kinds: [] },
         { courseId: "1", text: "enzymes", kinds: ["video"] },
