@@ -77,7 +77,7 @@ export class QuestionAnswerer {
     }
 }
 
-function takeWithinBudget(passages: readonly IndexedPassage[], maxChars: number): IndexedPassage[] {
+export function takeWithinBudget(passages: readonly IndexedPassage[], maxChars: number): IndexedPassage[] {
     const taken: IndexedPassage[] = [];
     let used = 0;
 
