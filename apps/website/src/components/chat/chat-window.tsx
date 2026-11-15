@@ -1,109 +1,201 @@
-/*
-This file provides the ChatWindow element used in the Courses > Chat view.
-*/
-/*
-TODO:
-- Refactor all document.querySelector() and similar uses of direct DOM manipulation to React state-based DOM rerendering because I forgot that was the React paradigm
-- Figure out what props the AI model needs to reference so what should be passed to the element can be implemented (most except for course id can probably be implemented via api calls)
-- Add markdown rendering and document embeds for AI chatbot reponses, potentially if possible for textarea and user messages as well
-- Implement AI internal API handling and passing
-- Add nice animations for user and AI messages sliding into frame
-- Add nice animation of loading icon or   > . > .. > ... animation when waiting for an API response (or wait to add the message until after a response is recieved) (if there's an option consistent with other pages let me know)
-- Add persistency using database and API to store chat messages, with times to create session dividers for chat based on day/session
-*/
+import { useAuth } from "../../api/auth/provider";
+import type { Lecture } from "../../api/lectures/types";
+import type { AnswerSource } from "../../api/questions/client";
+import { createQuestionsApi } from "../../api/questions/client";
+import { createResourcesApi } from "../../api/resources/client";
+import { openInNewTab } from "../courses/open-in-new-tab";
+import { formatTimestamp } from "../lectures/timestamp";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 
-// interface ChatWindowProps {
-//     courseCode: string;
-//     courseName: string;
-// }
+const MAX_QUESTION_LENGTH = 1000;
 
-export default function ChatWindow(/* props: ChatWindowProps */) {
-    const TEXT_BOX_PLACEHOLDER = "Type here to chat with an AI model! (Prototype)";
-    const TEXT_BOX_WAITING = "Please wait until a response is recieved...";
-    const AI_MESSAGE_WAITING = "Waiting for AI API Response...<br>(Prototype waits 3 seconds)";
+interface ChatMessage {
+    id: number;
+    role: "user" | "assistant";
+    text: string;
+    sources?: AnswerSource[];
+    failed?: boolean;
+}
+
+interface ChatWindowProps {
+    courseId: string;
+    lectures: Lecture[];
+    onOpenLecture: (lectureId: string, startSeconds?: number) => void;
+}
+
+export default function ChatWindow({ courseId, lectures, onOpenLecture }: ChatWindowProps) {
+    const { apiFetch } = useAuth();
+    const questions = useMemo(() => createQuestionsApi(apiFetch), [apiFetch]);
+    const resources = useMemo(() => createResourcesApi(apiFetch), [apiFetch]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [question, setQuestion] = useState("");
+    const [lectureId, setLectureId] = useState("");
+    const [asking, setAsking] = useState(false);
+    const [notice, setNotice] = useState("");
+    const lifetime = useRef(new AbortController());
+    const nextId = useRef(1);
+    const end = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        lifetime.current = new AbortController();
+
+        return () => lifetime.current.abort();
+    }, []);
+
+    useEffect(() => {
+        end.current?.scrollIntoView?.({ block: "end" });
+    }, [messages]);
+
+    function add(message: Omit<ChatMessage, "id">) {
+        setMessages((current) => [...current, { ...message, id: nextId.current++ }]);
+    }
+
+    async function submit(event?: FormEvent) {
+        event?.preventDefault();
+
+        const text = question.trim();
+
+        if (!text || asking) {
+            return;
+        }
+
+        const signal = lifetime.current.signal;
+
+        setQuestion("");
+        setNotice("");
+        setAsking(true);
+        add({ role: "user", text });
+
+        try {
+            const answer = await questions.ask(courseId, text, lectureId || undefined, signal);
+
+            if (!signal.aborted) {
+                add({ role: "assistant", text: answer.answer, sources: answer.sources });
+            }
+        } catch (error) {
+            if (!signal.aborted) {
+                add({
+                    role: "assistant",
+                    text: error instanceof Error ? error.message : "The question could not be answered.",
+                    failed: true,
+                });
+            }
+        } finally {
+            if (!signal.aborted) {
+                setAsking(false);
+            }
+        }
+    }
+
+    function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+        if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+            event.preventDefault();
+            void submit();
+        }
+    }
+
+    async function openSource(source: AnswerSource) {
+        const signal = lifetime.current.signal;
+
+        if (source.kind === "transcript" && source.lectureId) {
+            onOpenLecture(source.lectureId, source.startSeconds);
+
+            return;
+        }
+
+        if (!source.resourceId) {
+            return;
+        }
+
+        const resourceId = source.resourceId;
+
+        try {
+            const outcome = await openInNewTab(async () => {
+                const url = await resources.download(courseId, resourceId, signal);
+
+                return source.pageNumber === undefined ? url : `${url}#page=${source.pageNumber}`;
+            }, signal);
+
+            if (outcome === "blocked") {
+                setNotice("Your browser blocked the PDF. Allow pop-ups and try again.");
+            }
+        } catch {
+            if (!signal.aborted) {
+                setNotice("The PDF could not be opened.");
+            }
+        }
+    }
+
+    function describe(source: AnswerSource) {
+        const lecture = lectures.find((item) => item.id === source.lectureId);
+        const place =
+            source.pageNumber === undefined
+                ? source.startSeconds === undefined
+                    ? ""
+                    : formatTimestamp(source.startSeconds)
+                : `page ${source.pageNumber}`;
+        const name = source.kind === "transcript" ? (lecture?.title ?? source.title) : source.title;
+
+        return place ? `${name}, ${place}` : name;
+    }
 
     return (
-        <section className="chat-window-box">
-            <div className="chat-window-messages">
-                {/* AI and user messages are placed in here through onKeyDown event in chat-window-fields textarea */}
+        <section className="chat-window-box" aria-label="Ask about this course">
+            <div className="chat-window-messages" role="log" aria-live="polite">
+                {messages.length === 0 ? (
+                    <p className="chat-window-empty">
+                        Ask a question about this course. Answers come from its lectures and PDFs, with the passages they rely on.
+                    </p>
+                ) : null}
+                {messages.map((message) => (
+                    <div key={message.id} className={message.role === "user" ? "chat-message-box-user" : "chat-message-box-ai"}>
+                        <p>{message.text}</p>
+                        {message.sources && message.sources.length > 0 ? (
+                            <ul className="chat-message-sources" aria-label="Sources">
+                                {message.sources.map((source, index) => (
+                                    <li
+                                        key={`${source.lectureId ?? source.resourceId}-${source.startSeconds ?? source.pageNumber}-${index}`}
+                                    >
+                                        <button type="button" className="resources-view-btn" onClick={() => void openSource(source)}>
+                                            {describe(source)}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : null}
+                    </div>
+                ))}
+                {asking ? <div className="chat-message-box-ai">Looking through the course…</div> : null}
+                <div ref={end} />
             </div>
-            <form
-                className="chat-window-fields"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                }}
-            >
-                <label aria-label={TEXT_BOX_PLACEHOLDER}>
+            {notice ? (
+                <p role="alert" className="chat-window-notice">
+                    {notice}
+                </p>
+            ) : null}
+            <form className="chat-window-fields" onSubmit={(event) => void submit(event)}>
+                <label>
+                    Question
                     <textarea
-                        placeholder={TEXT_BOX_PLACEHOLDER}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                                e.preventDefault();
-
-                                const textarea = e.target as HTMLTextAreaElement;
-                                if (textarea.readOnly || textarea.value.trim() === "") {
-                                    return;
-                                }
-
-                                const select = document.querySelector(".chat-window-fields select") as HTMLSelectElement;
-
-                                textarea.form?.requestSubmit();
-                                if (select.value === "") {
-                                    select.style = "color: var(--color-danger)";
-
-                                    setTimeout(() => {
-                                        select.style = "color: default; transition: color 0.2s linear";
-                                    }, 250);
-
-                                    return; // Doesn't execute the rest of the code if an LLM model isn't selected, this is super hacky if there's a better way to do this let me know (though React state probably makes something like this relatively trival)
-                                }
-
-                                textarea.readOnly = true;
-                                textarea.placeholder = TEXT_BOX_WAITING;
-                                textarea.ariaLabel = TEXT_BOX_WAITING;
-
-                                const messages = document.querySelector(".chat-window-messages") as HTMLDivElement;
-
-                                const userMessage = document.createElement("div");
-                                userMessage.className = "chat-message-box-user";
-                                const userText = document.createElement("p");
-                                userText.textContent = textarea.value;
-                                userMessage.append(userText);
-                                messages.append(userMessage);
-
-                                textarea.value = "";
-
-                                const aiMessage = document.createElement("div");
-                                aiMessage.className = "chat-message-box-ai";
-                                aiMessage.innerHTML = `<p>${AI_MESSAGE_WAITING}</p>`;
-                                messages.append(aiMessage);
-
-                                setTimeout(() => {
-                                    aiMessage.innerHTML = `Once AI APIs are implemented, the response will go here.<br>Response recieved: 
-                                    ${new Date().toLocaleTimeString()}<br>Model that would have been used: ${select.selectedOptions[0]?.text}`;
-
-                                    // in actuality should wait for API response or max ~15 seconds otherwise, if response exists process said response otherwise send generic failure (maybe reprompt the user in textbox with their old input?)
-
-                                    // potentially collapse this to some kind of CallAPI function for modularity, same perhaps with other general parts of this
-
-                                    textarea.readOnly = false;
-                                    textarea.placeholder = TEXT_BOX_PLACEHOLDER;
-                                    textarea.ariaLabel = TEXT_BOX_PLACEHOLDER;
-                                }, 3000);
-                            }
-                        }}
+                        value={question}
+                        maxLength={MAX_QUESTION_LENGTH}
+                        placeholder="Ask about this course"
+                        readOnly={asking}
+                        onChange={(event) => setQuestion(event.target.value)}
+                        onKeyDown={onKeyDown}
                     />
                 </label>
                 <label>
-                    {/* rename to model once exact models are implemented */}
-                    <select required>
-                        <option value="" selected hidden disabled>
-                            LLM Provider
-                        </option>
-                        <option value="1">OpenAI</option>
-                        <option value="2">DeepSeek</option>
+                    Search in
+                    <select value={lectureId} onChange={(event) => setLectureId(event.target.value)}>
+                        <option value="">Whole course</option>
+                        {lectures.map((lecture) => (
+                            <option key={lecture.id} value={lecture.id}>
+                                {lecture.title}
+                            </option>
+                        ))}
                     </select>
-                    LLM Provider
                 </label>
             </form>
         </section>

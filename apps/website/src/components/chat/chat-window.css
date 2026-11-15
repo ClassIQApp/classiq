@@ -44,8 +44,31 @@ Some classes are slightly-modified versions of classes from courses.css.
 /* Original classes: */
 
 .chat-window-messages {
+    display: grid;
     max-height: 70vh;
+    margin-bottom: var(--space-4);
     overflow: auto;
+}
+
+.chat-window-empty {
+    margin: 0 0 var(--space-3);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.chat-window-notice {
+    margin: 0 0 var(--space-3);
+    color: var(--color-danger);
+    font-size: var(--text-sm);
+}
+
+.chat-message-sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
 }
 
 .chat-window-box select:invalid {
@@ -70,8 +93,10 @@ Some classes are slightly-modified versions of classes from courses.css.
 }
 
 .chat-message-box-user {
-    background-color: var(--mint-50);
+    background-color: var(--color-primary-subtle);
+    border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius-md);
+    color: var(--color-text);
     padding: var(--space-3);
     margin-bottom: var(--space-3);
     text-align: left;
@@ -80,11 +105,13 @@ Some classes are slightly-modified versions of classes from courses.css.
 }
 
 .chat-message-box-ai {
-    background-color: var(--pine-300);
+    background-color: var(--color-surface-sunken);
+    border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius-md);
+    color: var(--color-text);
     padding: var(--space-3);
     margin-bottom: var(--space-3);
-    text-align: right;
+    text-align: left;
     width: 80%;
     justify-self: end;
     font-size: var(--text-sm);

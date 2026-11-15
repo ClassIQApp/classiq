@@ -179,7 +179,7 @@ export default function CourseWorkspace({ course, courses, route, onNavigate, on
         }
 
         if (view === "chat") {
-            return <ChatWindow />;
+            return <ChatWindow courseId={course.id} lectures={course.lectures} onOpenLecture={openLecture} />;
         }
 
         if (lecture) {

@@ -15,6 +15,8 @@ import { PostgresProcessingRepository } from "./core/processing/postgres-process
 import { ProcessingService, type PipelineStarter } from "./core/processing/processing-service.ts";
 import { resourcePipeline } from "./core/processing/resource-pipeline.ts";
 import { sqsPipelineStarter } from "./core/processing/sqs-pipeline-starter.ts";
+import { QuestionAnswerer } from "./core/qa/question-answerer.ts";
+import { QuestionService } from "./core/qa/question-service.ts";
 import { PostgresQuizRepository } from "./core/quiz/postgres-quiz-repository.ts";
 import { QuizGenerator } from "./core/quiz/quiz-generator.ts";
 import { QuizService } from "./core/quiz/quiz-service.ts";
@@ -29,6 +31,7 @@ import { createContentRoutes } from "./routes/content/index.ts";
 import courseRoutes from "./routes/courses/index.ts";
 import { createCourseInvitationRoutes, createInvitationRoutes } from "./routes/invitations/index.ts";
 import { createLectureRoutes } from "./routes/lectures/index.ts";
+import { createQuestionRoutes } from "./routes/questions/index.ts";
 import { createQuizRoutes } from "./routes/quizzes/index.ts";
 import { createStudyGuideRoutes } from "./routes/study-guides/index.ts";
 import { createUploadRoutes } from "./routes/uploads/index.ts";
@@ -85,6 +88,7 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     let contentIndexService: ContentIndexService | undefined;
     let processing: ProcessingService | undefined;
     let invitationService: CourseInvitationService | undefined;
+    let questionService: QuestionService | undefined;
     let quizService: QuizService | undefined;
     let studyGuideService: StudyGuideService | undefined;
     let llmService: ReturnType<typeof createLlmService> | undefined;
@@ -104,6 +108,9 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     const getContentIndexService = () => (contentIndexService ??= new ContentIndexService(new PostgresContentIndexRepository(getDb())));
 
     const getLlmService = () => (llmService ??= createLlmService());
+
+    const getQuestionService = () =>
+        (questionService ??= new QuestionService(getContentIndexService(), new QuestionAnswerer(getLlmService())));
 
     const getQuizService = () =>
         (quizService ??= new QuizService(
@@ -240,6 +247,14 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             getProcessing,
             getLlmService,
             requireCourseRole,
+        }),
+    );
+
+    app.route(
+        "/courses",
+        createQuestionRoutes<AppEnv>({
+            requireCourseRole,
+            getService: getQuestionService,
         }),
     );
 
