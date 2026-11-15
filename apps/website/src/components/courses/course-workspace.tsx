@@ -3,7 +3,7 @@ import type { LectureStatus } from "../../api/lectures/types";
 import { useTranslation } from "../../i18n/use-translation";
 import type { AppRoute, CourseSection } from "../../navigation/route";
 import type { InterfaceLanguage } from "../../pages/settings/language-preferences";
-import ChatWindow from "../chat/chat-window";
+import ChatWidget from "../chat/chat-widget";
 import LectureDetail from "../lectures/lecture-detail";
 import LectureList from "../lectures/lecture-list";
 import type { LectureSort } from "../lectures/lecture-list";
@@ -99,7 +99,7 @@ const iconBySection: Record<CourseSection, Icon> = {
     chat: ChatCircleDotsIcon,
 };
 
-const courseSections: CourseSection[] = ["lectures", "resources", "study-guides", "search", "chat"];
+const courseSections: CourseSection[] = ["lectures", "resources", "study-guides", "search"];
 
 interface CourseWorkspaceProps {
     course: Course;
@@ -178,10 +178,6 @@ export default function CourseWorkspace({ course, courses, route, onNavigate, on
             return <CourseSearch courseId={course.id} lectures={course.lectures} onOpenLecture={openLecture} />;
         }
 
-        if (view === "chat") {
-            return <ChatWindow />;
-        }
-
         if (lecture) {
             return (
                 <LectureDetail
@@ -252,6 +248,14 @@ export default function CourseWorkspace({ course, courses, route, onNavigate, on
             </header>
 
             {showContent()}
+
+            <ChatWidget
+                courseId={course.id}
+                role={course.role}
+                lectures={course.lectures}
+                activeLectureId={lecture?.id}
+                onOpenLecture={openLecture}
+            />
         </div>
     );
 }

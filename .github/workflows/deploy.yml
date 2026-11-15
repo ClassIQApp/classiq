@@ -47,6 +47,14 @@ jobs:
                     -v ON_ERROR_STOP=1 \
                     -f apps/api/db/migrations/020_account_profile.sql
 
+            - name: Apply course chat migration
+              env:
+                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+              run: |
+                  psql "$DATABASE_URL" \
+                    -v ON_ERROR_STOP=1 \
+                    -f apps/api/db/migrations/021_course_chat.sql
+
             - name: Restore verified FFmpeg image
               id: media-cache
               uses: actions/cache/restore@v4
