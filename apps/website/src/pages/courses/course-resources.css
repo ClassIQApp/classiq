@@ -1,27 +1,47 @@
+/* =========================================================
+   Resources
+   ========================================================= */
+
 .resources-container {
     display: grid;
-    gap: var(--space-4);
-    max-width: var(--layout-prose);
+    gap: var(--space-5);
+    width: 100%;
+    max-width: 64rem;
     color: var(--color-text);
 }
 
 .resources-container > h2 {
+    margin: 0;
     font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
 }
 
 .resources-desc {
-    margin-top: calc(var(--space-2) * -1);
+    max-width: 42rem;
+    margin: calc(var(--space-2) * -1) 0 0;
     color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
 }
+
+/* ---------------------------------------------------------
+   RESOURCE UPLOAD CARD
+   --------------------------------------------------------- */
 
 .resources-card {
     display: grid;
     gap: var(--space-4);
-    padding: var(--space-5);
+    padding: var(--space-6);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
 }
 
 .resources-card > label {
     display: block;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
 }
 
 .resources-card > label + .resources-input {
@@ -30,6 +50,7 @@
 
 .resources-card progress {
     width: 100%;
+    accent-color: var(--color-primary);
 }
 
 .resources-card [role="status"] {
@@ -45,11 +66,19 @@
     justify-self: start;
 }
 
+/* ---------------------------------------------------------
+   RESOURCE STATUS / ALERTS
+   --------------------------------------------------------- */
+
 .resources-container > [role="alert"] {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
 }
 
 .resources-container > [role="status"],
@@ -57,9 +86,14 @@
     color: var(--color-text-secondary);
 }
 
+/* ---------------------------------------------------------
+   RESOURCE LIST
+   --------------------------------------------------------- */
+
 .resources-list {
     display: grid;
     gap: var(--space-3);
+    margin: 0;
     padding: 0;
     list-style: none;
 }
@@ -70,11 +104,26 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-4);
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
     overflow-wrap: anywhere;
+    transition:
+        border-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard),
+        transform var(--duration-base) var(--ease-standard);
+}
+
+.resources-item:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
 }
 
 .resources-file-name {
+    color: var(--color-text);
     font-weight: var(--weight-semibold);
 }
 
@@ -82,35 +131,92 @@
     margin: var(--space-1) 0 0;
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
+    line-height: var(--leading-normal);
 }
 
+/* ---------------------------------------------------------
+   RESOURCE UPLOAD QUEUE
+   --------------------------------------------------------- */
+
+.resources-queue {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.resources-queue-item {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-sunken);
+    overflow-wrap: anywhere;
+}
+
+.resources-queue-item p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.resources-queue-item progress {
+    width: 100%;
+    accent-color: var(--color-primary);
+}
+
+.resources-queue-item > .resources-view-btn {
+    justify-self: start;
+}
+
+/* =========================================================
+   Search
+   ========================================================= */
+
 .search-container {
-    padding: 2rem;
+    width: 100%;
+    max-width: none;
+    padding: 0;
     color: var(--color-text);
-    max-width: 760px;
+}
+
+.search-container > h2 {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
 }
 
 .search-desc,
 .search-hint {
+    max-width: 42rem;
+    margin-top: var(--space-2);
     color: var(--color-text-secondary);
-    margin-top: 0.5rem;
+    line-height: var(--leading-relaxed);
 }
+
+/* ---------------------------------------------------------
+   SEARCH FILTERS
+   --------------------------------------------------------- */
 
 .search-filters {
     display: grid;
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--space-4);
-    margin: 1.5rem 0 1rem;
+    margin: var(--space-6) 0 var(--space-5);
     padding: var(--space-5);
     border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
 }
 
 .search-filters label {
     display: grid;
     gap: var(--space-2);
     min-width: 0;
+    color: var(--color-text);
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
 }
@@ -123,91 +229,88 @@
     padding: var(--space-2) var(--space-3);
     border: var(--border-width) solid var(--color-border-strong);
     border-radius: var(--radius-md);
-    background: var(--color-surface);
+    background: var(--color-field);
     color: var(--color-text);
     font-weight: var(--weight-regular);
+    transition:
+        border-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard);
 }
 
+.search-filters input:hover,
+.search-filters select:hover {
+    border-color: var(--color-primary);
+}
+
+.search-filters input:focus,
+.search-filters select:focus {
+    outline: none;
+    border-color: var(--color-focus);
+    box-shadow: var(--focus-ring);
+}
+
+/* ---------------------------------------------------------
+   SEARCH RESULTS
+   --------------------------------------------------------- */
+
 .search-results {
-    list-style: none;
-    padding: 0;
     display: grid;
-    gap: 0.75rem;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .search-result {
     display: grid;
-    gap: 0.5rem;
+    gap: var(--space-3);
     justify-items: start;
-    padding: 0.75rem 1rem;
+    padding: var(--space-4) var(--space-5);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
     background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     overflow-wrap: anywhere;
+    transition:
+        border-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard),
+        transform var(--duration-base) var(--ease-standard);
+}
+
+.search-result:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
 }
 
 .search-result-heading {
     display: grid;
-    gap: 0.2rem;
+    gap: var(--space-1);
 }
 
 .search-result-title {
-    font-weight: var(--weight-medium);
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
 }
 
 .search-result-meta {
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
     font-size: var(--text-sm);
 }
 
 .search-result-snippet {
-    margin: 0;
-    color: var(--color-text-secondary);
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
+    margin: 0;
     overflow: hidden;
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
 }
 
 .search-result button:disabled {
-    opacity: 0.6;
+    opacity: var(--opacity-disabled);
     cursor: default;
-}
-
-@media (max-width: 48rem) {
-    .search-filters {
-        grid-template-columns: 1fr;
-    }
-}
-
-.resources-queue {
-    display: grid;
-    gap: var(--space-2);
-    padding: 0;
-    list-style: none;
-}
-
-.resources-queue-item {
-    display: grid;
-    gap: var(--space-1);
-    padding: var(--space-3);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-md);
-    overflow-wrap: anywhere;
-}
-
-.resources-queue-item p {
-    margin: 0;
-    color: var(--color-text-secondary);
-    font-size: var(--text-sm);
-}
-
-.resources-queue-item progress {
-    width: 100%;
-}
-
-.resources-queue-item > .resources-view-btn {
-    justify-self: start;
 }
 
 /* =========================================================
@@ -216,14 +319,16 @@
 
 .study-guides-container {
     display: grid;
-    gap: var(--space-5);
+    gap: var(--space-6);
     width: 100%;
-    max-width: 1120px;
-    padding: 2rem;
+    max-width: none;
+    padding: 0;
     color: var(--color-text);
 }
 
-/* Header */
+/* ---------------------------------------------------------
+   STUDY GUIDE HEADER
+   --------------------------------------------------------- */
 
 .study-guides-header {
     display: grid;
@@ -233,42 +338,47 @@
 .study-guides-header h2 {
     margin: 0;
     font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
 }
 
 .study-guides-header p {
     max-width: 42rem;
     margin: 0;
     color: var(--color-text-secondary);
-    line-height: 1.6;
+    line-height: var(--leading-relaxed);
 }
 
-/* Generate guide */
+/* ---------------------------------------------------------
+   GENERATE STUDY GUIDE
+   --------------------------------------------------------- */
 
 .study-guides-generate {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-6);
-    padding: var(--space-5);
+    padding: var(--space-6);
     border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
 }
 
 .study-guides-generate-info {
-    max-width: 30rem;
+    max-width: 32rem;
 }
 
 .study-guides-generate-info h3 {
     margin: 0;
-    font-size: var(--text-md);
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
 }
 
 .study-guides-generate-info p {
     margin: var(--space-2) 0 0;
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
 }
 
 .study-guides-generate-actions {
@@ -291,50 +401,80 @@
     padding: var(--space-2) var(--space-3);
     border: var(--border-width) solid var(--color-border-strong);
     border-radius: var(--radius-md);
-    background: var(--color-surface);
+    background: var(--color-field);
     color: var(--color-text);
     font-weight: var(--weight-regular);
+    transition:
+        border-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard);
+}
+
+.study-guides-generate-actions select:hover {
+    border-color: var(--color-primary);
+}
+
+.study-guides-generate-actions select:focus {
+    outline: none;
+    border-color: var(--color-focus);
+    box-shadow: var(--focus-ring);
 }
 
 .study-guides-generate-button {
     min-width: 9.5rem;
     min-height: var(--size-control);
     padding: var(--space-2) var(--space-4);
-    border: var(--border-width) solid var(--color-border-strong);
+    border: var(--border-width) solid var(--color-primary-fill);
     border-radius: var(--radius-md);
-    background: var(--color-text);
-    color: var(--color-surface);
+    background: var(--color-primary-fill);
+    color: var(--color-on-primary-fill);
     font-weight: var(--weight-semibold);
     white-space: nowrap;
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition:
+        background-color var(--duration-base) var(--ease-standard),
+        border-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard),
+        transform var(--duration-fast) var(--ease-standard);
 }
 
 .study-guides-generate-button:hover:not(:disabled) {
-    opacity: 0.88;
+    border-color: var(--color-primary-fill-hover);
+    background: var(--color-primary-fill-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.study-guides-generate-button:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .study-guides-generate-button:disabled {
-    opacity: 0.55;
+    opacity: var(--opacity-disabled);
     cursor: default;
 }
 
-/* General error */
+/* ---------------------------------------------------------
+   GENERAL ERROR
+   --------------------------------------------------------- */
 
 .study-guides-error {
     margin: 0;
     padding: var(--space-3) var(--space-4);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-text-secondary);
+    border: var(--border-width) solid color-mix(in srgb, var(--color-danger) 30%, var(--color-border));
+    border-radius: var(--radius-lg);
+    background: var(--color-danger-subtle);
+    color: var(--color-danger);
 }
 
-/* Main layout */
+/* ---------------------------------------------------------
+   STUDY GUIDE WORKSPACE
+   --------------------------------------------------------- */
 
 .study-guides-workspace {
     display: grid;
     grid-template-columns: 18rem minmax(0, 1fr);
-    gap: var(--space-4);
+    gap: var(--space-5);
     align-items: start;
 }
 
@@ -342,11 +482,14 @@
 .study-guide-viewer {
     min-width: 0;
     border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
 }
 
-/* Sidebar */
+/* ---------------------------------------------------------
+   STUDY GUIDE SIDEBAR
+   --------------------------------------------------------- */
 
 .study-guides-sidebar {
     overflow: hidden;
@@ -357,13 +500,15 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    padding: var(--space-4);
+    padding: var(--space-4) var(--space-5);
     border-bottom: var(--border-width) solid var(--color-border);
+    background: color-mix(in srgb, var(--color-surface-sunken) 45%, var(--color-surface));
 }
 
 .study-guides-sidebar-heading h3 {
     margin: 0;
-    font-size: var(--text-md);
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
 }
 
 .study-guides-sidebar-heading span {
@@ -373,15 +518,15 @@
 
 .study-guides-status {
     margin: 0;
-    padding: var(--space-4);
+    padding: var(--space-5);
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
 }
 
 .study-guides-load-error {
     display: grid;
-    gap: var(--space-2);
-    padding: var(--space-4);
+    gap: var(--space-3);
+    padding: var(--space-5);
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
 }
@@ -394,27 +539,33 @@
     justify-self: start;
 }
 
-/* Empty list */
+/* ---------------------------------------------------------
+   EMPTY GUIDE LIST
+   --------------------------------------------------------- */
 
 .study-guides-empty {
     display: grid;
-    gap: var(--space-1);
-    padding: var(--space-6) var(--space-4);
+    gap: var(--space-2);
+    padding: var(--space-8) var(--space-5);
     text-align: center;
 }
 
 .study-guides-empty h4 {
     margin: 0;
     font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
 }
 
 .study-guides-empty p {
     margin: 0;
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
+    line-height: var(--leading-normal);
 }
 
-/* Guide list */
+/* ---------------------------------------------------------
+   GUIDE LIST
+   --------------------------------------------------------- */
 
 .study-guides-list {
     display: grid;
@@ -428,22 +579,31 @@
     display: grid;
     width: 100%;
     gap: var(--space-1);
-    padding: var(--space-3);
+    padding: var(--space-3) var(--space-4);
     border: var(--border-width) solid transparent;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background: transparent;
     color: var(--color-text);
     text-align: left;
     cursor: pointer;
+    transition:
+        border-color var(--duration-base) var(--ease-standard),
+        background-color var(--duration-base) var(--ease-standard),
+        color var(--duration-base) var(--ease-standard);
 }
 
 .study-guide-card:hover {
-    background: var(--color-surface-muted);
+    background: var(--color-surface-hover);
 }
 
 .study-guide-card-active {
-    border-color: var(--color-border);
-    background: var(--color-surface-muted);
+    border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+    background: var(--color-primary-subtle);
+}
+
+.study-guide-card:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 
 .study-guide-card-title {
@@ -470,7 +630,9 @@
     font-size: var(--text-sm);
 }
 
-/* Viewer */
+/* ---------------------------------------------------------
+   GUIDE VIEWER
+   --------------------------------------------------------- */
 
 .study-guide-viewer {
     min-height: 28rem;
@@ -482,23 +644,26 @@
     align-content: center;
     justify-items: center;
     min-height: 28rem;
-    padding: var(--space-6);
+    padding: var(--space-8);
     text-align: center;
 }
 
 .study-guide-placeholder h3 {
     margin: 0;
     font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
 }
 
 .study-guide-placeholder p {
     max-width: 30rem;
     margin: var(--space-2) 0 0;
     color: var(--color-text-secondary);
-    line-height: 1.6;
+    line-height: var(--leading-relaxed);
 }
 
-/* Study guide document */
+/* ---------------------------------------------------------
+   STUDY GUIDE DOCUMENT
+   --------------------------------------------------------- */
 
 .study-guide-document {
     display: grid;
@@ -508,9 +673,10 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: var(--space-4);
+    gap: var(--space-5);
     padding: var(--space-6);
     border-bottom: var(--border-width) solid var(--color-border);
+    background: color-mix(in srgb, var(--color-surface-sunken) 35%, var(--color-surface));
 }
 
 .study-guide-document-heading {
@@ -522,10 +688,13 @@
 .study-guide-document-header h3 {
     margin: 0;
     font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
 }
 
 .study-guide-document-scope {
-    color: var(--color-text-secondary);
+    color: var(--color-primary);
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
 }
@@ -535,6 +704,10 @@
     color: var(--color-text-muted);
     font-size: var(--text-sm);
 }
+
+/* ---------------------------------------------------------
+   DELETE STUDY GUIDE
+   --------------------------------------------------------- */
 
 .study-guide-delete-button {
     flex-shrink: 0;
@@ -547,20 +720,26 @@
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
     cursor: pointer;
+    transition:
+        border-color var(--duration-base) var(--ease-standard),
+        background-color var(--duration-base) var(--ease-standard),
+        color var(--duration-base) var(--ease-standard);
 }
 
 .study-guide-delete-button:hover:not(:disabled) {
-    border-color: var(--color-border-strong);
-    background: var(--color-surface-muted);
-    color: var(--color-text);
+    border-color: color-mix(in srgb, var(--color-danger) 30%, var(--color-border));
+    background: var(--color-danger-subtle);
+    color: var(--color-danger);
 }
 
 .study-guide-delete-button:disabled {
-    opacity: 0.55;
+    opacity: var(--opacity-disabled);
     cursor: default;
 }
 
-/* Overview */
+/* ---------------------------------------------------------
+   GUIDE OVERVIEW
+   --------------------------------------------------------- */
 
 .study-guide-overview {
     display: grid;
@@ -572,16 +751,19 @@
 .study-guide-overview h4 {
     margin: 0;
     font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
 }
 
 .study-guide-overview > p {
     max-width: 52rem;
     margin: 0;
     color: var(--color-text-secondary);
-    line-height: 1.75;
+    line-height: var(--leading-relaxed);
 }
 
-/* Sections */
+/* ---------------------------------------------------------
+   GUIDE SECTIONS
+   --------------------------------------------------------- */
 
 .study-guide-sections {
     display: grid;
@@ -589,7 +771,7 @@
 
 .study-guide-section {
     display: grid;
-    grid-template-columns: 2rem minmax(0, 1fr);
+    grid-template-columns: 2.25rem minmax(0, 1fr);
     gap: var(--space-4);
     padding: var(--space-6);
     border-bottom: var(--border-width) solid var(--color-border);
@@ -601,15 +783,15 @@
 
 .study-guide-section-number {
     display: grid;
-    width: 2rem;
-    height: 2rem;
     place-items: center;
-    border: var(--border-width) solid var(--color-border);
-    border-radius: 50%;
-    background: var(--color-surface-muted);
-    color: var(--color-text);
+    width: 2.25rem;
+    height: 2.25rem;
+    border: var(--border-width) solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+    border-radius: var(--radius-full);
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
     font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
+    font-weight: var(--weight-bold);
 }
 
 .study-guide-section-body {
@@ -621,29 +803,35 @@
 .study-guide-section-body h4 {
     margin: 0;
     font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
 }
 
 .study-guide-section-content {
     max-width: 52rem;
     margin: 0;
     color: var(--color-text-secondary);
-    line-height: 1.75;
+    line-height: var(--leading-relaxed);
 }
 
-/* Key points */
+/* ---------------------------------------------------------
+   KEY POINTS
+   --------------------------------------------------------- */
 
 .study-guide-key-points {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-3);
     margin-top: var(--space-1);
     padding: var(--space-4);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-muted);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-sunken);
 }
 
 .study-guide-key-points h5 {
     margin: 0;
+    color: var(--color-text);
     font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
 }
 
 .study-guide-key-points ul {
@@ -655,10 +843,12 @@
 }
 
 .study-guide-key-points li {
-    line-height: 1.55;
+    line-height: var(--leading-normal);
 }
 
-/* Sources */
+/* ---------------------------------------------------------
+   SOURCES
+   --------------------------------------------------------- */
 
 .study-guide-sources {
     display: grid;
@@ -682,12 +872,16 @@
     display: inline-flex;
     align-items: center;
     min-height: 2rem;
-    padding: var(--space-1) var(--space-2);
+    padding: var(--space-1) var(--space-3);
     border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-full);
     background: var(--color-surface);
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
+    transition:
+        border-color var(--duration-base) var(--ease-standard),
+        background-color var(--duration-base) var(--ease-standard),
+        color var(--duration-base) var(--ease-standard);
 }
 
 button.study-guide-source {
@@ -695,18 +889,25 @@ button.study-guide-source {
 }
 
 button.study-guide-source:hover:not(:disabled) {
-    border-color: var(--color-border-strong);
-    color: var(--color-text);
+    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
 }
 
 button.study-guide-source:disabled {
-    opacity: 0.6;
+    opacity: var(--opacity-disabled);
     cursor: default;
 }
 
-/* Tablet */
+/* =========================================================
+   Tablet
+   ========================================================= */
 
 @media (max-width: 64rem) {
+    .search-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .study-guides-generate {
         align-items: stretch;
         flex-direction: column;
@@ -729,10 +930,35 @@ button.study-guide-source:disabled {
     }
 }
 
-/* Mobile */
+/* =========================================================
+   Mobile
+   ========================================================= */
 
 @media (max-width: 48rem) {
+    .resources-card {
+        padding: var(--space-4);
+    }
+
+    .resources-item {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: var(--space-4);
+    }
+
+    .search-filters {
+        grid-template-columns: 1fr;
+        padding: var(--space-4);
+    }
+
+    .search-result {
+        padding: var(--space-4);
+    }
+
     .study-guides-container {
+        gap: var(--space-5);
+    }
+
+    .study-guides-generate {
         padding: var(--space-4);
     }
 
@@ -743,6 +969,7 @@ button.study-guide-source:disabled {
 
     .study-guides-generate-actions label {
         width: 100%;
+        min-width: 0;
     }
 
     .study-guides-generate-button {
@@ -759,6 +986,7 @@ button.study-guide-source:disabled {
 
     .study-guide-placeholder {
         min-height: 14rem;
+        padding: var(--space-5);
     }
 
     .study-guide-document-header,
@@ -772,8 +1000,8 @@ button.study-guide-source:disabled {
     }
 
     .study-guide-section-number {
-        width: 1.75rem;
-        height: 1.75rem;
+        width: 2rem;
+        height: 2rem;
     }
 
     .study-guide-document-header {

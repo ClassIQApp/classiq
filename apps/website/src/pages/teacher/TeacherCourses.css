@@ -3,41 +3,110 @@
     text-align: left;
 }
 
+/* ---------------------------------------------------------
+   PAGE
+   --------------------------------------------------------- */
+
 .teacher-courses-page {
     width: 100%;
     color: var(--color-text);
 }
 
+/* ---------------------------------------------------------
+   PAGE HEADER
+   --------------------------------------------------------- */
+
 .teacher-courses-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: var(--space-5);
-    margin-bottom: var(--space-8);
+    gap: var(--space-8);
+    margin-bottom: var(--space-10);
+}
+
+.teacher-courses-header > div:first-child {
+    max-width: 42rem;
 }
 
 .teacher-courses-header h1 {
-    margin: var(--space-2) 0 var(--space-3);
+    margin: var(--space-1) 0 var(--space-3);
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
 }
 
-.teacher-courses-subtitle,
+.teacher-courses-subtitle {
+    max-width: 38rem;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+}
+
 .teacher-course-form-heading p,
 .teacher-course-description {
     color: var(--color-text-secondary);
 }
 
+/* ---------------------------------------------------------
+   HEADER ACTIONS
+   --------------------------------------------------------- */
+
+.teacher-courses-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding-top: var(--space-1);
+}
+
+.teacher-courses-actions button {
+    min-height: var(--size-control-lg);
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-lg);
+    font-weight: var(--weight-semibold);
+    transition:
+        transform var(--duration-fast) var(--ease-standard),
+        background-color var(--duration-base) var(--ease-standard),
+        border-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard);
+}
+
+.teacher-courses-actions button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.teacher-courses-actions button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* ---------------------------------------------------------
+   CREATE / EDIT FORM
+   --------------------------------------------------------- */
+
 .teacher-course-form-card {
-    margin-bottom: var(--space-8);
+    margin-bottom: var(--space-10);
     padding: var(--space-6);
+    border: var(--border-width) solid var(--color-border-card);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
 }
 
 .teacher-course-form-heading {
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-6);
 }
 
 .teacher-course-form-heading h2 {
     margin: var(--space-1) 0 var(--space-2);
     font-size: var(--text-lg);
+}
+
+.teacher-course-form-heading p {
+    margin: 0;
+    line-height: var(--leading-normal);
 }
 
 .teacher-course-form {
@@ -57,66 +126,147 @@
     gap: var(--space-3);
 }
 
+/* ---------------------------------------------------------
+   COURSE LIST
+   --------------------------------------------------------- */
+
 .teacher-course-list-section {
     display: grid;
-    gap: var(--space-4);
+    gap: var(--space-5);
 }
 
 .teacher-course-list-heading {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
+    padding: 0 var(--space-1);
 }
 
 .teacher-course-list-heading h2 {
+    margin: 0;
     font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
 }
 
 .teacher-course-list-heading p {
+    margin: 0;
     color: var(--color-text-muted);
     font-size: var(--text-sm);
 }
 
+/* ---------------------------------------------------------
+   COURSE GRID
+   --------------------------------------------------------- */
+
 .teacher-course-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-4);
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
+/* ---------------------------------------------------------
+   COURSE CARD
+   --------------------------------------------------------- */
+
 .teacher-course-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: var(--space-5);
+    gap: var(--space-6);
     min-width: 0;
-    padding: var(--space-5);
+    min-height: 12.5rem;
+    padding: var(--space-6);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    transition:
+        border-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard),
+        transform var(--duration-base) var(--ease-standard);
 }
+
+.teacher-course-card:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 32%, var(--color-border));
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.teacher-course-card:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-md), var(--focus-ring);
+}
+
+/* ---------------------------------------------------------
+   COURSE INFORMATION
+   --------------------------------------------------------- */
 
 .teacher-course-code {
     display: inline-flex;
-    margin-bottom: var(--space-2);
-    color: var(--color-text-secondary);
+    align-items: center;
+    margin-bottom: var(--space-3);
+    color: var(--color-primary);
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
     font-variant-numeric: tabular-nums;
 }
 
 .teacher-course-card h3 {
-    margin-bottom: var(--space-2);
-    font-size: var(--text-lg);
+    margin: 0 0 var(--space-2);
+    color: var(--color-text);
+    font-size: 1.2rem;
+    font-weight: var(--weight-semibold);
     line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
 }
 
 .teacher-course-description {
+    margin: 0;
     line-height: var(--leading-normal);
 }
+
+/* ---------------------------------------------------------
+   ROLE BADGE
+   --------------------------------------------------------- */
+
+.course-role-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.4rem;
+    margin-left: var(--space-2);
+    padding: 0 var(--space-2);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-full);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    vertical-align: middle;
+}
+
+.course-role-teacher {
+    border-color: color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+}
+
+.course-role-member {
+    background: var(--color-neutral-subtle);
+    color: var(--color-neutral);
+}
+
+/* ---------------------------------------------------------
+   CARD FOOTER
+   --------------------------------------------------------- */
 
 .teacher-course-card-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--space-4);
     padding-top: var(--space-4);
     border-top: var(--border-width) solid var(--color-border);
     color: var(--color-text-muted);
@@ -126,74 +276,83 @@
 .teacher-course-card-actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-2);
 }
+
+/* ---------------------------------------------------------
+   COURSE SETTINGS BUTTON
+   --------------------------------------------------------- */
+
+.teacher-course-settings-btn {
+    min-height: var(--size-control);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+    border: var(--border-width) solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-medium);
+    transition:
+        background-color var(--duration-base) var(--ease-standard),
+        color var(--duration-base) var(--ease-standard);
+}
+
+.teacher-course-settings-btn:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+}
+
+/* ---------------------------------------------------------
+   OPEN COURSE BUTTON
+   --------------------------------------------------------- */
+
+.teacher-course-card .teacher-course-primary-btn {
+    min-height: var(--size-control);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    font-weight: var(--weight-semibold);
+    transition:
+        transform var(--duration-fast) var(--ease-standard),
+        background-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard);
+}
+
+.teacher-course-card .teacher-course-primary-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ---------------------------------------------------------
+   EMPTY / ERROR STATE
+   --------------------------------------------------------- */
 
 .teacher-course-empty,
 .teacher-course-error {
     display: grid;
     justify-items: center;
     gap: var(--space-3);
-    padding: var(--space-10) var(--space-5);
+    padding: var(--space-12) var(--space-6);
     border: var(--border-width) dashed var(--color-border-strong);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
+    background: color-mix(in srgb, var(--color-surface) 55%, transparent);
     color: var(--color-text-secondary);
     text-align: center;
 }
 
-.teacher-course-settings-btn {
-    padding: 0 var(--space-3);
-    border-color: transparent;
-    background: transparent;
-    color: var(--color-text-secondary);
-}
-
-.teacher-course-settings-btn:hover:not(:disabled) {
-    border-color: transparent;
-    background: var(--color-surface-hover);
-    color: var(--color-text);
-}
-
-.course-role-badge {
-    margin-left: var(--space-2);
-}
-
-.course-role-teacher {
-    background: var(--color-neutral-subtle);
-    color: var(--color-neutral);
-}
-
-.course-role-member {
-    background: var(--color-neutral-subtle);
-    color: var(--color-neutral);
-}
-
-@media (max-width: 48rem) {
-    .teacher-courses-header {
-        flex-direction: column;
-    }
-
-    .teacher-course-form-grid,
-    .teacher-course-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .teacher-course-card-footer {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-}
-
-.teacher-courses-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-3);
-}
+/* ---------------------------------------------------------
+   JOIN CODE
+   --------------------------------------------------------- */
 
 .teacher-course-form-card .teacher-course-form-card {
     margin: 0;
     padding: 0;
     border: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 .teacher-join-code-section {
@@ -234,6 +393,10 @@
     letter-spacing: var(--tracking-code);
 }
 
+/* ---------------------------------------------------------
+   JOIN COURSE DIALOG
+   --------------------------------------------------------- */
+
 .teacher-join-dialog-backdrop {
     position: fixed;
     inset: 0;
@@ -242,6 +405,7 @@
     place-items: center;
     padding: var(--space-4);
     background: var(--color-backdrop);
+    backdrop-filter: blur(3px);
 }
 
 .teacher-join-dialog {
@@ -258,13 +422,15 @@
 }
 
 .teacher-join-dialog h2 {
-    margin-bottom: calc(var(--space-3) * -1);
+    margin: 0 0 calc(var(--space-2) * -1);
     font-size: var(--text-lg);
 }
 
 .teacher-join-dialog > p {
+    margin: 0;
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
+    line-height: var(--leading-normal);
 }
 
 .teacher-join-code-input {
@@ -274,4 +440,59 @@
 
 .teacher-join-dialog-actions {
     justify-content: flex-end;
+}
+
+/* ---------------------------------------------------------
+   TABLET
+   --------------------------------------------------------- */
+
+@media (max-width: 64rem) {
+    .teacher-courses-header {
+        gap: var(--space-5);
+    }
+
+    .teacher-course-grid {
+        gap: var(--space-4);
+    }
+
+    .teacher-course-card {
+        padding: var(--space-5);
+    }
+}
+
+/* ---------------------------------------------------------
+   MOBILE
+   --------------------------------------------------------- */
+
+@media (max-width: 48rem) {
+    .teacher-courses-header {
+        flex-direction: column;
+        margin-bottom: var(--space-8);
+    }
+
+    .teacher-courses-actions {
+        width: 100%;
+    }
+
+    .teacher-courses-actions button {
+        flex: 1;
+    }
+
+    .teacher-course-form-grid,
+    .teacher-course-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .teacher-course-card {
+        min-height: auto;
+    }
+
+    .teacher-course-card-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .teacher-course-card-actions {
+        width: 100%;
+    }
 }

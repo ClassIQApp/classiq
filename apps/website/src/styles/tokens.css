@@ -1,89 +1,123 @@
 :root {
     color-scheme: light dark;
+    /* ---------------------------------------------------------
+       CLASSIQ BRAND
+       --------------------------------------------------------- */
 
-    --pine-950: #172724;
-    --pine-800: #26473e;
-    --pine-700: #2f554b;
-    --pine-600: #3c695c;
-    --pine-500: #416759;
-    --pine-450: #4b7465;
-    --pine-300: #a5b6b0;
-    --pine-100: #c3ceca;
-    --mint-400: #8eccae;
-    --mint-300: #9ad5b3;
-    --mint-50: #e6efea;
+    --pine-950: #0d2923;
+    --pine-800: #15483d;
+    --pine-700: #1d5c4e;
+    --pine-600: #287363;
+    --pine-500: #368675;
+    --pine-450: #4a9987;
+    --pine-300: #a7d3c5;
+    --pine-100: #d7ebe4;
+    --mint-400: #65cfa5;
+    --mint-300: #88ddb9;
+    --mint-50: #edf9f4;
+    /* ---------------------------------------------------------
+       LIGHT NEUTRALS
+       --------------------------------------------------------- */
 
     --white: #ffffff;
     --black: #000000;
-    --sheet: #fffefb;
-    --paper: #f6f4ee;
-    --paper-sunken: #eeebe3;
-    --stone-200: #e3ded3;
-    --stone-300: #d4cdbf;
-    --stone-500: #8a8274;
-    --ink-900: #1b2420;
-    --ink-700: #47524c;
-    --ink-500: #5c6660;
+    --sheet: #ffffff;
+    --paper: #f5f7f6;
+    --paper-sunken: #edf1ef;
+    --stone-200: #e3e9e6;
+    --stone-300: #d5ded9;
+    --stone-500: #85928c;
+    --ink-900: #17211d;
+    --ink-700: #46534d;
+    --ink-500: #6b7771;
+    /* ---------------------------------------------------------
+       DARK MODE
+       --------------------------------------------------------- */
 
-    --forest-900: #17211d;
-    --night-950: #0a0e0c;
-    --night-900: #111513;
-    --night-850: #131715;
-    --night-800: #1b211f;
-    --night-750: #232a27;
-    --night-700: #2a332f;
-    --night-650: #2e3532;
-    --night-600: #3d4743;
-    --night-500: #818c87;
-    --mist-450: #929b97;
-    --mist-400: #9ba4a0;
-    --mist-300: #c1c9c6;
-    --mist-100: #f6f8f6;
+    --forest-900: #10201b;
+    --night-950: #090e0c;
+    --night-900: #0f1512;
+    --night-850: #121916;
+    --night-800: #18211d;
+    --night-750: #1d2823;
+    --night-700: #25312c;
+    --night-650: #303c36;
+    --night-600: #3b4943;
+    --night-500: #87938e;
+    --mist-450: #929d98;
+    --mist-400: #a0aaa5;
+    --mist-300: #c5ceca;
+    --mist-100: #f5f8f6;
+    /* ---------------------------------------------------------
+       STATUS COLORS
+       --------------------------------------------------------- */
 
-    --green-700: #416746;
-    --green-300: #93c9a4;
-    --green-50: #e7f0e7;
-    --amber-700: #7b5c33;
-    --amber-400: #d4aa6b;
-    --amber-50: #f8f0e1;
-    --blue-700: #3e608a;
-    --blue-300: #94b2d9;
-    --blue-50: #e7edf4;
-    --red-700: #944739;
-    --red-500: #c96b5b;
-    --red-300: #dfa397;
-    --red-50: #f4e7e4;
+    --green-700: #34734d;
+    --green-300: #91d0a7;
+    --green-50: #eaf6ee;
+    --amber-700: #8a6528;
+    --amber-400: #deb363;
+    --amber-50: #fff6e6;
+    --blue-700: #376da1;
+    --blue-300: #91b9df;
+    --blue-50: #edf5fc;
+    --red-700: #9a4138;
+    --red-500: #d45e52;
+    --red-300: #e69c94;
+    --red-50: #fcecea;
+    /* ---------------------------------------------------------
+       SURFACES
+       --------------------------------------------------------- */
 
     --color-bg: light-dark(var(--paper), var(--night-950));
     --color-surface: light-dark(var(--sheet), var(--night-800));
-    --color-surface-raised: light-dark(var(--sheet), var(--night-750));
-    --color-surface-overlay: light-dark(var(--sheet), var(--night-700));
+    --color-surface-raised: light-dark(var(--white), var(--night-750));
+    --color-surface-overlay: light-dark(var(--white), var(--night-700));
     --color-surface-sunken: light-dark(var(--paper-sunken), var(--night-850));
-    --color-surface-hover: light-dark(color-mix(in srgb, var(--ink-900) 4%, transparent), var(--night-750));
-    --color-field: light-dark(var(--sheet), var(--night-900));
+    --color-surface-hover: light-dark(color-mix(in srgb, var(--pine-700) 5%, transparent), var(--night-750));
+    --color-field: light-dark(var(--white), var(--night-900));
+    /* ---------------------------------------------------------
+       BORDERS
+       --------------------------------------------------------- */
+
     --color-border: light-dark(var(--stone-200), var(--night-650));
     --color-border-card: light-dark(var(--stone-300), var(--night-600));
     --color-border-strong: light-dark(var(--stone-500), var(--night-500));
+    /* ---------------------------------------------------------
+       TEXT
+       --------------------------------------------------------- */
 
     --color-text: light-dark(var(--ink-900), var(--mist-100));
     --color-text-secondary: light-dark(var(--ink-700), var(--mist-300));
     --color-text-muted: light-dark(var(--ink-500), var(--mist-400));
+    /* ---------------------------------------------------------
+       PRIMARY BRAND COLOR
+       --------------------------------------------------------- */
 
     --color-primary: light-dark(var(--pine-700), var(--mint-400));
     --color-primary-hover: light-dark(var(--pine-800), var(--mint-300));
-    --color-on-primary: light-dark(var(--sheet), var(--pine-950));
+    --color-on-primary: light-dark(var(--white), var(--pine-950));
     --color-primary-fill: light-dark(var(--pine-700), var(--pine-500));
     --color-primary-fill-hover: light-dark(var(--pine-800), var(--pine-450));
-    --color-on-primary-fill: var(--sheet);
-    --color-primary-subtle: light-dark(var(--mint-50), color-mix(in srgb, var(--mint-400) 14%, var(--night-800)));
+    --color-on-primary-fill: var(--white);
+    --color-primary-subtle: light-dark(var(--mint-50), color-mix(in srgb, var(--mint-400) 13%, var(--night-800)));
+    /* ---------------------------------------------------------
+       DISABLED
+       --------------------------------------------------------- */
 
     --color-disabled: light-dark(var(--paper-sunken), var(--night-750));
     --color-on-disabled: light-dark(var(--ink-500), var(--mist-450));
     --color-disabled-border: light-dark(var(--stone-300), var(--night-600));
+    /* ---------------------------------------------------------
+       FOCUS / SELECTION
+       --------------------------------------------------------- */
 
     --color-focus: light-dark(var(--pine-600), var(--mint-300));
-    --color-focus-ring: color-mix(in srgb, var(--color-focus) 28%, transparent);
-    --color-selection: light-dark(var(--mint-50), color-mix(in srgb, var(--mint-400) 30%, transparent));
+    --color-focus-ring: color-mix(in srgb, var(--color-focus) 25%, transparent);
+    --color-selection: light-dark(var(--mint-50), color-mix(in srgb, var(--mint-400) 28%, transparent));
+    /* ---------------------------------------------------------
+       FEEDBACK
+       --------------------------------------------------------- */
 
     --color-success: light-dark(var(--green-700), var(--green-300));
     --color-success-subtle: light-dark(var(--green-50), color-mix(in srgb, var(--green-300) 14%, var(--night-800)));
@@ -93,57 +127,64 @@
     --color-info-subtle: light-dark(var(--blue-50), color-mix(in srgb, var(--blue-300) 14%, var(--night-800)));
     --color-danger: light-dark(var(--red-700), var(--red-300));
     --color-danger-subtle: light-dark(var(--red-50), color-mix(in srgb, var(--red-300) 14%, var(--night-800)));
-    --color-on-danger: light-dark(var(--sheet), var(--night-950));
+    --color-on-danger: light-dark(var(--white), var(--night-950));
     --color-neutral: var(--color-text-secondary);
     --color-neutral-subtle: var(--color-surface-sunken);
     --color-live: var(--red-500);
-
     --color-accent: var(--color-warning);
     --color-accent-subtle: var(--color-warning-subtle);
+    /* ---------------------------------------------------------
+       APP CHROME / SIDEBAR
+       --------------------------------------------------------- */
 
     --color-chrome: light-dark(var(--pine-950), var(--forest-900));
-    --color-chrome-text: var(--pine-100);
+    --color-chrome-text: #c1d5ce;
     --color-chrome-text-strong: var(--white);
-    --color-chrome-text-muted: var(--pine-300);
+    --color-chrome-text-muted: #91aaa1;
     --color-chrome-hover: color-mix(in srgb, var(--white) 7%, transparent);
     --color-chrome-active: color-mix(in srgb, var(--mint-300) 14%, transparent);
-    --color-chrome-active-text: var(--mint-300);
+    --color-chrome-active-text: #b8ebd5;
     --color-chrome-indicator: var(--mint-300);
-    --color-chrome-border: color-mix(in srgb, var(--white) 15%, transparent);
+    --color-chrome-border: color-mix(in srgb, var(--white) 11%, transparent);
+    /* ---------------------------------------------------------
+       LECTURE / VIDEO
+       --------------------------------------------------------- */
 
     --color-stage: light-dark(var(--pine-800), var(--night-950));
     --color-stage-text: var(--white);
     --color-stage-text-muted: var(--pine-100);
-    --color-caption: color-mix(in srgb, var(--black) 78%, transparent);
+    --color-caption: color-mix(in srgb, var(--black) 80%, transparent);
     --color-caption-text: var(--white);
-    --color-backdrop: light-dark(color-mix(in srgb, var(--black) 50%, transparent), color-mix(in srgb, var(--black) 65%, transparent));
+    --color-backdrop: light-dark(color-mix(in srgb, var(--black) 48%, transparent), color-mix(in srgb, var(--black) 68%, transparent));
+    /* ---------------------------------------------------------
+       TYPOGRAPHY
+       --------------------------------------------------------- */
 
-    --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-sans: "Inter Variable", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
     --font-serif: var(--font-display);
-
-    --text-2xs: 0.75rem;
+    --text-2xs: 0.6875rem;
     --text-xs: 0.75rem;
     --text-sm: 0.875rem;
     --text-base: 1rem;
     --text-lg: 1.125rem;
     --text-xl: 1.5rem;
     --text-2xl: 2rem;
-
     --weight-regular: 400;
     --weight-medium: 500;
     --weight-semibold: 600;
     --weight-bold: 700;
-
     --leading-tight: 1.15;
     --leading-snug: 1.3;
     --leading-normal: 1.5;
     --leading-relaxed: 1.7;
-
-    --tracking-tight: -0.011em;
-    --tracking-display: -0.02em;
+    --tracking-tight: -0.015em;
+    --tracking-display: -0.025em;
     --tracking-caps: 0.06em;
-    --tracking-code: 0.12em;
+    --tracking-code: 0.1em;
+    /* ---------------------------------------------------------
+       SPACING
+       --------------------------------------------------------- */
 
     --space-0-5: 0.125rem;
     --space-1: 0.25rem;
@@ -157,6 +198,9 @@
     --space-10: 2.5rem;
     --space-12: 3rem;
     --space-16: 4rem;
+    /* ---------------------------------------------------------
+       CONTROL SIZES
+       --------------------------------------------------------- */
 
     --size-dot: 0.5rem;
     --size-glyph-sm: 1rem;
@@ -164,48 +208,64 @@
     --size-icon: 1.5rem;
     --size-control-sm: 2rem;
     --size-control: 2.5rem;
-    --size-control-lg: 2.75rem;
-    --size-logo: 2.75rem;
+    --size-control-lg: 2.875rem;
+    --size-logo: 2.625rem;
     --size-logo-lg: 12rem;
+    /* ---------------------------------------------------------
+       LAYOUT
+       --------------------------------------------------------- */
 
-    --layout-sidebar: 15.5rem;
-    --layout-sidebar-compact: 13rem;
+    --layout-sidebar: 15rem;
+    --layout-sidebar-compact: 12.75rem;
     --layout-sidebar-rail: 4.5rem;
-    --layout-header: 4.5rem;
+    --layout-header: 4.25rem;
     --layout-header-compact: 4rem;
-    --layout-content: 75rem;
-    --layout-prose: 40rem;
+    --layout-content: 78rem;
+    --layout-prose: 42rem;
     --layout-aside: 20rem;
     --layout-panel: 25rem;
     --layout-stage: 14rem;
-    --layout-auth-card: 26rem;
+    --layout-auth-card: 27rem;
     --layout-media: 32rem;
+    /* ---------------------------------------------------------
+       BORDERS / RADIUS
+       --------------------------------------------------------- */
 
     --border-width: 0.0625rem;
     --border-width-thick: 0.125rem;
     --border-width-accent: 0.1875rem;
-
-    --radius-sm: 0.25rem;
-    --radius-md: 0.375rem;
-    --radius-lg: 0.625rem;
-    --radius-xl: 0.875rem;
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
     --radius-full: calc(infinity * 1rem);
+    /* ---------------------------------------------------------
+       SHADOWS
+       --------------------------------------------------------- */
 
-    --shadow-color: light-dark(color-mix(in srgb, var(--ink-900) 14%, transparent), color-mix(in srgb, var(--black) 55%, transparent));
-    --shadow-color-soft: light-dark(color-mix(in srgb, var(--ink-900) 6%, transparent), color-mix(in srgb, var(--black) 35%, transparent));
-    --shadow-sm: 0 0.0625rem 0.125rem var(--shadow-color-soft);
-    --shadow-md: 0 0.0625rem 0.125rem var(--shadow-color-soft), 0 0.75rem 1.75rem -1rem var(--shadow-color);
-    --shadow-lg: 0 0.0625rem 0.125rem var(--shadow-color-soft), 0 1.75rem 3.5rem -1.5rem var(--shadow-color);
+    --shadow-color: light-dark(color-mix(in srgb, var(--ink-900) 12%, transparent), color-mix(in srgb, var(--black) 58%, transparent));
+    --shadow-color-soft: light-dark(color-mix(in srgb, var(--ink-900) 5%, transparent), color-mix(in srgb, var(--black) 34%, transparent));
+    --shadow-sm: 0 1px 2px var(--shadow-color-soft);
+    --shadow-md: 0 1px 2px var(--shadow-color-soft), 0 8px 24px -12px var(--shadow-color);
+    --shadow-lg: 0 2px 4px var(--shadow-color-soft), 0 20px 44px -20px var(--shadow-color);
+    /* ---------------------------------------------------------
+       FOCUS
+       --------------------------------------------------------- */
 
     --focus-width: 0.125rem;
     --focus-offset: 0.125rem;
     --focus-ring: 0 0 0 0.1875rem var(--color-focus-ring);
+    /* ---------------------------------------------------------
+       INTERACTION
+       --------------------------------------------------------- */
 
     --opacity-disabled: 0.5;
-
     --duration-fast: 120ms;
-    --duration-base: 160ms;
+    --duration-base: 180ms;
     --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+    /* ---------------------------------------------------------
+       Z INDEX
+       --------------------------------------------------------- */
 
     --z-sidebar: 10;
     --z-overlay: 100;
