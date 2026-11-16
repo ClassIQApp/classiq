@@ -2,7 +2,6 @@
     --sidebar-width: var(--layout-sidebar);
     --header-height: var(--layout-header);
     --content-padding: var(--space-8);
-
     display: grid;
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
     height: 100vh;
@@ -11,39 +10,55 @@
     background: var(--color-bg);
 }
 
+/* ---------------------------------------------------------
+   SIDEBAR
+   --------------------------------------------------------- */
+
 .sidebar {
+    position: relative;
     min-height: 0;
-    padding: var(--space-6) var(--space-4);
     display: flex;
     flex-direction: column;
+    padding: var(--space-5) var(--space-3) var(--space-4);
     overflow-y: auto;
     overscroll-behavior: contain;
     background: var(--color-chrome);
     color: var(--color-chrome-text-strong);
+    border-right: var(--border-width) solid var(--color-chrome-border);
     --color-focus: var(--color-chrome-active-text);
 }
+
+/* ---------------------------------------------------------
+   BRAND
+   --------------------------------------------------------- */
 
 .brand {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: 0 var(--space-2) var(--space-8);
+    min-height: 4rem;
+    padding: 0 var(--space-3) var(--space-5);
 }
 
 .sidebar-logo {
     width: var(--size-logo);
     height: var(--size-logo);
-    object-fit: contain;
     flex-shrink: 0;
+    object-fit: contain;
 }
 
 .brand-title {
+    color: var(--color-chrome-text-strong);
     font-family: var(--font-display);
-    font-size: var(--text-xl);
+    font-size: 1.35rem;
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-display);
-    color: var(--color-chrome-text-strong);
+    line-height: 1;
 }
+
+/* ---------------------------------------------------------
+   NAVIGATION
+   --------------------------------------------------------- */
 
 .side-nav {
     display: flex;
@@ -52,14 +67,15 @@
 }
 
 .nav-item {
+    position: relative;
     width: 100%;
-    min-height: var(--size-control);
+    min-height: 2.75rem;
     display: flex;
     align-items: center;
     gap: var(--space-3);
     padding: 0 var(--space-3);
     border: 0;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background: transparent;
     color: var(--color-chrome-text);
     text-align: left;
@@ -68,7 +84,8 @@
     cursor: pointer;
     transition:
         background-color var(--duration-base) var(--ease-standard),
-        color var(--duration-base) var(--ease-standard);
+        color var(--duration-base) var(--ease-standard),
+        transform var(--duration-fast) var(--ease-standard);
 }
 
 .nav-item:hover {
@@ -76,21 +93,40 @@
     color: var(--color-chrome-text-strong);
 }
 
+.nav-item:active {
+    transform: scale(0.985);
+}
+
 .nav-item.active {
     background: var(--color-chrome-active);
     color: var(--color-chrome-active-text);
-    box-shadow: inset var(--border-width-thick) 0 0 var(--color-chrome-indicator);
+    font-weight: var(--weight-semibold);
+    box-shadow: none;
+}
+
+.nav-item.active::before {
+    position: absolute;
+    left: 0;
+    width: 0.2rem;
+    height: 1.4rem;
+    border-radius: 0 var(--radius-full) var(--radius-full) 0;
+    background: var(--color-chrome-indicator);
+    content: "";
 }
 
 .nav-icon {
-    width: var(--size-glyph);
-    height: var(--size-glyph);
+    width: 1.2rem;
+    height: 1.2rem;
     flex-shrink: 0;
 }
 
+/* ---------------------------------------------------------
+   SIDEBAR FOOTER
+   --------------------------------------------------------- */
+
 .sidebar-footer {
     margin-top: auto;
-    padding: 0 var(--space-2) var(--space-2);
+    padding: var(--space-5) var(--space-3) var(--space-2);
     color: var(--color-chrome-text-muted);
     font-size: var(--text-xs);
     line-height: var(--leading-normal);
@@ -106,21 +142,32 @@
     background: var(--color-chrome-border);
 }
 
+/* ---------------------------------------------------------
+   MAIN APP AREA
+   --------------------------------------------------------- */
+
 .app-area {
-    display: grid;
-    grid-template-rows: var(--header-height) minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
+    display: grid;
+    grid-template-rows: var(--header-height) minmax(0, 1fr);
+    background: var(--color-bg);
 }
+
+/* ---------------------------------------------------------
+   TOP HEADER
+   --------------------------------------------------------- */
 
 .main-header {
     height: var(--header-height);
-    padding: 0 var(--space-6);
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    background: var(--color-bg);
+    padding: 0 var(--space-8);
+    background: color-mix(in srgb, var(--color-surface) 92%, transparent);
     border-bottom: var(--border-width) solid var(--color-border);
+    backdrop-filter: blur(10px);
+    z-index: 5;
 }
 
 .header-right {
@@ -129,13 +176,29 @@
     gap: var(--space-3);
 }
 
+/* ---------------------------------------------------------
+   MODE LABEL
+   --------------------------------------------------------- */
+
 .mode-label {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    min-height: var(--size-control-sm);
+    padding: 0 var(--space-3);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
+    box-shadow: var(--shadow-sm);
+}
+
+.mode-icon {
+    width: var(--size-glyph);
+    height: var(--size-glyph);
+    color: var(--color-primary);
 }
 
 .header-divider {
@@ -144,10 +207,9 @@
     background: var(--color-border);
 }
 
-.mode-icon {
-    width: var(--size-glyph);
-    height: var(--size-glyph);
-}
+/* ---------------------------------------------------------
+   PROFILE
+   --------------------------------------------------------- */
 
 .profile {
     display: flex;
@@ -155,21 +217,27 @@
 }
 
 .avatar {
-    width: var(--size-control-sm);
-    height: var(--size-control-sm);
+    width: 2.35rem;
+    height: 2.35rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: var(--border-width) solid color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
     border-radius: var(--radius-full);
-    background: var(--color-primary-fill);
-    color: var(--color-on-primary-fill);
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
     font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
+    font-weight: var(--weight-bold);
+    box-shadow: var(--shadow-sm);
 }
 
+/* ---------------------------------------------------------
+   PAGE CONTENT
+   --------------------------------------------------------- */
+
 .main-content {
-    align-content: start;
     min-height: 0;
+    align-content: start;
     padding: var(--content-padding);
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -178,17 +246,56 @@
 }
 
 .main-content > * {
+    width: 100%;
     max-width: var(--layout-content);
     margin-left: auto;
     margin-right: auto;
 }
+
+/* ---------------------------------------------------------
+   SCROLLBAR
+   --------------------------------------------------------- */
+
+.sidebar,
+.main-content {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-text-muted) 35%, transparent) transparent;
+}
+
+.sidebar::-webkit-scrollbar,
+.main-content::-webkit-scrollbar {
+    width: 0.45rem;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.main-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.main-content::-webkit-scrollbar-thumb {
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--color-text-muted) 30%, transparent);
+}
+
+/* ---------------------------------------------------------
+   TABLET
+   --------------------------------------------------------- */
 
 @media (max-width: 64rem) {
     .app-shell {
         --sidebar-width: var(--layout-sidebar-compact);
         --content-padding: var(--space-6);
     }
+
+    .main-header {
+        padding: 0 var(--space-6);
+    }
 }
+
+/* ---------------------------------------------------------
+   MOBILE / SIDEBAR RAIL
+   --------------------------------------------------------- */
 
 @media (max-width: 48rem) {
     .app-shell {
@@ -198,12 +305,18 @@
     }
 
     .sidebar {
-        padding: var(--space-5) var(--space-2);
+        padding: var(--space-4) var(--space-2);
     }
 
     .brand {
         justify-content: center;
-        padding: 0 0 var(--space-6);
+        min-height: auto;
+        padding: var(--space-1) 0 var(--space-5);
+    }
+
+    .sidebar-logo {
+        width: 2.4rem;
+        height: 2.4rem;
     }
 
     .brand-title,
@@ -213,16 +326,31 @@
     }
 
     .nav-item {
+        min-height: 2.75rem;
         justify-content: center;
         padding: 0;
     }
 
+    .nav-item.active::before {
+        left: -0.5rem;
+    }
+
+    .nav-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
     .main-header {
-        padding: 0 var(--space-3);
+        padding: 0 var(--space-4);
     }
 
     .mode-label,
     .header-divider {
         display: none;
+    }
+
+    .avatar {
+        width: 2.2rem;
+        height: 2.2rem;
     }
 }

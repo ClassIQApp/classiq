@@ -16,22 +16,24 @@ export default function TopBar({ role, onLogout, user, loggingOut }: TopBarProps
 
     const ModeIcon = role === "teacher" ? ChalkboardTeacherIcon : GraduationCapIcon;
 
+    const displayName = user?.name || user?.email || "";
+
     const labelByRole = {
         teacher: t("topbar.instructorMode"),
         student: t("topbar.studentMode"),
-        account: user?.name || user?.email,
+        account: displayName,
     };
 
-    const avatarByRole = {
+    const fallbackInitialByRole = {
         teacher: "T",
         student: "S",
-        account: (user?.name || user?.email || "").slice(0, 1).toUpperCase(),
+        account: "",
     };
+
+    const avatarInitial = displayName.trim().slice(0, 1).toUpperCase() || fallbackInitialByRole[role];
 
     return (
         <header className="main-header">
-            <div></div>
-
             <div className="header-right">
                 <span className="mode-label">
                     {role !== "account" && <ModeIcon className="mode-icon" aria-hidden />}
@@ -39,13 +41,15 @@ export default function TopBar({ role, onLogout, user, loggingOut }: TopBarProps
                     {labelByRole[role]}
                 </span>
 
-                <div className="header-divider" />
+                <div className="header-divider" aria-hidden />
 
                 <div className="profile">
-                    <div className="avatar">{avatarByRole[role]}</div>
+                    <div className="avatar" aria-hidden>
+                        {avatarInitial}
+                    </div>
                 </div>
 
-                <button className="logout-button" onClick={onLogout} disabled={loggingOut}>
+                <button type="button" className="logout-button" onClick={onLogout} disabled={loggingOut}>
                     {loggingOut ? t("topbar.loggingOut") : t("topbar.logout")}
                 </button>
             </div>

@@ -3,104 +3,141 @@
     text-align: left;
 }
 
+/* ---------------------------------------------------------
+   PAGE
+   --------------------------------------------------------- */
+
 .account-settings-page {
     width: 100%;
     color: var(--color-text);
     text-align: left;
 }
 
+/* ---------------------------------------------------------
+   BACK BUTTON
+   --------------------------------------------------------- */
+
 .settings-back-button {
     display: inline-flex;
     align-items: center;
     width: fit-content;
-    margin-bottom: 1.5rem;
-    padding: 0;
+    margin-bottom: var(--space-6);
+    padding: var(--space-2) var(--space-3);
     border: 0;
+    border-radius: var(--radius-md);
     background: transparent;
     color: var(--color-text-secondary);
     font: inherit;
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     cursor: pointer;
+    transition:
+        background-color var(--duration-base) var(--ease-standard),
+        color var(--duration-base) var(--ease-standard);
 }
 
 .settings-back-button:hover {
-    color: var(--color-text);
+    background: var(--color-surface-hover);
+    color: var(--color-primary);
 }
 
 .settings-back-button:focus-visible {
-    outline: 2px solid var(--color-border-strong);
-    outline-offset: 4px;
-    border-radius: 4px;
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 
+/* ---------------------------------------------------------
+   HEADER
+   --------------------------------------------------------- */
+
 .account-settings-header {
-    max-width: 880px;
-    margin-bottom: 2.75rem;
+    max-width: 46rem;
+    margin-bottom: var(--space-10);
     text-align: left;
 }
 
 .account-settings-eyebrow {
-    margin: 0 0 0.4rem;
-    color: var(--color-text-secondary);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    margin: 0 0 var(--space-2);
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
 }
 
 .account-settings-header h1 {
     margin: 0;
-    font-size: 2rem;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-display);
     text-align: left;
 }
 
 .account-settings-description {
-    margin: 0.6rem 0 0;
+    max-width: 42rem;
+    margin: var(--space-3) 0 0;
     color: var(--color-text-secondary);
-    line-height: 1.6;
+    line-height: var(--leading-relaxed);
     text-align: left;
 }
 
+/* ---------------------------------------------------------
+   SETTINGS LIST
+   --------------------------------------------------------- */
+
 .account-settings-list {
     display: grid;
-    gap: 3rem;
+    gap: var(--space-10);
     width: 100%;
-    max-width: 880px;
+    max-width: 58rem;
 }
+
+/* ---------------------------------------------------------
+   SECTION
+   --------------------------------------------------------- */
 
 .account-settings-section {
     display: grid;
-    gap: 1rem;
+    gap: var(--space-5);
 }
 
 .account-settings-section-title {
-    padding-bottom: 0.65rem;
-    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-3);
+    border-bottom: var(--border-width) solid var(--color-border);
 }
 
 .account-settings-section-title h2 {
     margin: 0;
-    color: var(--color-text-secondary);
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-caps);
     text-align: left;
     text-transform: uppercase;
 }
 
+/* ---------------------------------------------------------
+   FORM
+   --------------------------------------------------------- */
+
 .account-settings-form {
     display: grid;
-    gap: 1.5rem;
+    gap: var(--space-6);
 }
+
+/* ---------------------------------------------------------
+   SETTING ROW
+   --------------------------------------------------------- */
 
 .account-setting-row,
 .account-password-fields {
     display: grid;
-    grid-template-columns: minmax(180px, 1fr) minmax(320px, 1.4fr);
-    gap: 3rem;
+    grid-template-columns: minmax(12rem, 1fr) minmax(20rem, 1.5fr);
+    gap: var(--space-10);
     align-items: start;
-    padding: 0.5rem 0;
+    padding: var(--space-5) 0;
 }
 
 .account-setting-copy {
@@ -109,119 +146,181 @@
 
 .account-setting-copy h3 {
     margin: 0;
-    font-size: 1rem;
-    font-weight: 650;
+    color: var(--color-text);
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
 }
 
 .account-setting-copy p {
-    margin: 0.35rem 0 0;
+    max-width: 22rem;
+    margin: var(--space-2) 0 0;
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
 }
+
+/* ---------------------------------------------------------
+   NAME / EMAIL / PASSWORD FIELDS
+   --------------------------------------------------------- */
 
 .account-name-fields {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+    gap: var(--space-3);
 }
 
 .account-email-field,
 .account-password-form {
     display: grid;
-    gap: 0.9rem;
+    gap: var(--space-4);
 }
+
+/* ---------------------------------------------------------
+   LABELS
+   --------------------------------------------------------- */
 
 .account-settings-form label {
     display: grid;
-    gap: 0.4rem;
+    gap: var(--space-2);
+    color: var(--color-text);
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
 }
+
+/* ---------------------------------------------------------
+   INPUTS
+   --------------------------------------------------------- */
 
 .account-settings-form input {
     width: 100%;
     min-width: 0;
-    min-height: 40px;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--color-border-strong);
-    border-radius: 8px;
-    background: var(--color-surface);
+    min-height: var(--size-control-lg);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-field);
     color: var(--color-text);
     font: inherit;
-    font-weight: 400;
+    font-weight: var(--weight-regular);
+    transition:
+        border-color var(--duration-base) var(--ease-standard),
+        background-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard);
+}
+
+.account-settings-form input:hover:not(:disabled) {
+    border-color: var(--color-primary);
 }
 
 .account-settings-form input:focus {
-    outline: 2px solid var(--color-border-strong);
-    outline-offset: 2px;
+    outline: none;
+    border-color: var(--color-focus);
+    box-shadow: var(--focus-ring);
 }
 
 .account-settings-form input:disabled {
-    background: var(--color-surface-muted);
-    color: var(--color-text-secondary);
-    opacity: 0.8;
+    border-color: var(--color-disabled-border);
+    background: var(--color-disabled);
+    color: var(--color-on-disabled);
+    opacity: 1;
     cursor: not-allowed;
 }
 
 .account-settings-form small {
-    color: var(--color-text-secondary);
-    font-size: 0.78rem;
-    font-weight: 400;
-    line-height: 1.4;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-regular);
+    line-height: var(--leading-normal);
 }
+
+/* ---------------------------------------------------------
+   STATUS MESSAGES
+   --------------------------------------------------------- */
 
 .account-settings-message {
     margin: 0;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-lg);
     font-size: var(--text-sm);
+    line-height: var(--leading-normal);
 }
 
 .account-settings-error {
-    background: var(--color-surface-muted);
-    color: var(--color-text);
+    border-color: color-mix(in srgb, var(--color-danger) 30%, var(--color-border));
+    background: var(--color-danger-subtle);
+    color: var(--color-danger);
 }
 
 .account-settings-success {
-    background: var(--color-surface-muted);
-    color: var(--color-text);
+    border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-border));
+    background: var(--color-success-subtle);
+    color: var(--color-success);
 }
+
+/* ---------------------------------------------------------
+   ACTIONS
+   --------------------------------------------------------- */
 
 .account-settings-actions {
     display: flex;
     justify-content: flex-end;
-    padding-top: 0.25rem;
+    padding-top: var(--space-1);
 }
 
 .account-settings-actions button {
-    min-height: 40px;
-    padding: 0.5rem 1rem;
-    border: 1px solid #173b32;
-    border-radius: 8px;
-    background: #173b32;
-    color: white;
+    min-height: var(--size-control-lg);
+    padding: var(--space-2) var(--space-5);
+    border: var(--border-width) solid var(--color-primary-fill);
+    border-radius: var(--radius-md);
+    background: var(--color-primary-fill);
+    color: var(--color-on-primary-fill);
     font: inherit;
     font-size: var(--text-sm);
-    font-weight: 650;
+    font-weight: var(--weight-semibold);
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition:
+        background-color var(--duration-base) var(--ease-standard),
+        border-color var(--duration-base) var(--ease-standard),
+        box-shadow var(--duration-base) var(--ease-standard),
+        transform var(--duration-fast) var(--ease-standard);
 }
 
 .account-settings-actions button:hover:not(:disabled) {
-    opacity: 0.9;
+    border-color: var(--color-primary-fill-hover);
+    background: var(--color-primary-fill-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.account-settings-actions button:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .account-settings-actions button:disabled {
-    opacity: 0.55;
+    opacity: var(--opacity-disabled);
     cursor: default;
 }
 
+/* ---------------------------------------------------------
+   MOBILE
+   --------------------------------------------------------- */
+
 @media (max-width: 48rem) {
+    .account-settings-header {
+        margin-bottom: var(--space-8);
+    }
+
+    .account-settings-list {
+        gap: var(--space-8);
+    }
+
     .account-setting-row,
     .account-password-fields {
         grid-template-columns: 1fr;
-        gap: 1rem;
+        gap: var(--space-4);
+        padding: var(--space-3) 0;
     }
 
     .account-name-fields {
