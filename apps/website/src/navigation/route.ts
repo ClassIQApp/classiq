@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 
-export type CourseSection = "lectures" | "resources" | "study-guides" | "search" | "chat";
+export type CourseSection = "lectures" | "resources" | "study-guides" | "quizzes" | "search" | "chat";
 
 export type AppRoute =
     | { name: "courses" }
@@ -24,7 +24,7 @@ export interface NavigateOptions {
     replace?: boolean;
 }
 
-const courseSections: ReadonlySet<string> = new Set<CourseSection>(["lectures", "resources", "study-guides", "search", "chat"]);
+const courseSections: ReadonlySet<string> = new Set<CourseSection>(["lectures", "resources", "study-guides", "quizzes", "search", "chat"]);
 
 const NAVIGATION_EVENT = "classiq:navigate";
 

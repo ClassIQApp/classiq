@@ -3,6 +3,7 @@ import { useCourse, useCourses, useForgetUnavailableCourse } from "../../api/cou
 import CourseWorkspace from "../../components/courses/course-workspace";
 import type { CourseRoute } from "../../components/courses/course-workspace";
 import "../teacher/TeacherCourses.css";
+import "./course-quizzes.css";
 import "./course-resources.css";
 import "./courses.css";
 import "./lecture-study.css";
