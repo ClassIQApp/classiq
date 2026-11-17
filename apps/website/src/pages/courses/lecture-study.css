@@ -388,6 +388,102 @@
     color: var(--color-primary);
 }
 
+.lecture-search {
+    display: flex;
+    flex: 1 1 18rem;
+    align-items: center;
+    gap: var(--space-1);
+    max-width: 28rem;
+    min-width: 0;
+}
+
+.lecture-search-field {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+    color: var(--color-text-muted);
+}
+
+.lecture-search-field > svg {
+    position: absolute;
+    left: var(--space-3);
+    pointer-events: none;
+}
+
+.lecture-search-field input {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--size-control-sm);
+    padding: 0 var(--space-8) 0 var(--space-8);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-field);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+}
+
+.lecture-search-field input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.lecture-search-field input:focus-visible {
+    border-color: var(--color-focus);
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.lecture-search-field .lecture-search-icon {
+    position: absolute;
+    right: var(--space-0-5);
+}
+
+.lecture-search-count {
+    min-width: 4.5rem;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.lecture-search-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--size-control-sm);
+    height: var(--size-control-sm);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.lecture-search-icon:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+}
+
+.lecture-search-icon:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+}
+
+.lecture-match {
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-warning) 26%, transparent);
+    color: inherit;
+}
+
+.lecture-match.is-active {
+    background: color-mix(in srgb, var(--color-warning) 52%, transparent);
+    box-shadow: 0 0 0 var(--border-width-thick) var(--color-warning);
+}
+
 .lecture-segmented {
     display: inline-flex;
     padding: var(--space-0-5);
