@@ -6,6 +6,7 @@ import PendingInvitations from "./components/invitations/PendingInvitations";
 import AppShell from "./components/layout/AppShell";
 import type { NavItem } from "./components/layout/Sidebar";
 import "./components/lectures/lecture-upload-form.css";
+import "./components/lectures/saved-moments.css";
 import "./index.css";
 import { useRoute } from "./navigation/route";
 import CoursePage from "./pages/courses/course-page";

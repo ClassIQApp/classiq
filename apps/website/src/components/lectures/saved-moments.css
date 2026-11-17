@@ -1,0 +1,174 @@
+.moment-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding-top: var(--space-2);
+}
+
+.moment-save-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--size-control-sm);
+    padding: 0 var(--space-3);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+.moment-save-button:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
+}
+
+.moment-save-button:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+}
+
+.moment-list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.moment-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+}
+
+.moment-note {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+}
+
+.moment-note-empty {
+    color: var(--color-text-muted);
+}
+
+.moment-error {
+    color: var(--color-danger);
+}
+
+.moment-actions {
+    display: flex;
+    gap: var(--space-0-5);
+}
+
+.moment-icon-button,
+.moment-paragraph-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--size-control-sm);
+    height: var(--size-control-sm);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.moment-icon-button:hover,
+.moment-paragraph-button:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-primary);
+}
+
+.moment-icon-button-danger:hover {
+    background: var(--color-danger-subtle);
+    color: var(--color-danger);
+}
+
+.moment-note-form {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--space-2);
+}
+
+.moment-note-form input {
+    min-width: 0;
+    min-height: var(--size-control-sm);
+    padding: 0 var(--space-2);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-field);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+}
+
+.moment-action {
+    min-height: var(--size-control-sm);
+    padding: 0 var(--space-3);
+    border: var(--border-width) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+}
+
+.moment-action-primary {
+    border-color: var(--color-primary-fill);
+    background: var(--color-primary-fill);
+    color: var(--color-on-primary-fill);
+}
+
+.moment-action:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+}
+
+.lecture-paragraph:has(.moment-paragraph-button) {
+    position: relative;
+}
+
+.moment-paragraph-button {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+}
+
+@media (hover: hover) {
+    .moment-paragraph-button {
+        opacity: 0;
+    }
+
+    .lecture-paragraph:hover .moment-paragraph-button,
+    .moment-paragraph-button:focus-visible {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 45rem) {
+    .moment-item {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .moment-actions {
+        grid-column: 1 / -1;
+        justify-self: end;
+    }
+
+    .moment-note-form {
+        grid-column: 1 / -1;
+    }
+}
