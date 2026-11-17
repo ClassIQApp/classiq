@@ -46,7 +46,7 @@ export function extractResourceStage(
         if (context.deadline.getTime() <= Date.now()) {
             throw new PermanentStageError("PROCESSING_TIMEOUT", "Resource processing timed out. Try again.");
         }
-        const source = await indexer.index(input, () => storage.read(asset));
+        const source = await indexer.index(input, asset.contentType, () => storage.read(asset));
         if (source.status !== "indexed") {
             throw new PermanentStageError("RESOURCE_EXTRACTION_FAILED", source.statusMessage);
         }

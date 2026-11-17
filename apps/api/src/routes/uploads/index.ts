@@ -8,6 +8,7 @@ import {
     type UploadRepository,
     type UploadStorage,
 } from "../../core/uploads/model.ts";
+import { MAX_RESOURCE_BYTES, resourceContentTypes } from "../../core/uploads/resource-formats.ts";
 import { Hono, type Env, type MiddlewareHandler } from "hono";
 import { z } from "zod";
 
@@ -35,12 +36,8 @@ const recordingInput = baseInput
 
 const resourceInput = baseInput
     .extend({
-        contentType: z.literal("application/pdf"),
-        contentLength: z
-            .number()
-            .int()
-            .positive()
-            .max(25 * 1024 ** 2),
+        contentType: z.enum(resourceContentTypes),
+        contentLength: z.number().int().positive().max(MAX_RESOURCE_BYTES),
         lectureId: id.optional(),
     })
     .strict();

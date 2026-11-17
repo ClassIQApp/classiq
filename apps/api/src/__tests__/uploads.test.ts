@@ -193,6 +193,19 @@ describe("authorized upload router", () => {
         expect(repository.initiate).toHaveBeenCalledWith("resource", "1", expect.objectContaining({ lectureId: "2" }), undefined);
     });
 
+    it.each([
+        ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", 201],
+        ["application/vnd.openxmlformats-officedocument.presentationml.presentation", 201],
+        ["application/msword", 400],
+        ["application/zip", 400],
+    ])("accepts only supported resource types: %s", async (contentType, status) => {
+        const { request } = fixture();
+
+        const response = await request("1/resources/upload", { name: "notes", contentType, contentLength: 1024 });
+
+        expect(response.status).toBe(status);
+    });
+
     it("checks parent isolation, request IDs and ticket identity", async () => {
         const { request, storage, repository } = fixture();
 

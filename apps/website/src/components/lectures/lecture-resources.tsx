@@ -2,10 +2,18 @@ import { useAuth } from "../../api/auth/provider";
 import { displayError } from "../../api/lectures/processing";
 import type { LectureContentLink } from "../../api/lectures/types";
 import { createResourcesApi, resourceIndexingNote, resourceQueryKey } from "../../api/resources/client";
+import { resourceFormatLabels, resourceFormatOfContentType } from "../../api/resources/resource-formats";
+import type { ResourceFormat } from "../../api/resources/resource-formats";
 import { openInNewTab } from "../courses/open-in-new-tab";
-import { FilePdfIcon } from "@phosphor-icons/react";
+import { FileDocIcon, FilePdfIcon, FilePptIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+const resourceIcons: Record<ResourceFormat, typeof FilePdfIcon> = {
+    pdf: FilePdfIcon,
+    docx: FileDocIcon,
+    pptx: FilePptIcon,
+};
 
 interface LectureResourcesProps {
     accountId: string;
@@ -45,11 +53,11 @@ export default function LectureResources({ accountId, courseId, lectureId, legac
             const outcome = await openInNewTab(() => api.download(courseId, resourceId, signal), signal);
 
             if (outcome === "blocked") {
-                setError("Allow popups and try opening the PDF again.");
+                setError("Allow popups and try opening the file again.");
             }
         } catch (error_) {
             if (!signal.aborted) {
-                setError(error_ instanceof Error ? displayError(error_) : "Couldn't open this PDF. Try again for a fresh link.");
+                setError(error_ instanceof Error ? displayError(error_) : "Couldn't open this file. Try again for a fresh link.");
             }
         } finally {
             if (!signal.aborted) {
@@ -75,25 +83,32 @@ export default function LectureResources({ accountId, courseId, lectureId, legac
             )}
             {error && <p role="alert">{error}</p>}
             <ul className="lecture-resource-list" role="list">
-                {attached.map((resource) => (
-                    <li key={resource.id}>
-                        <button
-                            type="button"
-                            className="lecture-resource"
-                            disabled={opening !== null}
-                            onClick={() => void open(resource.id)}
-                        >
-                            <FilePdfIcon size={24} aria-hidden />
-                            <span>
-                                <strong>{resource.name}</strong>
+                {attached.map((resource) => {
+                    const format = resourceFormatOfContentType(resource.contentType);
+                    const ResourceIcon = resourceIcons[format];
+
+                    return (
+                        <li key={resource.id}>
+                            <button
+                                type="button"
+                                className="lecture-resource"
+                                disabled={opening !== null}
+                                onClick={() => void open(resource.id)}
+                            >
+                                <ResourceIcon size={24} aria-hidden />
                                 <span>
-                                    {opening === resource.id ? "Opening…" : `PDF · ${Math.ceil(resource.contentLength / 1024)} KB`}
-                                    {resourceIndexingNote(resource) ? ` · ${resourceIndexingNote(resource)}` : ""}
+                                    <strong>{resource.name}</strong>
+                                    <span>
+                                        {opening === resource.id
+                                            ? "Opening…"
+                                            : `${resourceFormatLabels[format]} · ${Math.ceil(resource.contentLength / 1024)} KB`}
+                                        {resourceIndexingNote(resource) ? ` · ${resourceIndexingNote(resource)}` : ""}
+                                    </span>
                                 </span>
-                            </span>
-                        </button>
-                    </li>
-                ))}
+                            </button>
+                        </li>
+                    );
+                })}
                 {legacyLinks.map((link) => (
                     <li key={link.id}>
                         <a className="lecture-resource" href={link.href} target="_blank" rel="noreferrer">

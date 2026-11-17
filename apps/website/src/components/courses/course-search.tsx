@@ -59,7 +59,7 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
     en: {
         ariaLabel: "Course search",
         title: "Search this course",
-        description: "Find passages in lecture transcripts and PDF resources shared with this course.",
+        description: "Find passages in lecture transcripts and documents shared with this course.",
 
         search: "Search",
         placeholder: "e.g. activation energy",
@@ -70,8 +70,8 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
         lecture: "Lecture",
         allLectures: "All lectures",
 
-        resourceSingular: "PDF resource",
-        resourcePlural: "PDF resources",
+        resourceSingular: "Document",
+        resourcePlural: "Documents",
 
         transcriptSingular: "Lecture transcript",
         transcriptPlural: "Lecture transcripts",
@@ -88,21 +88,21 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
         page: (page) => `Page ${page}`,
 
         opening: "Opening…",
-        openPdf: "Open PDF",
-        openPdfAt: (location) => `Open PDF at ${location}`,
+        openPdf: "Open file",
+        openPdfAt: (location) => `Open file at ${location}`,
 
         openLecture: "Open lecture",
         openLectureAt: (location) => `Open lecture at ${location}`,
 
-        popupBlocked: "Allow popups and try opening the PDF again.",
+        popupBlocked: "Allow popups and try opening the file again.",
 
-        openPdfFailed: "Could not open this PDF. Try again for a fresh link.",
+        openPdfFailed: "Could not open this file. Try again for a fresh link.",
     },
 
     es: {
         ariaLabel: "Búsqueda del curso",
         title: "Buscar en este curso",
-        description: "Busca contenido en las transcripciones de las clases y los recursos PDF compartidos con este curso.",
+        description: "Busca contenido en las transcripciones de las clases y los documentos compartidos con este curso.",
 
         search: "Buscar",
         placeholder: "p. ej. energía de activación",
@@ -113,8 +113,8 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
         lecture: "Clase",
         allLectures: "Todas las clases",
 
-        resourceSingular: "Recurso PDF",
-        resourcePlural: "Recursos PDF",
+        resourceSingular: "Documento",
+        resourcePlural: "Documentos",
 
         transcriptSingular: "Transcripción de clase",
         transcriptPlural: "Transcripciones de clases",
@@ -135,23 +135,23 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
 
         opening: "Abriendo…",
 
-        openPdf: "Abrir PDF",
+        openPdf: "Abrir archivo",
 
-        openPdfAt: (location) => `Abrir PDF en ${location}`,
+        openPdfAt: (location) => `Abrir archivo en ${location}`,
 
         openLecture: "Abrir clase",
 
         openLectureAt: (location) => `Abrir clase en ${location}`,
 
-        popupBlocked: "Permite las ventanas emergentes e intenta abrir el PDF nuevamente.",
+        popupBlocked: "Permite las ventanas emergentes e intenta abrir el archivo nuevamente.",
 
-        openPdfFailed: "No se pudo abrir este PDF. Inténtalo de nuevo.",
+        openPdfFailed: "No se pudo abrir este archivo. Inténtalo de nuevo.",
     },
 
     ar: {
         ariaLabel: "البحث في المقرر",
         title: "البحث في هذا المقرر",
-        description: "ابحث في نصوص المحاضرات وملفات PDF المشتركة مع هذا المقرر.",
+        description: "ابحث في نصوص المحاضرات والمستندات المشتركة مع هذا المقرر.",
 
         search: "بحث",
         placeholder: "مثال: طاقة التنشيط",
@@ -162,8 +162,8 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
         lecture: "المحاضرة",
         allLectures: "كل المحاضرات",
 
-        resourceSingular: "مصدر PDF",
-        resourcePlural: "مصادر PDF",
+        resourceSingular: "مستند",
+        resourcePlural: "مستندات",
 
         transcriptSingular: "نص المحاضرة",
         transcriptPlural: "نصوص المحاضرات",
@@ -184,23 +184,23 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
 
         opening: "جارٍ الفتح…",
 
-        openPdf: "فتح PDF",
+        openPdf: "فتح الملف",
 
-        openPdfAt: (location) => `فتح PDF عند ${location}`,
+        openPdfAt: (location) => `فتح الملف عند ${location}`,
 
         openLecture: "فتح المحاضرة",
 
         openLectureAt: (location) => `فتح المحاضرة عند ${location}`,
 
-        popupBlocked: "اسمح بالنوافذ المنبثقة ثم حاول فتح ملف PDF مرة أخرى.",
+        popupBlocked: "اسمح بالنوافذ المنبثقة ثم حاول فتح الملف مرة أخرى.",
 
-        openPdfFailed: "تعذر فتح ملف PDF. حاول مرة أخرى.",
+        openPdfFailed: "تعذر فتح الملف. حاول مرة أخرى.",
     },
 
     de: {
         ariaLabel: "Kurssuche",
         title: "Diesen Kurs durchsuchen",
-        description: "Suche in Vorlesungstranskripten und PDF-Materialien, die mit diesem Kurs geteilt wurden.",
+        description: "Suche in Vorlesungstranskripten und Dokumenten, die mit diesem Kurs geteilt wurden.",
 
         search: "Suchen",
         placeholder: "z. B. Aktivierungsenergie",
@@ -211,8 +211,8 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
         lecture: "Vorlesung",
         allLectures: "Alle Vorlesungen",
 
-        resourceSingular: "PDF-Material",
-        resourcePlural: "PDF-Materialien",
+        resourceSingular: "Dokument",
+        resourcePlural: "Dokumente",
 
         transcriptSingular: "Vorlesungstranskript",
         transcriptPlural: "Vorlesungstranskripte",
@@ -233,23 +233,23 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
 
         opening: "Wird geöffnet…",
 
-        openPdf: "PDF öffnen",
+        openPdf: "Datei öffnen",
 
-        openPdfAt: (location) => `PDF bei ${location} öffnen`,
+        openPdfAt: (location) => `Datei bei ${location} öffnen`,
 
         openLecture: "Vorlesung öffnen",
 
         openLectureAt: (location) => `Vorlesung bei ${location} öffnen`,
 
-        popupBlocked: "Erlaube Pop-ups und versuche erneut, die PDF-Datei zu öffnen.",
+        popupBlocked: "Erlaube Pop-ups und versuche erneut, die Datei zu öffnen.",
 
-        openPdfFailed: "Diese PDF-Datei konnte nicht geöffnet werden. Versuche es erneut.",
+        openPdfFailed: "Diese Datei konnte nicht geöffnet werden. Versuche es erneut.",
     },
 
     fr: {
         ariaLabel: "Recherche dans le cours",
         title: "Rechercher dans ce cours",
-        description: "Recherchez des passages dans les transcriptions des cours et les ressources PDF partagées avec ce cours.",
+        description: "Recherchez des passages dans les transcriptions des cours et les documents partagés avec ce cours.",
 
         search: "Recherche",
         placeholder: "ex. énergie d’activation",
@@ -260,8 +260,8 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
         lecture: "Cours",
         allLectures: "Tous les cours",
 
-        resourceSingular: "Ressource PDF",
-        resourcePlural: "Ressources PDF",
+        resourceSingular: "Document",
+        resourcePlural: "Documents",
 
         transcriptSingular: "Transcription de cours",
         transcriptPlural: "Transcriptions de cours",
@@ -282,17 +282,17 @@ const messagesByLanguage: Record<InterfaceLanguage, SearchMessages> = {
 
         opening: "Ouverture…",
 
-        openPdf: "Ouvrir le PDF",
+        openPdf: "Ouvrir le fichier",
 
-        openPdfAt: (location) => `Ouvrir le PDF à ${location}`,
+        openPdfAt: (location) => `Ouvrir le fichier à ${location}`,
 
         openLecture: "Ouvrir le cours",
 
         openLectureAt: (location) => `Ouvrir le cours à ${location}`,
 
-        popupBlocked: "Autorisez les fenêtres contextuelles puis essayez d’ouvrir le PDF à nouveau.",
+        popupBlocked: "Autorisez les fenêtres contextuelles puis essayez d’ouvrir le fichier à nouveau.",
 
-        openPdfFailed: "Impossible d’ouvrir ce PDF. Réessayez.",
+        openPdfFailed: "Impossible d’ouvrir ce fichier. Réessayez.",
     },
 };
 
