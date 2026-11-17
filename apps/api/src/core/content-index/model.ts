@@ -55,12 +55,14 @@ export interface ContentSource {
     readonly indexedAt?: string;
 }
 
+export const MAX_SEARCH_RESULTS = 50;
+
 export const contentSearchQuerySchema = z.strictObject({
     courseId: id,
     text: z.string().check(z.trim(), z.minLength(1), z.maxLength(500)),
     lectureId: z.optional(id),
     kinds: z.optional(z.array(contentSourceKindSchema).check(z.minLength(1))),
-    limit: z._default(z.int().check(z.minimum(1), z.maximum(20)), 8),
+    limit: z._default(z.int().check(z.minimum(1), z.maximum(MAX_SEARCH_RESULTS)), 8),
 });
 export type ContentSearchQuery = z.input<typeof contentSearchQuerySchema>;
 export type ParsedContentSearchQuery = z.infer<typeof contentSearchQuerySchema>;

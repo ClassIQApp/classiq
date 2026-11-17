@@ -90,7 +90,7 @@ describe("content search router", () => {
         });
     });
 
-    it.each(["", "q=", "q=enzymes&limit=abc", "q=enzymes&limit=50", "q=enzymes&kind=video", "q=enzymes&lectureId=x"])(
+    it.each(["", "q=", "q=enzymes&limit=abc", "q=enzymes&limit=51", "q=enzymes&kind=video", "q=enzymes&lectureId=x"])(
         "rejects invalid query %j",
         async (query) => {
             const { request } = fixture();

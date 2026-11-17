@@ -1,11 +1,14 @@
-import type { LlmCallOptions } from "../ai/model.ts";
 import type { ContentIndexService } from "../content-index/content-index-service.ts";
 import { QaError } from "./errors.ts";
 import { questionRequestSchema, type CourseAnswer, type QuestionRequest } from "./model.ts";
-import { NO_EVIDENCE_ANSWER, type QuestionAnswerer } from "./question-answerer.ts";
+import { NO_EVIDENCE_ANSWER, type AnswerOptions, type QuestionAnswerer } from "./question-answerer.ts";
 import { toSearchQuery } from "./search-query.ts";
 
 const RETRIEVED_PASSAGES = 8;
+
+export interface AskOptions extends AnswerOptions {
+    readonly maxPassages?: number;
+}
 
 export class QuestionService {
     private readonly content: Pick<ContentIndexService, "search">;
@@ -16,7 +19,8 @@ export class QuestionService {
         this.answerer = answerer;
     }
 
-    async ask(request: QuestionRequest, options: LlmCallOptions = {}): Promise<CourseAnswer> {
+    async ask(request: QuestionRequest, options: AskOptions = {}): Promise<CourseAnswer> {
+        const { maxPassages = RETRIEVED_PASSAGES, ...answerOptions } = options;
         const parsed = questionRequestSchema.safeParse(request);
 
         if (!parsed.success) {
@@ -31,14 +35,14 @@ export class QuestionService {
                 : await this.content.search({
                       courseId,
                       text,
-                      limit: RETRIEVED_PASSAGES,
+                      limit: maxPassages,
                       ...(lectureId === undefined ? {} : { lectureId }),
                   });
 
         if (passages.length === 0) {
-            return { answerable: false, answer: NO_EVIDENCE_ANSWER, sources: [] };
+            return { answerable: false, answer: NO_EVIDENCE_ANSWER, sources: [], context: { passages: 0, characters: 0 } };
         }
 
-        return this.answerer.answer(question, passages, options);
+        return this.answerer.answer(question, passages, answerOptions);
     }
 }

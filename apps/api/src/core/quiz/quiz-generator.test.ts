@@ -85,6 +85,27 @@ describe("QuizGenerator", () => {
         expect(user).toContain("[S2] notes.pdf (page 4)");
     });
 
+    it("generates an ungrounded baseline from a topic without requiring sources", async () => {
+        const { generator, llm } = fixture([question({ sourceIds: [] }), question({ prompt: "What binds active sites?", sourceIds: [] })]);
+
+        const quiz = await generator.generate([], 2, { topic: "Enzyme catalysis" });
+
+        expect(quiz.questions).toHaveLength(2);
+        expect(quiz.questions[0]!.sources).toEqual([]);
+
+        const [request] = llm.generateStructured.mock.calls[0]!;
+
+        expect(request.messages[1]!.content).toContain("Topic: Enzyme catalysis");
+        expect(request.messages[0]!.content).toContain("empty list");
+    });
+
+    it("still rejects uncited questions when passages are supplied, and needs a topic without them", async () => {
+        const { generator } = fixture([question({ sourceIds: [] }), question({ prompt: "Another?", sourceIds: [] })]);
+
+        await expect(generator.generate(passages, 2)).rejects.toBeInstanceOf(QuizError);
+        await expect(generator.generate([], 2)).rejects.toMatchObject({ code: "no_content" });
+    });
+
     it("shuffles choices while keeping the correct answer", async () => {
         const keys = [0.9, 0.1, 0.5, 0.3];
         const { generator } = fixture([question()], () => keys.shift()!);
