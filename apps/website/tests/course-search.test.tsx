@@ -98,7 +98,7 @@ test("ranked results show the source, location, snippet, and an action", () => {
     assert.match(markup, /enzyme-notes\.pdf/);
     assert.match(markup, /PDF resource · Page 3 · Enzymes/);
     assert.match(markup, /biological catalysts that lower activation energy/);
-    assert.match(markup, /Open PDF at page 3/);
+    assert.match(markup, /Open PDF at Page 3/);
     assert.match(markup, /Lecture transcript · 12:34/);
     assert.match(markup, /Open lecture at 12:34/);
     assert.ok(markup.indexOf("enzyme-notes.pdf") < markup.indexOf("not consumed by the reaction"));
@@ -112,7 +112,7 @@ test("opening a PDF disables other result actions", () => {
     const markup = render(client, filters, "11");
 
     assert.match(markup, /disabled="">Opening…/);
-    assert.match(markup, /disabled="">Open PDF at page 5/);
+    assert.match(markup, /disabled="">Open PDF at Page 5/);
 });
 
 function failedClient() {

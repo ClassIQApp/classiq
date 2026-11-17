@@ -84,6 +84,8 @@ function fixture({
         listStudyGuides: vi.fn(async () => []),
 
         getStudyGuide: vi.fn(async (courseId: string, studyGuideId: string) => guides.get(`${courseId}/${studyGuideId}`)),
+
+        deleteStudyGuide: vi.fn(async (courseId: string, studyGuideId: string) => guides.delete(`${courseId}/${studyGuideId}`)),
     } satisfies StudyGuideRepository;
 
     const content = {

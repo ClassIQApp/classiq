@@ -80,7 +80,7 @@ export class StudyGuideGenerator {
             throw new StudyGuideError("no_content");
         }
 
-        const labeled = new Map(selected.map((passage, index) => [`S${index + 1}`, passage] as const));
+        const labeled = new Map<string, IndexedPassage>(selected.map((passage, index) => [`S${index + 1}`, passage]));
 
         const response = await this.llm.generateStructured(
             {

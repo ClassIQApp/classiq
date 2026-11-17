@@ -132,6 +132,8 @@ function fixture(
         getStudyGuide: vi.fn(async (courseId: string, studyGuideId: string) =>
             courseId === "1" && studyGuideId === "10" ? studyGuide : undefined,
         ),
+
+        deleteStudyGuide: vi.fn(async () => true),
     } satisfies StudyGuideRepository;
 
     const service = new StudyGuideService(
@@ -352,7 +354,7 @@ describe("study guide router", () => {
 
         expect(response.status).toBe(200);
 
-        const body = await response.json();
+        const body = (await response.json()) as StudyGuide;
 
         expect(body).toMatchObject({
             id: "10",
@@ -376,7 +378,7 @@ describe("study guide router", () => {
             },
         ]);
 
-        expect(body.sections[0].sources).toEqual([
+        expect(body.sections.at(0)?.sources).toEqual([
             {
                 kind: "transcript",
                 lectureId: "2",
