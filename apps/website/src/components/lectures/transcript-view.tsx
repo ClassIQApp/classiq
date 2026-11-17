@@ -1,5 +1,9 @@
 import type { SpanishTranscript, Transcript, TranscriptSegment } from "../../api/lectures/content";
 import { formatTimestamp } from "./timestamp";
+import { lineKey } from "./transcript-search";
+import type { ParagraphHighlights } from "./transcript-search";
+import TranscriptSearchBar, { HighlightedText } from "./transcript-search-bar";
+import { useTranscriptSearch } from "./use-transcript-search";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 
 type DisplayMode = "original" | "es" | "both";
@@ -38,6 +42,8 @@ interface ParagraphRowProps {
     sourceLanguage: string;
     showSpeaker: boolean;
     currentPhrase: number | null;
+    highlights: ParagraphHighlights | undefined;
+    activeMatchId: number | null;
     onSeek: (seconds: number) => void;
 }
 
@@ -112,6 +118,8 @@ const ParagraphRow = memo(function ParagraphRow({
     sourceLanguage,
     showSpeaker,
     currentPhrase,
+    highlights,
+    activeMatchId,
     onSeek,
 }: ParagraphRowProps) {
     const time = formatTimestamp(paragraph.startSeconds);
@@ -147,7 +155,11 @@ const ParagraphRow = memo(function ParagraphRow({
                                 className={classes.filter(Boolean).join(" ")}
                                 onClick={() => onSeek(phrase.startSeconds)}
                             >
-                                {primaryIsSpanish ? (phrase.translation ?? phrase.text) : phrase.text}{" "}
+                                <HighlightedText
+                                    text={primaryIsSpanish ? (phrase.translation ?? phrase.text) : phrase.text}
+                                    ranges={highlights?.get(lineKey(phrase.index, "primary"))}
+                                    activeMatchId={activeMatchId}
+                                />{" "}
                             </span>
                         );
                     })}
@@ -155,7 +167,17 @@ const ParagraphRow = memo(function ParagraphRow({
                 {mode === "both" && (
                     <p lang="es" className="lecture-paragraph-translation">
                         <span className="lecture-lang-tag lecture-lang-tag-es">ES</span>
-                        {paragraph.phrases.map((phrase) => phrase.translation ?? "").join(" ") || "Not translated."}
+                        {paragraph.phrases.some((phrase) => phrase.translation)
+                            ? paragraph.phrases.map((phrase) => (
+                                  <span key={phrase.index} onClick={() => onSeek(phrase.startSeconds)}>
+                                      <HighlightedText
+                                          text={phrase.translation ?? ""}
+                                          ranges={highlights?.get(lineKey(phrase.index, "translation"))}
+                                          activeMatchId={activeMatchId}
+                                      />{" "}
+                                  </span>
+                              ))
+                            : "Not translated."}
                     </p>
                 )}
             </div>
@@ -183,6 +205,13 @@ export default function TranscriptView({ transcript, spanish, spanishLoading, pl
     const currentParagraph = lastStartedIndex(paragraphs, playhead);
     const currentPhrase = currentParagraph >= 0 ? lastStartedIndex(paragraphs[currentParagraph]!.phrases, playhead) : -1;
     const mounted = useRef(false);
+    const search = useTranscriptSearch({ paragraphs, mode: effectiveMode, container: list });
+
+    useEffect(() => {
+        if (search.activeMatch) {
+            setFollowing(false);
+        }
+    }, [search.activeMatch]);
 
     useEffect(() => {
         // Skip the first render so opening a lecture never jumps the page to the transcript.
@@ -238,6 +267,7 @@ export default function TranscriptView({ transcript, spanish, spanishLoading, pl
                     </div>
                 )}
                 {translationNote && <p className="lecture-muted">{translationNote}</p>}
+                <TranscriptSearchBar search={search} />
                 <button type="button" className="lecture-follow" aria-pressed={following} onClick={() => setFollowing(!following)}>
                     Follow along
                 </button>
@@ -252,6 +282,8 @@ export default function TranscriptView({ transcript, spanish, spanishLoading, pl
                             sourceLanguage={sourceLanguage}
                             showSpeaker={showSpeaker}
                             currentPhrase={index === currentParagraph ? (paragraph.phrases[currentPhrase]?.index ?? null) : null}
+                            highlights={search.highlights.get(paragraph.key)}
+                            activeMatchId={search.activeMatch?.paragraphKey === paragraph.key ? search.activeMatch.id : null}
                             onSeek={onSeek}
                         />
                     ))}
