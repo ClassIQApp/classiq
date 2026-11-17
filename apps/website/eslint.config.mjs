@@ -10,7 +10,4 @@ export default [
             "turbo/no-undeclared-env-vars": ["warn", { allowList: ["^(DEV|PROD|MODE|SSR|BASE_URL)$"] }],
         },
     },
-    {
-        ignores: ["src/mock/**"],
-    },
 ];
