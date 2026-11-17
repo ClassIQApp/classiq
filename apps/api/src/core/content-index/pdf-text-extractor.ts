@@ -1,9 +1,12 @@
+import { UnreadableResourceError } from "./errors.ts";
 import type { ResourcePage } from "./model.ts";
 import { extractText, getDocumentProxy } from "unpdf";
 
 /** Extracts the text layer of each page. Scanned pages without a text layer come back empty. */
 export async function extractPdfPages(data: Uint8Array): Promise<ResourcePage[]> {
-    const pdf = await getDocumentProxy(data);
+    const pdf = await getDocumentProxy(data).catch((error: unknown) => {
+        throw new UnreadableResourceError(error instanceof Error && error.name === "PasswordException" ? "protected" : "corrupt", error);
+    });
 
     try {
         const { text } = await extractText(pdf, { mergePages: false });

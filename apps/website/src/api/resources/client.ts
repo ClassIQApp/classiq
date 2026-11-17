@@ -1,6 +1,7 @@
 import { ApiError } from "../auth/client";
 import type { ApiFetch } from "../auth/client";
 import { uploadFile } from "../files/upload-file";
+import { resourceContentType } from "./resource-formats";
 
 export interface CourseResource {
     id: string;
@@ -26,8 +27,10 @@ export function resourceIndexingNote(resource: CourseResource) {
         return undefined;
     }
 
-    if (stages.some((stage) => stage.status === "failed")) {
-        return "Not searchable yet: indexing didn't finish. The PDF is still available.";
+    const failed = stages.find((stage) => stage.status === "failed");
+
+    if (failed) {
+        return `Not searchable: ${failed.status_message || "indexing didn't finish."} The file is still available.`;
     }
 
     if (stages.some((stage) => stage.status === "pending" || stage.status === "running")) {
@@ -136,7 +139,7 @@ export function createResourcesApi(request: ApiFetch, transfer = uploadResourceF
             headers: { "Content-Type": "application/json", "Idempotency-Key": operation.key },
             body: JSON.stringify({
                 name: operation.file.name,
-                contentType: "application/pdf",
+                contentType: resourceContentType(operation.file),
                 contentLength: operation.file.size,
                 lectureId: operation.lectureId,
             }),

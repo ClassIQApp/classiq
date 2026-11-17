@@ -227,3 +227,31 @@ test("XHR sends signed headers, reports actual progress, and aborts the transfer
         }
     }
 });
+
+test("uploads declare the content type of the chosen document format", async () => {
+    const declared: string[] = [];
+    const api = createResourcesApi(
+        async (path, init) => {
+            if (path.endsWith("/complete")) {
+                return Response.json(resource);
+            }
+
+            declared.push(JSON.parse(String(init?.body)).contentType);
+
+            return Response.json(ticket);
+        },
+        async () => {},
+    );
+    const signal = new AbortController().signal;
+    const key = "d5e374cc-149c-41ad-a7ef-20b3d307ab36";
+
+    await api.upload("2", { file: new File(["x"], "Week 1.DOCX"), key }, signal, () => {});
+    await api.upload("2", { file: new File(["x"], "deck.pptx"), key }, signal, () => {});
+    await api.upload("2", { file: new File(["x"], "notes.pdf"), key }, signal, () => {});
+
+    assert.deepEqual(declared, [
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/pdf",
+    ]);
+});

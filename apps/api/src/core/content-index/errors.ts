@@ -17,3 +17,15 @@ export class ContentIndexError extends Error {
         this.code = code;
     }
 }
+
+export type UnreadableResourceReason = "protected" | "corrupt";
+
+export class UnreadableResourceError extends Error {
+    readonly reason: UnreadableResourceReason;
+
+    constructor(reason: UnreadableResourceReason, cause?: unknown) {
+        super(`The resource is ${reason}.`, { cause });
+        this.name = "UnreadableResourceError";
+        this.reason = reason;
+    }
+}
