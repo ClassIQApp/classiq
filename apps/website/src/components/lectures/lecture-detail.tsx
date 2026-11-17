@@ -1,4 +1,5 @@
 import { useAuth } from "../../api/auth/provider";
+import { useBookmarks } from "../../api/bookmarks/use-bookmarks";
 import type { CourseRole } from "../../api/courses/types";
 import type { Lecture } from "../../api/lectures/types";
 import { useLectureContent, useLectureProcessing, useRefreshOnProcessingChange, useRetryProcessing } from "../../api/lectures/use-lecture";
@@ -9,6 +10,8 @@ import LectureStatus from "./lecture-status";
 import ProcessingNotice from "./processing-notice";
 import RecordingPlayer from "./recording-player";
 import type { SeekRequest } from "./recording-player";
+import { SaveMomentButton } from "./save-moment-button";
+import SavedMoments from "./saved-moments";
 import TranscriptView from "./transcript-view";
 import { ArrowLeftIcon } from "@phosphor-icons/react";
 import { useCallback, useRef, useState } from "react";
@@ -26,6 +29,7 @@ export default function LectureDetail({ courseId, lecture, role, startSeconds, o
     const processing = useLectureProcessing(courseId, lecture.id);
     const content = useLectureContent(courseId, lecture.id);
     const retry = useRetryProcessing(courseId);
+    const bookmarks = useBookmarks(courseId, lecture.id);
     const player = useRef<HTMLDivElement>(null);
     const seekCount = useRef(0);
     const [seek, setSeek] = useState<SeekRequest | undefined>(
@@ -82,6 +86,13 @@ export default function LectureDetail({ courseId, lecture, role, startSeconds, o
                                 transcript={content.transcript.data}
                                 spanish={content.spanish.data}
                             />
+                            <div className="moment-bar">
+                                <SaveMomentButton
+                                    seconds={Math.max(0, playhead)}
+                                    pending={bookmarks.add.isPending}
+                                    onSave={bookmarks.add.mutate}
+                                />
+                            </div>
                         </div>
                         <section className="lecture-card lecture-transcript-card" aria-labelledby="lecture-transcript-heading">
                             <h2 id="lecture-transcript-heading">Transcript</h2>
@@ -92,6 +103,7 @@ export default function LectureDetail({ courseId, lecture, role, startSeconds, o
                                     spanishLoading={content.spanish.isFetching}
                                     playhead={playhead}
                                     onSeek={seekTo}
+                                    onBookmark={bookmarks.add.mutate}
                                 />
                             ) : (
                                 <OutputPlaceholder output="transcript" query={content.transcript} {...context} />
@@ -100,6 +112,7 @@ export default function LectureDetail({ courseId, lecture, role, startSeconds, o
                         </section>
                     </div>
                     <aside className="lecture-aside" aria-label="Lecture materials">
+                        <SavedMoments bookmarks={bookmarks} onSeek={seekTo} />
                         <SummarySection content={content} {...context} />
                         <KeyTermsSection content={content} onSeek={seekTo} {...context} />
                         {resources}
