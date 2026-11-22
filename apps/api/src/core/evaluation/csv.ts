@@ -50,3 +50,7 @@ export function parseCsvRecords(text: string): Record<string, string>[] {
 
     return rows.map((row) => Object.fromEntries(header.map((name, column) => [name, row[column] ?? ""])));
 }
+
+export function stringifyCsv(rows: readonly (readonly string[])[]): string {
+    return `${rows.map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(",")).join("\n")}\n`;
+}

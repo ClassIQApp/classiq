@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Scoring</title>
+        <style>
+            :root { color-scheme: light dark; --line: #8884; --accent: #2f554b; }
+            body { font: 16px/1.5 -apple-system, Helvetica, Arial, sans-serif; margin: 0; }
+            header { display: flex; gap: 12px; align-items: center; padding: 10px 20px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: Canvas; }
+            header progress { flex: 1; height: 10px; }
+            main { max-width: 900px; margin: 0 auto; padding: 20px; }
+            .meta { color: GrayText; font-size: 14px; margin-bottom: 12px; }
+            .block { border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+            .block h3 { margin: 0 0 6px; font-size: 13px; text-transform: none; color: GrayText; font-weight: 600; }
+            .block p, .block ul { margin: 0; white-space: pre-wrap; }
+            .field { display: flex; gap: 10px; align-items: center; margin: 8px 0; padding: 6px 10px; border-radius: 8px; }
+            .field.active { outline: 2px solid var(--accent); }
+            .field label { flex: 1; }
+            button { font: inherit; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: ButtonFace; color: ButtonText; cursor: pointer; }
+            button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+            textarea { width: 100%; font: inherit; min-height: 56px; }
+            .siblings li { margin: 4px 0; }
+            .hint { color: GrayText; font-size: 13px; }
+        </style>
+    </head>
+    <body>
+        <header>
+            <button id="prev">Prev</button>
+            <button id="next">Next</button>
+            <button id="nextUnscored">Next unscored</button>
+            <progress id="progress" max="1" value="0"></progress>
+            <span id="count"></span>
+        </header>
+        <main id="main"></main>
+        <script>
+            const FIELDS = {
+                qa: [
+                    { key: "correctness", label: "Correctness", options: [["correct", "c"], ["partial", "p"], ["incorrect", "i"]] },
+                    { key: "unsupported_claim", label: "Contains an unsupported claim?", options: [["yes", "y"], ["no", "n"]] },
+                    { key: "correct_decline", label: "Correctly declines to answer?", options: [["yes", "y"], ["no", "n"]], when: (item) => item.category === "unanswerable" },
+                    { key: "source_support", label: "Cited passages support the answer?", options: [["yes", "y"], ["no", "n"]], when: (item) => item.sources.trim() !== "" },
+                ],
+                quiz: [
+                    { key: "single_correct", label: "Exactly one correct choice?", options: [["yes", "y"], ["no", "n"]] },
+                    { key: "key_ok", label: "The marked answer key is correct?", options: [["yes", "y"], ["no", "n"]] },
+                    { key: "explanation_ok", label: "The explanation is accurate?", options: [["yes", "y"], ["no", "n"]] },
+                    { key: "duplicate", label: "Duplicates another question in this quiz?", options: [["yes", "y"], ["no", "n"]] },
+                    { key: "supported", label: "Supported by the reference material?", options: [["yes", "y"], ["no", "n"]] },
+                ],
+            };
+
+            let items = [];
+            let index = 0;
+
+            const fieldsOf = (item) => FIELDS[item.task].filter((field) => !field.when || field.when(item));
+            const isComplete = (item) => fieldsOf(item).every((field) => item[field.key] !== "");
+            const activeField = (item) => fieldsOf(item).find((field) => item[field.key] === "");
+            const escapeHtml = (text) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+            async function save(item, values) {
+                Object.assign(item, values);
+                await fetch("/api/score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: item.id, values }) });
+            }
+
+            function render() {
+                const item = items[index];
+                const done = items.filter(isComplete).length;
+                document.getElementById("progress").max = items.length;
+                document.getElementById("progress").value = done;
+                document.getElementById("count").textContent = `${done} of ${items.length} scored, item ${index + 1}`;
+
+                if (!item) {
+                    document.getElementById("main").textContent = "Nothing to score.";
+                    return;
+                }
+
+                const active = activeField(item);
+                const quizSiblings = item.task === "quiz" ? items.filter((other) => other.quiz_set === item.quiz_set && other.id !== item.id) : [];
+                const block = (title, text) => (text ? `<div class="block"><h3>${title}</h3><p>${escapeHtml(text)}</p></div>` : "");
+                const rows = fieldsOf(item)
+                    .map(
+                        (field) => `<div class="field ${active && active.key === field.key ? "active" : ""}"><label>${field.label}</label>${field.options
+                            .map(([value, shortcut]) => `<button data-field="${field.key}" data-value="${value}" class="${item[field.key] === value ? "on" : ""}">${value} (${shortcut})</button>`)
+                            .join("")}</div>`,
+                    )
+                    .join("");
+
+                document.getElementById("main").innerHTML = `
+                    <div class="meta">${item.id} · ${item.task === "qa" ? "Question answering" : "Quiz question"} · lecture ${escapeHtml(item.lecture)}${item.category ? " · " + escapeHtml(item.category) : ""}${item.quiz_set ? " · set " + item.quiz_set : ""}</div>
+                    ${block("Question", item.question)}
+                    ${item.task === "qa" ? block("Reference answer", item.reference) + block("Model answer", item.answer) : block("Choices", item.choices.split(" | ").join("\n")) + block("Marked key", item.correct_choice) + block("Explanation", item.explanation)}
+                    ${block("Cited sources", item.sources)}
+                    ${quizSiblings.length ? `<details class="block"><summary>Other questions in this quiz (${quizSiblings.length})</summary><ul class="siblings">${quizSiblings.map((other) => `<li>${escapeHtml(other.question)}</li>`).join("")}</ul></details>` : ""}
+                    <div class="block"><h3>Scores</h3>${rows}<p class="hint">Keys: type the letter shown in brackets to fill the highlighted row. Backspace clears the last answer. ← → move, Enter jumps to the next unscored item.</p></div>
+                    <div class="block"><h3>Notes</h3><textarea id="notes">${escapeHtml(item.notes)}</textarea></div>`;
+                document.getElementById("notes").addEventListener("change", (event) => save(item, { notes: event.target.value }));
+            }
+
+            async function choose(field, value) {
+                const item = items[index];
+                await save(item, { [field]: value });
+                render();
+
+                if (isComplete(item)) {
+                    setTimeout(() => goNextUnscored(), 250);
+                }
+            }
+
+            function goNextUnscored() {
+                const next = items.findIndex((item, position) => position > index && !isComplete(item));
+                const first = items.findIndex((item) => !isComplete(item));
+                index = next !== -1 ? next : first !== -1 ? first : index;
+                render();
+            }
+
+            document.addEventListener("click", (event) => {
+                const target = event.target.closest("button[data-field]");
+                if (target) choose(target.dataset.field, target.dataset.value);
+            });
+            document.getElementById("prev").onclick = () => { index = Math.max(0, index - 1); render(); };
+            document.getElementById("next").onclick = () => { index = Math.min(items.length - 1, index + 1); render(); };
+            document.getElementById("nextUnscored").onclick = goNextUnscored;
+            document.addEventListener("keydown", (event) => {
+                if (event.target.tagName === "TEXTAREA" || event.metaKey || event.ctrlKey) return;
+                const item = items[index];
+                if (event.key === "ArrowRight") { index = Math.min(items.length - 1, index + 1); render(); }
+                else if (event.key === "ArrowLeft") { index = Math.max(0, index - 1); render(); }
+                else if (event.key === "Enter") goNextUnscored();
+                else if (event.key === "Backspace" && item) {
+                    const filled = fieldsOf(item).filter((field) => item[field.key] !== "");
+                    const last = filled[filled.length - 1];
+                    if (last) save(item, { [last.key]: "" }).then(render);
+                } else if (item) {
+                    const field = activeField(item);
+                    const option = field && field.options.find(([, shortcut]) => shortcut === event.key.toLowerCase());
+                    if (option) choose(field.key, option[0]);
+                }
+            });
+
+            fetch("/api/items")
+                .then((response) => response.json())
+                .then((rows) => {
+                    items = rows;
+                    const first = items.findIndex((item) => !isComplete(item));
+                    index = first === -1 ? 0 : first;
+                    render();
+                });
+        </script>
+    </body>
+</html>

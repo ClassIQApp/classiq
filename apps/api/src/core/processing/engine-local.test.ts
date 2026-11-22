@@ -40,10 +40,13 @@ it.skipIf(process.env.PROCESSING_TEST_LOCAL !== "1")(
     async () => {
         const suffix = randomUUID().replaceAll("-", "");
         const schema = `engine_${suffix}`;
-        const db = new Pool({ connectionString: "postgres://classiq:classiq@localhost:5432/classiq", options: `-c search_path=${schema}` });
+        const db = new Pool({
+            connectionString: process.env.PROCESSING_TEST_DATABASE_URL ?? "postgres://classiq:classiq@localhost:5432/classiq",
+            options: `-c search_path=${schema}`,
+        });
         const sqs = new SQSClient({
             region: "us-east-1",
-            endpoint: "http://localhost:9324",
+            endpoint: process.env.PROCESSING_TEST_SQS_ENDPOINT ?? "http://localhost:9324",
             credentials: { accessKeyId: "classiq", secretAccessKey: "classiq-local" },
         });
         let queueUrl: string | undefined;

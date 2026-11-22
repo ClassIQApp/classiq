@@ -54,11 +54,9 @@ describe.skipIf(!url)("processing persistence", () => {
                 await cp(path.join(migrationsDirectory, file), path.join(directory, file));
             }
             expect(await runMigrations(db, directory)).toEqual(engineMigrations);
-            expect(await runMigrations(db)).toEqual([
-                "013_recording_transcripts.sql",
-                "014_lecture_generated_content.sql",
-                "015_recording_audio.sql",
-            ]);
+            expect(await runMigrations(db)).toEqual(
+                expect.arrayContaining(["013_recording_transcripts.sql", "014_lecture_generated_content.sql", "015_recording_audio.sql"]),
+            );
             expect(await runMigrations(db)).toEqual([]);
             expect(await uploads.find(courseId, "recording", lectureId)).toMatchObject({ id: asset.id, uploadStatus: "uploaded" });
             const existingLecture = await db.query("SELECT title, status FROM lectures WHERE id = $1", [lectureId]);

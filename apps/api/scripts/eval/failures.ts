@@ -13,7 +13,7 @@ interface Report {
     testResults: { assertionResults: Assertion[] }[];
 }
 
-const FAILURE_SCENARIOS = /fail|retr|recover|duplicate|lost|supersed|permanent|resum|restart/i;
+const FAILURE_SCENARIOS = /fail|retr|recover|duplicate|lost|supersed|supersession|deadline|permanent|resum|restart/i;
 
 const { values } = parseArgs({ options: { out: { type: "string" } } });
 

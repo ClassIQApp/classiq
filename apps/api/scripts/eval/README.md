@@ -47,6 +47,17 @@ SOURCE_DATABASE_URL=<url> pnpm --filter @classiq/api eval:timing --lecture 40 --
 - `--excerpt <start>-<end>` (seconds) also writes `wer/L1.machine.txt`, the machine transcript of that window. Correct it against the audio and save it as `wer/L1.txt`; `eval:wer` fails until that file exists, so an uncorrected draft cannot pass as a reference.
 - `eval:timing` reports every processing run of the given lectures (status, wall time, wall seconds per audio minute) and each stage's duration and attempts, which shows retries and failures at realistic lecture lengths.
 
+## Gold questions
+
+```sh
+pnpm --filter @classiq/api eval:questions template --benchmark <benchmark.json> --csv questions.csv
+pnpm --filter @classiq/api eval:questions import --benchmark <benchmark.json> --csv questions.csv
+```
+
+- `template` writes a sheet with one blank row per planned question, 4 lecture, 4 document, and 2 unanswerable for each lecture. Fill in `question`, `reference_answer`, and optionally `where_the_answer_is` in any spreadsheet tool.
+- `import` checks the rows, writes the questions into `benchmark.json`, reports lectures that are off the 4/4/2 plan, and writes `questions.lock.json` with the time of import and a hash of the questions. A row with only one of question and reference answer is rejected.
+- `eval:run` records the benchmark hash, the questions hash, the commit, and whether `src` had uncommitted changes in `run-config.json`.
+
 ## Run
 
 ```sh
@@ -64,9 +75,11 @@ pnpm --filter @classiq/api eval:failures --out failure-report.md
 - Condition B takes the whole context budget from the transcript. Condition C splits it evenly between transcript and documents.
 - `eval:export` writes `scoring.csv` with the condition hidden and shuffled ids, `key.csv` to map them back after scoring, and `summary.md` with latency, tokens, context size, and cost per task and condition.
 - `eval:wer` compares each lecture's transcript against its corrected reference excerpt.
-- `eval:failures` runs the processing tests that inject failures and reports each scenario. Set `TEST_UPLOAD_DATABASE_URL` to a real Postgres to include the database-backed ones.
+- `eval:failures` runs the processing tests that inject failures and reports each scenario. Set `TEST_UPLOAD_DATABASE_URL` to a real Postgres to include the database-backed ones. To include the queue test as well, start an ElasticMQ and set `PROCESSING_TEST_LOCAL=1`, `PROCESSING_TEST_DATABASE_URL` (a database named like `classiq` that the test can create schemas in), and `PROCESSING_TEST_SQS_ENDPOINT`.
 
 ## Score and analyze
+
+Run `pnpm --filter @classiq/api eval:score --results <directory>` and open the printed address to score one item at a time. It reads and writes only `scoring.csv` (never `key.csv`), and each key press saves immediately. Type the letter shown on a button to fill the highlighted row, Backspace to undo the last answer, the arrow keys to move, and Enter to jump to the next unscored item. Quiz questions show the other questions of the same quiz (`quiz_set`) so duplicates can be spotted without revealing the condition. You can also fill in the sheet by hand.
 
 Fill in the score columns of `scoring.csv` without opening `key.csv`. Blank cells mean not scored yet and are left out of the rates.
 

@@ -180,6 +180,11 @@ async function main(outDirectory: string) {
             {
                 startedAt: new Date().toISOString(),
                 commit: execFileSync("git", ["rev-parse", "HEAD"]).toString().trim(),
+                uncommittedSourceChanges: execFileSync("git", ["status", "--porcelain", "--", "src"]).toString().trim() !== "",
+                benchmarkSha256: createHash("sha256")
+                    .update(readFileSync(path.resolve(values.benchmark!)))
+                    .digest("hex"),
+                questionsSha256: createHash("sha256").update(JSON.stringify(benchmark.questions)).digest("hex"),
                 provider: llmConfig.provider,
                 model: llmConfig.model,
                 promptVersions: { qa: sourceHash("qa/question-answerer.ts"), quiz: sourceHash("quiz/quiz-generator.ts") },

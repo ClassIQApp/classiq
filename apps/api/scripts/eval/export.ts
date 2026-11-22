@@ -119,6 +119,12 @@ const shuffled = seededShuffle(items, benchmark.config.seed).map((item, position
     ...item,
     id: `r${String(position + 1).padStart(4, "0")}`,
 }));
+const quizSets = new Map(
+    [...new Set(shuffled.filter((item) => item.columns[0] === "quiz").map((item) => item.key))].map((key, index) => [
+        key,
+        `Q${String(index + 1).padStart(3, "0")}`,
+    ]),
+);
 const scores = [
     "correctness",
     "unsupported_claim",
@@ -147,9 +153,10 @@ writeFileSync(
             "choices",
             "correct_choice",
             "explanation",
+            "quiz_set",
             ...scores,
         ],
-        ...shuffled.map((item) => [item.id, ...item.columns, ...scores.map(() => "")]),
+        ...shuffled.map((item) => [item.id, ...item.columns, quizSets.get(item.key) ?? "", ...scores.map(() => "")]),
     ]),
 );
 writeFileSync(
