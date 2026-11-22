@@ -2,6 +2,8 @@ import { createLlmService } from "./core/ai/create-llm-service.ts";
 import { createAuth, type AuthenticatedUser, type AuthService } from "./core/auth/auth.ts";
 import { readAuthConfig, type AuthConfig } from "./core/auth/config.ts";
 import { requireSession } from "./core/auth/middleware.ts";
+import { BookmarkService } from "./core/bookmark/bookmark-service.ts";
+import { PostgresBookmarkRepository } from "./core/bookmark/postgres-bookmark-repository.ts";
 import { ChatService } from "./core/chat/chat-service.ts";
 import { PostgresChatRepository } from "./core/chat/postgres-chat-repository.ts";
 import { ContentIndexService } from "./core/content-index/content-index-service.ts";
@@ -29,6 +31,7 @@ import type { UploadAsset, UploadStorage } from "./core/uploads/model.ts";
 import { PostgresUploadRepository } from "./core/uploads/postgres-upload-repository.ts";
 import { S3UploadStorage } from "./core/uploads/s3-upload-storage.ts";
 import authRoutes from "./routes/auth/index.ts";
+import { createBookmarkRoutes } from "./routes/bookmarks/index.ts";
 import { createChatRoutes } from "./routes/chat/index.ts";
 import { createContentRoutes } from "./routes/content/index.ts";
 import courseRoutes from "./routes/courses/index.ts";
@@ -132,6 +135,7 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
     let contentIndexService: ContentIndexService | undefined;
     let processing: ProcessingService | undefined;
     let invitationService: CourseInvitationService | undefined;
+    let bookmarkService: BookmarkService | undefined;
     let chatService: ChatService | undefined;
     let questionService: QuestionService | undefined;
     let quizService: QuizService | undefined;
@@ -156,6 +160,8 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
 
     const getQuestionService = () =>
         (questionService ??= new QuestionService(getContentIndexService(), new QuestionAnswerer(getLlmService())));
+
+    const getBookmarkService = () => (bookmarkService ??= new BookmarkService(new PostgresBookmarkRepository(getDb())));
 
     const getChatService = () => (chatService ??= new ChatService(new PostgresChatRepository(getDb()), getQuestionService()));
 
@@ -294,6 +300,15 @@ export function createApp(getDb: () => Pool, options: AppOptions = {}): Hono<App
             getProcessing,
             getLlmService,
             requireCourseRole,
+        }),
+    );
+
+    app.route(
+        "/courses",
+        createBookmarkRoutes<AppEnv>({
+            requireCourseRole,
+            getUserId: (c) => c.get("user").id,
+            getService: getBookmarkService,
         }),
     );
 

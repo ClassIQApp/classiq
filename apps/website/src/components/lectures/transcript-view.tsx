@@ -1,4 +1,5 @@
 import type { SpanishTranscript, Transcript, TranscriptSegment } from "../../api/lectures/content";
+import { ParagraphBookmarkButton } from "./save-moment-button";
 import { formatTimestamp } from "./timestamp";
 import { lineKey } from "./transcript-search";
 import type { ParagraphHighlights } from "./transcript-search";
@@ -20,6 +21,7 @@ interface TranscriptViewProps {
     spanishLoading: boolean;
     playhead: number;
     onSeek: (seconds: number) => void;
+    onBookmark?: (seconds: number) => void;
 }
 
 interface Phrase {
@@ -45,6 +47,7 @@ interface ParagraphRowProps {
     highlights: ParagraphHighlights | undefined;
     activeMatchId: number | null;
     onSeek: (seconds: number) => void;
+    onBookmark?: (seconds: number) => void;
 }
 
 function groupParagraphs(source: TranscriptSegment[], spanish: TranscriptSegment[] | undefined) {
@@ -121,6 +124,7 @@ const ParagraphRow = memo(function ParagraphRow({
     highlights,
     activeMatchId,
     onSeek,
+    onBookmark,
 }: ParagraphRowProps) {
     const time = formatTimestamp(paragraph.startSeconds);
     const primaryIsSpanish = mode === "es";
@@ -181,11 +185,12 @@ const ParagraphRow = memo(function ParagraphRow({
                     </p>
                 )}
             </div>
+            {onBookmark && <ParagraphBookmarkButton seconds={paragraph.startSeconds} onSave={onBookmark} />}
         </li>
     );
 });
 
-export default function TranscriptView({ transcript, spanish, spanishLoading, playhead, onSeek }: TranscriptViewProps) {
+export default function TranscriptView({ transcript, spanish, spanishLoading, playhead, onSeek, onBookmark }: TranscriptViewProps) {
     const [mode, setMode] = useState<DisplayMode>("original");
     const [following, setFollowing] = useState(true);
     const list = useRef<HTMLOListElement>(null);
@@ -285,6 +290,7 @@ export default function TranscriptView({ transcript, spanish, spanishLoading, pl
                             highlights={search.highlights.get(paragraph.key)}
                             activeMatchId={search.activeMatch?.paragraphKey === paragraph.key ? search.activeMatch.id : null}
                             onSeek={onSeek}
+                            onBookmark={onBookmark}
                         />
                     ))}
                 </ol>
