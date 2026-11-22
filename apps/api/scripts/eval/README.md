@@ -58,6 +58,8 @@ pnpm --filter @classiq/api eval:questions import --benchmark <benchmark.json> --
 - `import` checks the rows, writes the questions into `benchmark.json`, reports lectures that are off the 4/4/2 plan, and writes `questions.lock.json` with the time of import and a hash of the questions. A row with only one of question and reference answer is rejected.
 - `eval:run` records the benchmark hash, the questions hash, the commit, and whether `src` had uncommitted changes in `run-config.json`.
 
+- `eval:review` serves a page to approve, reject, or edit drafted questions one at a time (`--benchmark`, `--drafts <directory of <lecture>.json>`, `--csv questions.csv`). Each card shows the question, the reference answer, the drafter's pointer and quotes, an automatic lecture-versus-document match check, and the closest lecture and document passages found by an independent search, plus a search box. Decisions save to `review-state.json` in the drafts directory and to `questions.csv` (approved rows only, with `status` and `origin` columns). `import` records how many questions came from each origin in `questions.lock.json`.
+
 ## Run
 
 ```sh

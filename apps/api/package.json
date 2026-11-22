@@ -27,6 +27,7 @@
         "eval:run": "dotenv --override --no-expand -e .env.evaluation -- tsx scripts/eval/run.ts",
         "eval:export": "tsx scripts/eval/export.ts",
         "eval:questions": "tsx scripts/eval/questions.ts",
+        "eval:review": "tsx scripts/eval/review.ts",
         "eval:score": "tsx scripts/eval/score.ts",
         "eval:analyze": "tsx scripts/eval/analyze.ts",
         "eval:pull": "tsx scripts/eval/pull.ts",

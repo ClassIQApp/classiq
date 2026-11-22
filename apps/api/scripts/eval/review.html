@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Review gold questions</title>
+        <style>
+            :root { color-scheme: light dark; --line: #8884; --accent: #2f554b; --bad: #a33; }
+            body { font: 16px/1.5 -apple-system, Helvetica, Arial, sans-serif; margin: 0; }
+            header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px 20px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: Canvas; z-index: 2; }
+            main { max-width: 980px; margin: 0 auto; padding: 20px; }
+            .meta { color: GrayText; font-size: 14px; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; }
+            .badge { border: 1px solid var(--line); border-radius: 999px; padding: 0 10px; font-size: 13px; }
+            .badge.approved { background: var(--accent); color: #fff; border-color: var(--accent); }
+            .badge.rejected { background: var(--bad); color: #fff; border-color: var(--bad); }
+            .block { border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+            .block h3 { margin: 0 0 6px; font-size: 13px; color: GrayText; font-weight: 600; }
+            textarea, input[type=search] { width: 100%; box-sizing: border-box; font: inherit; padding: 8px; }
+            textarea { min-height: 70px; }
+            button, select { font: inherit; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: ButtonFace; color: ButtonText; cursor: pointer; }
+            button.approve { background: var(--accent); color: #fff; border-color: var(--accent); }
+            button.reject { background: var(--bad); color: #fff; border-color: var(--bad); }
+            .actions { display: flex; gap: 10px; margin: 12px 0; }
+            .hit { margin: 8px 0; padding-left: 10px; border-left: 3px solid var(--line); white-space: pre-wrap; }
+            .hit b { color: var(--accent); }
+            .hint, .drafter { color: GrayText; font-size: 14px; white-space: pre-wrap; }
+            .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+            @media (max-width: 800px) { .columns { grid-template-columns: 1fr; } }
+        </style>
+    </head>
+    <body>
+        <header>
+            <button id="prev">Prev</button>
+            <button id="next">Next</button>
+            <button id="nextPending">Next pending (n)</button>
+            <select id="lecture"></select>
+            <select id="category"><option value="">All categories</option><option value="lecture">lecture</option><option value="document">document</option><option value="unanswerable">unanswerable</option></select>
+            <select id="status"><option value="">All statuses</option><option value="pending">pending</option><option value="approved">approved</option><option value="rejected">rejected</option></select>
+            <span id="count"></span>
+        </header>
+        <main id="main"></main>
+        <script>
+            let drafts = [];
+            let visible = [];
+            let index = 0;
+
+            const statusOf = (draft) => draft.review.status || "pending";
+            const escapeHtml = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+            const post = (id, patch) => fetch("/api/review", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, patch }) });
+
+            function applyFilters(keepId) {
+                const lecture = document.getElementById("lecture").value;
+                const category = document.getElementById("category").value;
+                const status = document.getElementById("status").value;
+                visible = drafts.filter((d) => (!lecture || d.lecture === lecture) && (!category || d.category === category) && (!status || statusOf(d) === status));
+                const position = keepId ? visible.findIndex((d) => d.id === keepId) : -1;
+                index = position >= 0 ? position : Math.min(index, Math.max(visible.length - 1, 0));
+                render();
+            }
+
+            function hitsHtml(hits, empty) {
+                return hits.length
+                    ? hits.map((hit) => `<div class="hit"><b>${escapeHtml(hit.label)}</b> ${escapeHtml(hit.text.length > 600 ? hit.text.slice(0, 600) + "…" : hit.text)}</div>`).join("")
+                    : `<p class="hint">${empty}</p>`;
+            }
+
+            async function render() {
+                const counts = { approved: 0, rejected: 0, pending: 0 };
+                for (const d of drafts) counts[statusOf(d)] += 1;
+                document.getElementById("count").textContent = `${counts.approved} approved, ${counts.rejected} rejected, ${counts.pending} pending · showing ${visible.length ? index + 1 : 0} of ${visible.length}`;
+                const draft = visible[index];
+                const main = document.getElementById("main");
+
+                if (!draft) {
+                    main.textContent = "Nothing matches the filters.";
+                    return;
+                }
+
+                const review = draft.review;
+                const question = review.question ?? draft.question;
+                const answer = review.reference_answer ?? draft.reference_answer;
+                main.innerHTML = `
+                    <div class="meta"><span class="badge ${statusOf(draft)}">${statusOf(draft)}</span><b>${draft.id}</b><span>${escapeHtml(draft.category)}</span></div>
+                    <div class="block"><h3>Question (edit if needed)</h3><textarea id="question">${escapeHtml(question)}</textarea></div>
+                    <div class="block"><h3>Reference answer (edit if needed)</h3><textarea id="answer">${escapeHtml(answer)}</textarea></div>
+                    <div class="actions"><button class="approve" id="approve">Approve (a)</button><button class="reject" id="reject">Reject (r)</button><button id="clear">Back to pending</button></div>
+                    <div class="block"><h3>Note (for example why you rejected it, used when I write a replacement)</h3><textarea id="note">${escapeHtml(review.note || "")}</textarea></div>
+                    <div class="block"><h3>The drafter's claims, to verify</h3><p class="drafter"><b>Where:</b> ${escapeHtml(draft.where_the_answer_is)}\n<b>Evidence:</b> ${escapeHtml(draft.evidence)}\n<b>Checks:</b> ${escapeHtml(draft.checks)}</p><p class="drafter"><b>Automatic check (independent of the drafter):</b> ${escapeHtml(draft.crosscheck || "none")}</p></div>
+                    <div class="columns">
+                        <div class="block"><h3>Closest lecture passages (independent search)</h3><div id="tHits">searching…</div></div>
+                        <div class="block"><h3>Closest document passages (independent search)</h3><div id="dHits">searching…</div></div>
+                    </div>
+                    <div class="block"><h3>Search this lecture and its documents</h3><input type="search" id="query" placeholder="Type terms and press Enter" /><div class="columns"><div id="qT"></div><div id="qD"></div></div></div>
+                    <p class="hint">Keys: a approve, r reject, n next pending, ← → move (not while typing).</p>`;
+
+                document.getElementById("approve").onclick = () => decide(draft, "approved");
+                document.getElementById("reject").onclick = () => decide(draft, "rejected");
+                document.getElementById("clear").onclick = () => decide(draft, undefined);
+                for (const [id, key] of [["question", "question"], ["answer", "reference_answer"], ["note", "note"]]) {
+                    document.getElementById(id).addEventListener("change", (event) => {
+                        draft.review[key] = event.target.value;
+                        post(draft.id, { [key]: event.target.value });
+                    });
+                }
+                document.getElementById("query").addEventListener("keydown", async (event) => {
+                    if (event.key !== "Enter") return;
+                    const result = await (await fetch(`/api/search?lecture=${draft.lecture}&q=${encodeURIComponent(event.target.value)}`)).json();
+                    document.getElementById("qT").innerHTML = "<h3>Lecture</h3>" + hitsHtml(result.transcript, "No matches in the lecture.");
+                    document.getElementById("qD").innerHTML = "<h3>Documents</h3>" + hitsHtml(result.documents, "No matches in the documents.");
+                });
+
+                const found = await (await fetch(`/api/evidence?id=${draft.id}`)).json();
+                if (visible[index] !== draft) return;
+                document.getElementById("tHits").innerHTML = hitsHtml(found.transcript, "Nothing in the lecture matches these terms.");
+                document.getElementById("dHits").innerHTML = hitsHtml(found.documents, "Nothing in the documents matches these terms.");
+            }
+
+            async function decide(draft, status) {
+                const question = document.getElementById("question").value;
+                const answer = document.getElementById("answer").value;
+                const note = document.getElementById("note").value;
+                const patch = { status, question, reference_answer: answer, note };
+                draft.review = { ...draft.review, ...patch };
+                if (!status) delete draft.review.status;
+                await post(draft.id, patch);
+                if (status) goNextPending(); else render();
+            }
+
+            function goNextPending() {
+                const next = visible.findIndex((d, position) => position > index && statusOf(d) === "pending");
+                const first = visible.findIndex((d) => statusOf(d) === "pending");
+                index = next !== -1 ? next : first !== -1 ? first : index;
+                render();
+            }
+
+            document.getElementById("prev").onclick = () => { index = Math.max(0, index - 1); render(); };
+            document.getElementById("next").onclick = () => { index = Math.min(visible.length - 1, index + 1); render(); };
+            document.getElementById("nextPending").onclick = goNextPending;
+            for (const id of ["lecture", "category", "status"]) document.getElementById(id).addEventListener("change", () => applyFilters());
+            document.addEventListener("keydown", (event) => {
+                if (["TEXTAREA", "INPUT"].includes(event.target.tagName) || event.metaKey || event.ctrlKey) return;
+                const draft = visible[index];
+                if (event.key === "ArrowRight") { index = Math.min(visible.length - 1, index + 1); render(); }
+                else if (event.key === "ArrowLeft") { index = Math.max(0, index - 1); render(); }
+                else if (event.key === "n") goNextPending();
+                else if (event.key === "a" && draft) decide(draft, "approved");
+                else if (event.key === "r" && draft) decide(draft, "rejected");
+            });
+
+            fetch("/api/items").then((r) => r.json()).then((data) => {
+                drafts = data.drafts;
+                const lectures = [...new Set(drafts.map((d) => d.lecture))];
+                document.getElementById("lecture").innerHTML = `<option value="">All lectures</option>` + lectures.map((l) => `<option>${l}</option>`).join("");
+                const first = drafts.find((d) => statusOf(d) === "pending");
+                applyFilters(first && first.id);
+            });
+        </script>
+    </body>
+</html>

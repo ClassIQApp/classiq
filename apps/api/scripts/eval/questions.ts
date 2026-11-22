@@ -76,9 +76,15 @@ if (command === "template") {
         `${JSON.stringify(benchmarkSchema.parse({ ...benchmark, questions }), null, 2)}\n`,
     );
 
+    const origins = filled.reduce<Record<string, number>>((counts, record) => {
+        const origin = record.origin?.trim() || "written by Gavin";
+
+        return { ...counts, [origin]: (counts[origin] ?? 0) + 1 };
+    }, {});
     const lock = {
         importedAt: new Date().toISOString(),
         questions: questions.length,
+        origins,
         questionsSha256: createHash("sha256").update(JSON.stringify(questions)).digest("hex"),
     };
 
