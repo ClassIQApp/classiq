@@ -92,6 +92,23 @@ describe.skipIf(!testUrl)("Postgres upload persistence", () => {
         await expect(repository.initiate("recording", courseId, input)).rejects.toMatchObject({ status: 409 });
     });
 
+    it("stores Word and PowerPoint resources but keeps the database allowlist closed", async () => {
+        const word = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        const slides = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+        await expect(
+            repository.initiate("resource", courseId, { name: "notes.docx", contentType: word, contentLength: 100 }),
+        ).resolves.toMatchObject({
+            contentType: word,
+        });
+        await expect(
+            repository.initiate("resource", courseId, { name: "deck.pptx", contentType: slides, contentLength: 26_214_400 }),
+        ).resolves.toMatchObject({ contentType: slides });
+        await expect(
+            repository.initiate("resource", courseId, { name: "old.doc", contentType: "application/msword", contentLength: 100 }),
+        ).rejects.toThrow();
+    });
+
     it("persists PDF metadata through the existing repository and isolates parents", async () => {
         const input = { name: "notes.pdf", contentType: "application/pdf", contentLength: 100, lectureId };
 

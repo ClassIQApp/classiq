@@ -49,6 +49,8 @@
         "pg": "catalog:",
         "zod": "catalog:",
         "@aws-sdk/s3-request-presigner": "catalog:",
+        "fast-xml-parser": "catalog:",
+        "fflate": "catalog:",
         "unpdf": "catalog:"
     },
     "devDependencies": {

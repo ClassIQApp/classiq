@@ -2,6 +2,7 @@ import { useAuth } from "../../api/auth/provider";
 import type { Lecture } from "../../api/lectures/types";
 import { createResourcesApi, resourceIndexingNote, resourceQueryKey } from "../../api/resources/client";
 import type { ResourceOperation } from "../../api/resources/client";
+import { MAX_RESOURCE_BYTES, RESOURCE_FILE_ACCEPT, resourceFormatOfName } from "../../api/resources/resource-formats";
 import { useTranslation } from "../../i18n/use-translation";
 import type { InterfaceLanguage } from "../../pages/settings/language-preferences";
 import { openInNewTab } from "./open-in-new-tab";
@@ -19,7 +20,7 @@ interface ResourceMessages {
     title: string;
     description: string;
 
-    pdfFiles: string;
+    resourceFiles: string;
     chooseFiles: string;
     noFilesSelected: string;
     filesSelected: (count: number) => string;
@@ -35,8 +36,8 @@ interface ResourceMessages {
     transferringFile: (progress: number) => string;
     remove: string;
 
-    uploadPdf: string;
-    uploadPdfs: (count: number) => string;
+    uploadFile: string;
+    uploadFiles: (count: number) => string;
     cancelUpload: string;
 
     loadingResources: string;
@@ -67,9 +68,9 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
     en: {
         ariaLabel: "Course resources",
         title: "Course Resources",
-        description: "PDF lecture notes, assignments, and study guides shared with this course.",
+        description: "PDF, Word, and PowerPoint lecture notes, assignments, and study guides shared with this course.",
 
-        pdfFiles: "PDF files (up to 25 MB each)",
+        resourceFiles: "PDF, Word (.docx), or PowerPoint (.pptx) files (up to 25 MB each)",
         chooseFiles: "Choose Files",
         noFilesSelected: "No files selected",
         filesSelected: (count) => `${count} files selected`,
@@ -85,8 +86,8 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         transferringFile: (progress) => `Transferring file: ${progress}%`,
         remove: "Remove",
 
-        uploadPdf: "Upload PDF",
-        uploadPdfs: (count) => `Upload ${count} PDFs`,
+        uploadFile: "Upload file",
+        uploadFiles: (count) => `Upload ${count} files`,
         cancelUpload: "Cancel upload",
 
         loadingResources: "Loading resources…",
@@ -104,21 +105,22 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         failedMessage: "Upload failed. A teacher can select the file to start a new upload.",
 
         opening: "Opening…",
-        openDownload: "Open / download PDF",
+        openDownload: "Open / download file",
 
-        invalidFiles: (names) => `Skipped ${names}. Each file must be a nonempty PDF up to 25 MB.`,
+        invalidFiles: (names) =>
+            `Skipped ${names}. Each file must be a nonempty PDF, Word (.docx), or PowerPoint (.pptx) file up to 25 MB.`,
         uploadFailed: "Upload failed. Please retry.",
         uploadCancelled: "Upload cancelled. Retry to resume this file.",
-        popupBlocked: "Allow popups and try opening the PDF again.",
-        openFailed: "Could not open this PDF. Try again for a fresh link.",
+        popupBlocked: "Allow popups and try opening the file again.",
+        openFailed: "Could not open this file. Try again for a fresh link.",
     },
 
     es: {
         ariaLabel: "Recursos del curso",
         title: "Recursos del curso",
-        description: "Notas de clase, tareas y guías de estudio en PDF compartidas con este curso.",
+        description: "Notas de clase, tareas y guías de estudio en PDF, Word y PowerPoint compartidas con este curso.",
 
-        pdfFiles: "Archivos PDF (hasta 25 MB cada uno)",
+        resourceFiles: "Archivos PDF, Word (.docx) o PowerPoint (.pptx) (hasta 25 MB cada uno)",
         chooseFiles: "Seleccionar archivos",
         noFilesSelected: "Ningún archivo seleccionado",
         filesSelected: (count) => `${count} archivos seleccionados`,
@@ -134,8 +136,8 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         transferringFile: (progress) => `Transfiriendo archivo: ${progress}%`,
         remove: "Eliminar",
 
-        uploadPdf: "Subir PDF",
-        uploadPdfs: (count) => `Subir ${count} PDF`,
+        uploadFile: "Subir archivo",
+        uploadFiles: (count) => `Subir ${count} archivos`,
         cancelUpload: "Cancelar subida",
 
         loadingResources: "Cargando recursos…",
@@ -153,21 +155,22 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         failedMessage: "La subida falló. Un profesor puede seleccionar el archivo para iniciar una nueva subida.",
 
         opening: "Abriendo…",
-        openDownload: "Abrir / descargar PDF",
+        openDownload: "Abrir / descargar archivo",
 
-        invalidFiles: (names) => `Se omitieron ${names}. Cada archivo debe ser un PDF no vacío de hasta 25 MB.`,
+        invalidFiles: (names) =>
+            `Se omitieron ${names}. Cada archivo debe ser un PDF, Word (.docx) o PowerPoint (.pptx) no vacío de hasta 25 MB.`,
         uploadFailed: "La subida falló. Inténtalo de nuevo.",
         uploadCancelled: "La subida fue cancelada. Reintenta para continuar este archivo.",
-        popupBlocked: "Permite las ventanas emergentes e intenta abrir el PDF nuevamente.",
-        openFailed: "No se pudo abrir este PDF. Inténtalo de nuevo.",
+        popupBlocked: "Permite las ventanas emergentes e intenta abrir el archivo nuevamente.",
+        openFailed: "No se pudo abrir este archivo. Inténtalo de nuevo.",
     },
 
     ar: {
         ariaLabel: "مصادر المقرر",
         title: "مصادر المقرر",
-        description: "ملاحظات المحاضرات والواجبات وأدلة الدراسة بصيغة PDF المشتركة مع هذا المقرر.",
+        description: "ملاحظات المحاضرات والواجبات وأدلة الدراسة بصيغة PDF أو Word أو PowerPoint المشتركة مع هذا المقرر.",
 
-        pdfFiles: "ملفات PDF (حتى 25 ميجابايت لكل ملف)",
+        resourceFiles: "ملفات PDF أو Word (.docx) أو PowerPoint (.pptx) (حتى 25 ميجابايت لكل ملف)",
         chooseFiles: "اختيار الملفات",
         noFilesSelected: "لم يتم اختيار ملفات",
         filesSelected: (count) => `تم اختيار ${count} ملفات`,
@@ -183,8 +186,8 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         transferringFile: (progress) => `جارٍ نقل الملف: ${progress}%`,
         remove: "إزالة",
 
-        uploadPdf: "رفع PDF",
-        uploadPdfs: (count) => `رفع ${count} ملفات PDF`,
+        uploadFile: "رفع ملف",
+        uploadFiles: (count) => `رفع ${count} ملفات`,
         cancelUpload: "إلغاء الرفع",
 
         loadingResources: "جارٍ تحميل المصادر…",
@@ -202,21 +205,23 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         failedMessage: "فشل الرفع. يمكن للمدرس اختيار الملف لبدء عملية رفع جديدة.",
 
         opening: "جارٍ الفتح…",
-        openDownload: "فتح / تنزيل PDF",
+        openDownload: "فتح / تنزيل الملف",
 
-        invalidFiles: (names) => `تم تخطي ${names}. يجب أن يكون كل ملف PDF غير فارغ وبحجم لا يزيد عن 25 ميجابايت.`,
+        invalidFiles: (names) =>
+            `تم تخطي ${names}. يجب أن يكون كل ملف بصيغة PDF أو Word (.docx) أو PowerPoint (.pptx) وغير فارغ وبحجم لا يزيد عن 25 ميجابايت.`,
         uploadFailed: "فشل الرفع. حاول مرة أخرى.",
         uploadCancelled: "تم إلغاء الرفع. أعد المحاولة لمتابعة هذا الملف.",
-        popupBlocked: "اسمح بالنوافذ المنبثقة ثم حاول فتح ملف PDF مرة أخرى.",
-        openFailed: "تعذر فتح ملف PDF. حاول مرة أخرى.",
+        popupBlocked: "اسمح بالنوافذ المنبثقة ثم حاول فتح الملف مرة أخرى.",
+        openFailed: "تعذر فتح الملف. حاول مرة أخرى.",
     },
 
     de: {
         ariaLabel: "Kursmaterialien",
         title: "Kursmaterialien",
-        description: "PDF-Vorlesungsnotizen, Aufgaben und Lernhilfen, die mit diesem Kurs geteilt wurden.",
+        description:
+            "Vorlesungsnotizen, Aufgaben und Lernhilfen als PDF-, Word- und PowerPoint-Dateien, die mit diesem Kurs geteilt wurden.",
 
-        pdfFiles: "PDF-Dateien (jeweils bis zu 25 MB)",
+        resourceFiles: "PDF-, Word- (.docx) oder PowerPoint-Dateien (.pptx) (jeweils bis zu 25 MB)",
         chooseFiles: "Dateien auswählen",
         noFilesSelected: "Keine Dateien ausgewählt",
         filesSelected: (count) => `${count} Dateien ausgewählt`,
@@ -232,8 +237,8 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         transferringFile: (progress) => `Datei wird übertragen: ${progress}%`,
         remove: "Entfernen",
 
-        uploadPdf: "PDF hochladen",
-        uploadPdfs: (count) => `${count} PDFs hochladen`,
+        uploadFile: "Datei hochladen",
+        uploadFiles: (count) => `${count} Dateien hochladen`,
         cancelUpload: "Upload abbrechen",
 
         loadingResources: "Materialien werden geladen…",
@@ -251,21 +256,22 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         failedMessage: "Der Upload ist fehlgeschlagen. Eine Lehrkraft kann die Datei auswählen und einen neuen Upload starten.",
 
         opening: "Wird geöffnet…",
-        openDownload: "PDF öffnen / herunterladen",
+        openDownload: "Datei öffnen / herunterladen",
 
-        invalidFiles: (names) => `${names} wurden übersprungen. Jede Datei muss eine nicht leere PDF-Datei mit höchstens 25 MB sein.`,
+        invalidFiles: (names) =>
+            `${names} wurden übersprungen. Jede Datei muss eine nicht leere PDF-, Word- (.docx) oder PowerPoint-Datei (.pptx) mit höchstens 25 MB sein.`,
         uploadFailed: "Upload fehlgeschlagen. Versuche es erneut.",
         uploadCancelled: "Upload abgebrochen. Versuche es erneut, um diese Datei fortzusetzen.",
-        popupBlocked: "Erlaube Pop-ups und versuche erneut, die PDF-Datei zu öffnen.",
-        openFailed: "Diese PDF-Datei konnte nicht geöffnet werden. Versuche es erneut.",
+        popupBlocked: "Erlaube Pop-ups und versuche erneut, die Datei zu öffnen.",
+        openFailed: "Diese Datei konnte nicht geöffnet werden. Versuche es erneut.",
     },
 
     fr: {
         ariaLabel: "Ressources du cours",
         title: "Ressources du cours",
-        description: "Notes de cours, devoirs et guides d’étude PDF partagés avec ce cours.",
+        description: "Notes de cours, devoirs et guides d’étude au format PDF, Word et PowerPoint partagés avec ce cours.",
 
-        pdfFiles: "Fichiers PDF (25 Mo maximum chacun)",
+        resourceFiles: "Fichiers PDF, Word (.docx) ou PowerPoint (.pptx) (25 Mo maximum chacun)",
         chooseFiles: "Choisir des fichiers",
         noFilesSelected: "Aucun fichier sélectionné",
         filesSelected: (count) => `${count} fichiers sélectionnés`,
@@ -281,8 +287,8 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         transferringFile: (progress) => `Transfert du fichier : ${progress}%`,
         remove: "Supprimer",
 
-        uploadPdf: "Téléverser le PDF",
-        uploadPdfs: (count) => `Téléverser ${count} PDF`,
+        uploadFile: "Téléverser le fichier",
+        uploadFiles: (count) => `Téléverser ${count} fichiers`,
         cancelUpload: "Annuler le téléversement",
 
         loadingResources: "Chargement des ressources…",
@@ -300,13 +306,14 @@ const messagesByLanguage: Record<InterfaceLanguage, ResourceMessages> = {
         failedMessage: "Le téléversement a échoué. Un enseignant peut sélectionner le fichier pour démarrer un nouveau téléversement.",
 
         opening: "Ouverture…",
-        openDownload: "Ouvrir / télécharger le PDF",
+        openDownload: "Ouvrir / télécharger le fichier",
 
-        invalidFiles: (names) => `${names} ont été ignorés. Chaque fichier doit être un PDF non vide de 25 Mo maximum.`,
+        invalidFiles: (names) =>
+            `${names} ont été ignorés. Chaque fichier doit être un PDF, Word (.docx) ou PowerPoint (.pptx) non vide de 25 Mo maximum.`,
         uploadFailed: "Le téléversement a échoué. Réessayez.",
         uploadCancelled: "Le téléversement a été annulé. Réessayez pour reprendre ce fichier.",
-        popupBlocked: "Autorisez les fenêtres contextuelles puis essayez d’ouvrir le PDF à nouveau.",
-        openFailed: "Impossible d’ouvrir ce PDF. Réessayez.",
+        popupBlocked: "Autorisez les fenêtres contextuelles puis essayez d’ouvrir le fichier à nouveau.",
+        openFailed: "Impossible d’ouvrir ce fichier. Réessayez.",
     },
 };
 
@@ -319,10 +326,8 @@ interface QueuedFile {
     error?: string;
 }
 
-const MAX_RESOURCE_BYTES = 25 * 1024 ** 2;
-
-function isUploadablePdf(file: File) {
-    return file.size > 0 && file.size <= MAX_RESOURCE_BYTES && file.name.toLowerCase().endsWith(".pdf");
+function isUploadableResource(file: File) {
+    return file.size > 0 && file.size <= MAX_RESOURCE_BYTES && resourceFormatOfName(file.name) !== undefined;
 }
 
 export default function CourseResources(props: CourseResourcesProps) {
@@ -403,10 +408,10 @@ export function ResourceLibrary({
     function select(files: FileList | null) {
         const chosen = [...(files ?? [])];
 
-        const skipped = chosen.filter((file) => !isUploadablePdf(file)).map((file) => file.name);
+        const skipped = chosen.filter((file) => !isUploadableResource(file)).map((file) => file.name);
 
         const accepted: QueuedFile[] = chosen
-            .filter((file) => isUploadablePdf(file))
+            .filter((file) => isUploadableResource(file))
             .map((file) => ({
                 id: crypto.randomUUID(),
                 file,
@@ -532,14 +537,14 @@ export function ResourceLibrary({
 
             {canManage && (
                 <div className="resources-card">
-                    <label className="resources-label">{messages.pdfFiles}</label>
+                    <label className="resources-label">{messages.resourceFiles}</label>
 
                     <input
                         ref={fileInput}
                         id="resource-file"
                         type="file"
                         multiple
-                        accept=".pdf,application/pdf"
+                        accept={RESOURCE_FILE_ACCEPT}
                         disabled={busy}
                         onChange={(event) => select(event.target.files)}
                         style={{
@@ -628,7 +633,7 @@ export function ResourceLibrary({
                         disabled={queue.length === 0 || busy}
                         onClick={() => void uploadQueued()}
                     >
-                        {queue.length > 1 ? messages.uploadPdfs(queue.length) : messages.uploadPdf}
+                        {queue.length > 1 ? messages.uploadFiles(queue.length) : messages.uploadFile}
                     </button>
 
                     {busy && (

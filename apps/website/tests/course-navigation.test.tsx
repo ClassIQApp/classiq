@@ -159,7 +159,7 @@ test("the persisted resource list exposes only completed downloads and explains 
     assert.match(markup, /Ready.pdf/);
     assert.match(markup, /Awaiting upload verification/);
     assert.match(markup, /Upload failed/);
-    assert.equal(markup.match(/Open \/ download PDF/g)?.length, 1);
+    assert.equal(markup.match(/Open \/ download file/g)?.length, 1);
     assert.doesNotMatch(markup, /type="file"|blob:/);
 });
 
