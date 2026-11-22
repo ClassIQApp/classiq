@@ -9,6 +9,7 @@ test("course, section and lecture URLs round-trip through the route", () => {
         { name: "settings" },
         { name: "course", courseId: "5", section: "lectures" },
         { name: "course", courseId: "5", section: "resources" },
+        { name: "course", courseId: "5", section: "quizzes" },
         { name: "course", courseId: "5", section: "search" },
         { name: "course", courseId: "5", section: "chat" },
         { name: "lecture", courseId: "5", lectureId: "8", startSeconds: undefined },

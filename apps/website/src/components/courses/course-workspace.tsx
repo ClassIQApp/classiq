@@ -7,11 +7,12 @@ import ChatWidget from "../chat/chat-widget";
 import LectureDetail from "../lectures/lecture-detail";
 import LectureList from "../lectures/lecture-list";
 import type { LectureSort } from "../lectures/lecture-list";
+import CourseQuizzes from "./course-quizzes";
 import CourseResources from "./course-resources";
 import CourseRoleBadge from "./course-role-badge";
 import CourseSearch from "./course-search";
 import CourseStudyGuides from "./course-study-guides";
-import { ChatCircleDotsIcon, FilesIcon, MagnifyingGlassIcon, PresentationIcon } from "@phosphor-icons/react";
+import { ChatCircleDotsIcon, FilesIcon, ListChecksIcon, MagnifyingGlassIcon, PresentationIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 
@@ -33,6 +34,7 @@ const messagesByLanguage: Record<InterfaceLanguage, CourseWorkspaceMessages> = {
             lectures: "Lectures",
             resources: "Resources",
             "study-guides": "Study Guides",
+            quizzes: "Quizzes",
             search: "Search",
             chat: "Chat",
         },
@@ -46,6 +48,7 @@ const messagesByLanguage: Record<InterfaceLanguage, CourseWorkspaceMessages> = {
             lectures: "Clases",
             resources: "Recursos",
             "study-guides": "Guías de estudio",
+            quizzes: "Cuestionarios",
             search: "Buscar",
             chat: "Chat",
         },
@@ -59,6 +62,7 @@ const messagesByLanguage: Record<InterfaceLanguage, CourseWorkspaceMessages> = {
             lectures: "المحاضرات",
             resources: "المصادر",
             "study-guides": "أدلة الدراسة",
+            quizzes: "الاختبارات",
             search: "البحث",
             chat: "الدردشة",
         },
@@ -72,6 +76,7 @@ const messagesByLanguage: Record<InterfaceLanguage, CourseWorkspaceMessages> = {
             lectures: "Vorlesungen",
             resources: "Materialien",
             "study-guides": "Lernhilfen",
+            quizzes: "Quiz",
             search: "Suche",
             chat: "Chat",
         },
@@ -85,6 +90,7 @@ const messagesByLanguage: Record<InterfaceLanguage, CourseWorkspaceMessages> = {
             lectures: "Cours",
             resources: "Ressources",
             "study-guides": "Guides d’étude",
+            quizzes: "Quiz",
             search: "Recherche",
             chat: "Discussion",
         },
@@ -95,11 +101,12 @@ const iconBySection: Record<CourseSection, Icon> = {
     lectures: PresentationIcon,
     resources: FilesIcon,
     "study-guides": FilesIcon,
+    quizzes: ListChecksIcon,
     search: MagnifyingGlassIcon,
     chat: ChatCircleDotsIcon,
 };
 
-const courseSections: CourseSection[] = ["lectures", "resources", "study-guides", "search"];
+const courseSections: CourseSection[] = ["lectures", "resources", "study-guides", "quizzes", "search"];
 
 interface CourseWorkspaceProps {
     course: Course;
@@ -166,6 +173,17 @@ export default function CourseWorkspace({ course, courses, route, onNavigate, on
         if (view === "study-guides") {
             return (
                 <CourseStudyGuides
+                    courseId={course.id}
+                    lectures={course.lectures}
+                    canManage={course.role === "teacher"}
+                    onOpenLecture={openLecture}
+                />
+            );
+        }
+
+        if (view === "quizzes") {
+            return (
+                <CourseQuizzes
                     courseId={course.id}
                     lectures={course.lectures}
                     canManage={course.role === "teacher"}
